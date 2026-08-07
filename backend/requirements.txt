@@ -1,0 +1,11 @@
+# Embodied AI Career OS - Backend Dependencies
+# Phase 1 Day1：FastAPI 基础
+# Phase 1 Day2：SQLAlchemy ORM（SQLite 开发态，可经 DATABASE_URL 切 PostgreSQL）
+
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+sqlalchemy==2.0.51
+
+# Phase 1 Day5：LangGraph Agent 框架
+langgraph>=0.2.0
+langchain-core>=0.2.0

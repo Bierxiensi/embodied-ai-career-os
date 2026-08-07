@@ -1,0 +1,300 @@
+{
+  "title": "Day7 Learning Loop E2E 测试报告",
+  "timestamp": "2026-08-03T15:44:24.474606",
+  "summary": {
+    "checks": 41,
+    "passed": 41,
+    "failed": 0,
+    "pass_rate": 100.0,
+    "elapsed_ms": 106,
+    "overall": "PASS"
+  },
+  "steps": [
+    {
+      "section": "前置",
+      "description": "建立技能基线",
+      "status": "PASS",
+      "start": 13302.949416927,
+      "checks": [
+        {
+          "name": "后端健康检查",
+          "ok": true,
+          "detail": "HTTP 200"
+        },
+        {
+          "name": "3 个目标技能存在",
+          "ok": true,
+          "detail": "Isaac L=0, ROS2 L=1, VLA L=0"
+        }
+      ],
+      "elapsed_ms": 5
+    },
+    {
+      "section": "步骤 1",
+      "description": "GET /api/skills 技能缺口分析",
+      "status": "PASS",
+      "start": 13302.954805506,
+      "checks": [
+        {
+          "name": "GET /api/skills 成功",
+          "ok": true,
+          "detail": "HTTP 200"
+        },
+        {
+          "name": "10 项种子技能",
+          "ok": true,
+          "detail": "10 项"
+        },
+        {
+          "name": "≥3 项弱技能",
+          "ok": true,
+          "detail": "4 项"
+        }
+      ],
+      "elapsed_ms": 4
+    },
+    {
+      "section": "步骤 2",
+      "description": "Planner 生成今日 3 个任务",
+      "status": "PASS",
+      "start": 13302.959679644,
+      "checks": [
+        {
+          "name": "Isaac 任务 生成",
+          "ok": true,
+          "detail": "HTTP 200 skill=Isaac"
+        },
+        {
+          "name": "ROS2 任务 生成",
+          "ok": true,
+          "detail": "HTTP 200 skill=ROS2"
+        },
+        {
+          "name": "VLA 任务 生成",
+          "ok": true,
+          "detail": "HTTP 200 skill=VLA"
+        },
+        {
+          "name": "tasks 增加 3",
+          "ok": true,
+          "detail": "3 → 6"
+        },
+        {
+          "name": "planner runs 增加 3",
+          "ok": true,
+          "detail": "0 → 3"
+        }
+      ],
+      "elapsed_ms": 32
+    },
+    {
+      "section": "步骤 3.1",
+      "description": "复盘 Isaac：Isaac Sim Python API 入门",
+      "status": "PASS",
+      "start": 13302.993627041,
+      "checks": [
+        {
+          "name": "POST /api/reviewer/review",
+          "ok": true,
+          "detail": "HTTP 200"
+        },
+        {
+          "name": "Score = 100",
+          "ok": true,
+          "detail": "实际 100"
+        },
+        {
+          "name": "等级 0→1（升级=True）",
+          "ok": true,
+          "detail": "Δ+1"
+        },
+        {
+          "name": "evidence 追加（0→1）",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Task 状态 → done",
+          "ok": true,
+          "detail": "status=done"
+        }
+      ],
+      "elapsed_ms": 23
+    },
+    {
+      "section": "步骤 3.2",
+      "description": "复盘 ROS2：ROS2 Topic 通信机制实践",
+      "status": "PASS",
+      "start": 13303.017388612,
+      "checks": [
+        {
+          "name": "POST /api/reviewer/review",
+          "ok": true,
+          "detail": "HTTP 200"
+        },
+        {
+          "name": "Score ≥ 50",
+          "ok": true,
+          "detail": "实际 70"
+        },
+        {
+          "name": "Score ≤ 79",
+          "ok": true,
+          "detail": "实际 70"
+        },
+        {
+          "name": "等级 1→1（升级=False）",
+          "ok": true,
+          "detail": "Δ+0"
+        },
+        {
+          "name": "evidence 追加（0→1）",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Task 状态 → done",
+          "ok": true,
+          "detail": "status=done"
+        }
+      ],
+      "elapsed_ms": 13
+    },
+    {
+      "section": "步骤 3.3",
+      "description": "复盘 VLA：VLA 模型概念梳理与论文精读",
+      "status": "PASS",
+      "start": 13303.030703684,
+      "checks": [
+        {
+          "name": "POST /api/reviewer/review",
+          "ok": true,
+          "detail": "HTTP 200"
+        },
+        {
+          "name": "Score ≤ 49",
+          "ok": true,
+          "detail": "实际 30"
+        },
+        {
+          "name": "等级 0→0（升级=False）",
+          "ok": true,
+          "detail": "Δ+0"
+        },
+        {
+          "name": "evidence 不变（0→0）",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Task 状态 → done",
+          "ok": true,
+          "detail": "status=done"
+        }
+      ],
+      "elapsed_ms": 11
+    },
+    {
+      "section": "步骤 4",
+      "description": "全链路数据一致性总验证",
+      "status": "PASS",
+      "start": 13303.042455874,
+      "checks": [
+        {
+          "name": "learning_logs +3",
+          "ok": true,
+          "detail": "0 → 3"
+        },
+        {
+          "name": "skill_assessments +3",
+          "ok": true,
+          "detail": "0 → 3"
+        },
+        {
+          "name": "reviewer runs +3",
+          "ok": true,
+          "detail": "0 → 3"
+        },
+        {
+          "name": "assessments ↔ reviewer_runs 数量匹配",
+          "ok": true,
+          "detail": "3 ↔ 3"
+        },
+        {
+          "name": "Assessment#1 skill#8 等级一致",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Assessment#2 skill#7 等级一致",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Assessment#3 skill#10 等级一致",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Assessment-Skill 一致性",
+          "ok": true,
+          "detail": "不匹配 0/3"
+        }
+      ],
+      "elapsed_ms": 2
+    },
+    {
+      "section": "步骤 5",
+      "description": "Dashboard 反射：GET /api/skills 等级变化",
+      "status": "PASS",
+      "start": 13303.045153413,
+      "checks": [
+        {
+          "name": "Isaac 升级",
+          "ok": true,
+          "detail": "0 → 1"
+        },
+        {
+          "name": "Isaac evidence 增加",
+          "ok": true,
+          "detail": "0 → 1"
+        },
+        {
+          "name": "ROS2 等级不变",
+          "ok": true,
+          "detail": "1 → 1"
+        },
+        {
+          "name": "ROS2 evidence 增加",
+          "ok": true,
+          "detail": "0 → 1"
+        },
+        {
+          "name": "VLA 等级不变",
+          "ok": true,
+          "detail": "0 → 0"
+        },
+        {
+          "name": "VLA evidence 不变",
+          "ok": true,
+          "detail": "0 → 0"
+        }
+      ],
+      "elapsed_ms": 2
+    },
+    {
+      "section": "步骤 6",
+      "description": "Planner 反射：学习后 gap 减小，决策动态调整",
+      "status": "PASS",
+      "start": 13303.048119534,
+      "checks": [
+        {
+          "name": "学习后 Planner 重新选技能",
+          "ok": true,
+          "detail": "选择=Isaac (Isaac gap=3, ROS2 gap=3)"
+        }
+      ],
+      "elapsed_ms": 7
+    }
+  ]
+}

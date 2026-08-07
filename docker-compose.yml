@@ -1,0 +1,30 @@
+# Embodied AI Career OS - 开发环境编排
+# Phase 1 Day1：仅 frontend + backend 两个服务
+# 数据库（postgres/redis/chromadb）将在 Day2 接入
+
+services:
+  backend:
+    build: ./backend
+    container_name: career-os-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - RELOAD=true
+      - CORS_ORIGINS=http://localhost:3000
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: career-os-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped

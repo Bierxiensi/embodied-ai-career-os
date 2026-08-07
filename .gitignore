@@ -1,0 +1,40 @@
+# ===== 通用 =====
+.DS_Store
+*.log
+*.pid
+*.seed
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+
+# ===== Node / Next.js =====
+node_modules/
+.next/
+out/
+build/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# ===== Docker =====
+*.dockerenv
+
+# ===== 数据库 / 数据 =====
+*.db
+*.sqlite3
+data/

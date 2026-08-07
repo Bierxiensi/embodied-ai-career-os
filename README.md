@@ -147,3 +147,59 @@ Build fast.
 Use AI agents.
 
 Avoid over engineering.
+
+
+---
+
+# Development Environment
+
+
+## 前置要求
+
+- Docker
+- Docker Compose
+
+
+## 快速启动
+
+```bash
+docker compose up --build
+```
+
+访问：
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- 健康检查: http://localhost:8000/health
+
+
+## 本地开发（不使用 Docker）
+
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+
+## 目录结构
+
+- `frontend/` — Next.js 前端
+- `backend/` — FastAPI 后端
+- `agents/` — LangGraph Agent（Phase 1 Day5 填充）
+- `database/` — 数据库迁移脚本（Phase 1 Day2 填充）
+- `knowledge/` — 知识库资源（Phase 2 填充）
+- `deploy/` — 部署配置（后续阶段填充）
+- `docs/` — 项目文档

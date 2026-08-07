@@ -1,0 +1,2 @@
+# 数据库相关
+# Phase 1 Day2：建表逻辑在 backend/app/db/，迁移脚本后续按需引入 Alembic
