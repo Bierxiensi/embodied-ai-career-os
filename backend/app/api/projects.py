@@ -79,13 +79,64 @@ def get_project(
 def patch_project(
     project_id: int, payload: ProjectPatch, db: Session = Depends(get_db)
 ) -> ApiResponse[ProjectOut]:
-    """更新项目字段。"""
+    """更新项目字段。标记 completed 时自动生成 README。"""
     p = db.get(Project, project_id)
     if p is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(p, field, value)
+
+    # 项目标记完成时自动生成 README
+    if payload.status == "completed":
+        from app.models.milestone import Milestone
+        from app.models.task import Task
+
+        milestones = (
+            db.query(Milestone)
+            .filter(Milestone.project_id == project_id)
+            .order_by(Milestone.sort_order)
+            .all()
+        )
+
+        # 收集关联技能
+        skills_set: set[str] = set()
+        for m in milestones:
+            tasks = db.query(Task).filter(Task.milestone_id == m.id).all()
+            for t in tasks:
+                if t.skill_name:
+                    skills_set.add(t.skill_name)
+
+        # 构建 README
+        lines = [
+            f"# {p.name}",
+            "",
+            f"> {p.goal}",
+            "",
+            "## 里程碑",
+            "",
+        ]
+        for m in milestones:
+            status_icon = "✅" if m.status == "completed" else "⬜"
+            lines.append(
+                f"- {status_icon} **{m.version}**: {m.title} — {m.goal}"
+            )
+
+        lines.extend([
+            "",
+            "## 涉及技能",
+            "",
+        ])
+        for skill in sorted(skills_set):
+            lines.append(f"- {skill}")
+
+        lines.extend([
+            "",
+            "---",
+            "*由 Embodied AI Career OS 自动生成*",
+        ])
+
+        p.readme = "\n".join(lines)
 
     db.commit()
     db.refresh(p)
