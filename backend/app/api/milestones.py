@@ -177,6 +177,30 @@ def _decompose_milestone(goal: str, available_minutes: int) -> list[dict]:
              "duration": min(30, available_minutes // 4), "difficulty": "beginner",
              "skill": "ROS2"},
         ]
+    elif "mujoco" in goal_lower or "仿真" in goal_lower or "simulation" in goal_lower:
+        return [
+            {"title": f"{goal} - 模型理解",
+             "objective": "理解 MJCF/URDF 格式，分析关节-连杆-执行器结构",
+             "duration": min(30, available_minutes // 3), "difficulty": "beginner",
+             "skill": "Mujoco Simulation",
+             "acceptance": ["能解释 MJCF 文件每个元素的含义",
+                            "理解 hinge joint 与 revolute joint 的区别"],
+             "resources": ["Mujoco 官方文档: https://mujoco.readthedocs.io/"]},
+            {"title": f"{goal} - 关节控制",
+             "objective": "编写 Python 脚本设置目标关节角度",
+             "duration": min(40, available_minutes // 3), "difficulty": "beginner",
+             "skill": "Mujoco Simulation",
+             "acceptance": ["成功加载模型并设置 3 组不同姿态",
+                            "打印/录制关节角度变化"],
+             "resources": ["本项目 so101/v0_mujoco/control_demo.py"]},
+            {"title": f"{goal} - 轨迹可视化",
+             "objective": "录制运动轨迹并绘图分析",
+             "duration": min(30, available_minutes // 3), "difficulty": "beginner",
+             "skill": "Python",
+             "acceptance": ["CSV 导出成功", "matplotlib 曲线图生成",
+                            "观察关节角度变化是否平滑"],
+             "resources": ["本项目 so101/v0_mujoco/state_reader.py"]},
+        ]
     elif "moveit" in goal_lower:
         return [
             {"title": f"{goal} - URDF 建模", "objective": "创建 SO101 URDF 模型",

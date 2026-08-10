@@ -135,6 +135,8 @@ def _seed_if_empty() -> None:
                       evidence=["理解 Transformer / 扩散模型原理"]),
                 Skill(name="ROS2", category="Weak", level=1, target_level=4, evidence=[]),
                 Skill(name="Isaac", category="Weak", level=0, target_level=4, evidence=[]),
+                Skill(name="Mujoco Simulation", category="Weak", level=0, target_level=3,
+                      evidence=[]),
                 Skill(name="Robot Learning", category="Weak", level=1, target_level=4,
                       evidence=["SO101 ACT 推理可用，泛化待提升"]),
                 Skill(name="VLA", category="Weak", level=0, target_level=4, evidence=[]),
@@ -190,10 +192,11 @@ def _seed_if_empty() -> None:
             db.flush()
 
             seed_milestones = [
-                Milestone(project_id=p.id, version="V0", title="Python 基础控制",
-                          goal="Python 直接控制 SO101 舵机转动", status="completed", sort_order=0),
+                Milestone(project_id=p.id, version="V0", title="Mujoco 仿真控制",
+                          goal="Mujoco 仿真机械臂：Python 控制 3-DOF 臂关节角度 → FK 验证 → 轨迹记录",
+                          status="in_progress", sort_order=0),
                 Milestone(project_id=p.id, version="V1", title="ROS2 基础控制",
-                          goal="通过 ROS2 topic 控制 SO101 关节", status="in_progress", sort_order=1),
+                          goal="通过 ROS2 topic 控制 SO101 关节", status="locked", sort_order=1),
                 Milestone(project_id=p.id, version="V2", title="MoveIt2 集成",
                           goal="MoveIt2 运动规划 + 执行", status="locked", sort_order=2),
                 Milestone(project_id=p.id, version="V3", title="ACT 模仿学习",
