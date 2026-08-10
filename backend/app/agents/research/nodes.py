@@ -58,10 +58,13 @@ def _match_with_llm(topic: str) -> dict | None:
 
     try:
         llm = get_llm()
-        return llm.chat_json([
+        result = llm.chat_json([
             ChatMessage(role="system", content="你是机器人/AI研究员。只输出 JSON。"),
             ChatMessage(role="user", content=prompt),
         ])
+        if result.get("_parse_error"):
+            return None
+        return result
     except Exception:
         return None
 

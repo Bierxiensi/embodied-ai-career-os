@@ -1,0 +1,1 @@
+"""GitHub Service —— commit 感知 + AI 分析 + 技能关联建议。"""

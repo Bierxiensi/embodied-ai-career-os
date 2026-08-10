@@ -64,6 +64,8 @@ def _evaluate_with_llm(task: dict, learning_log: dict) -> dict | None:
             ChatMessage(role="system", content="你是严格的技能评估导师。只输出 JSON。"),
             ChatMessage(role="user", content=prompt),
         ])
+        if result.get("_parse_error"):
+            return None
         score = int(result.get("total_score", 0))
         if 0 <= score <= 100:
             return {"evidence_score": min(score, 100), "llm_evaluation": result}
