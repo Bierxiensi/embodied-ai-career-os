@@ -1,0 +1,60 @@
+<!-- SO101 3-DOF 仿真机械臂 MJCF 模型
+
+  关节链:
+    Base (world)
+      └── Joint 0: base_rotation (z-axis hinge, ±90°)
+           └── Joint 1: shoulder_pitch (y-axis hinge, -90°~45°)
+                └── Joint 2: elbow_pitch (y-axis hinge, 0°~135°)
+                     └── Site: end_effector (末端标记点)
+
+  对应 V0 学习目标: 理解关节-连杆-执行器模型结构，
+  MJCF 概念直接映射到 ROS2 URDF 格式。
+-->
+<mujoco model="so101_arm">
+  <compiler angle="degree"/>
+
+  <option gravity="0 0 -9.81" timestep="0.002"/>
+
+  <worldbody>
+    <light pos="2 2 3" dir="-1 -1 -1" diffuse="0.8 0.8 0.8"/>
+
+    <!-- 地面 -->
+    <geom name="floor" type="plane" size="2 2 0.01" rgba="0.8 0.8 0.8 1"/>
+
+    <!-- 底座 -->
+    <body name="base" pos="0 0 0.3">
+      <geom name="base_cylinder" type="cylinder" size="0.08 0.05" rgba="0.3 0.3 0.4 1"/>
+      <geom name="base_top"     type="box" size="0.06 0.06 0.03" pos="0 0 0.08" rgba="0.4 0.4 0.5 1"/>
+
+      <!-- Joint 0: 底座旋转（yaw，绕 Z 轴） -->
+      <joint name="base_rotation" type="hinge" axis="0 0 1" range="-90 90"/>
+      <geom name="base_ring" type="cylinder" size="0.04 0.02" pos="0 0 0.06" rgba="0.5 0.5 0.6 1"/>
+
+      <!-- 上臂 -->
+      <body name="upper_arm" pos="0 0 0.1">
+        <!-- Joint 1: 肩关节俯仰（pitch，绕 Y 轴） -->
+        <joint name="shoulder_pitch" type="hinge" axis="0 1 0" range="-90 45"/>
+        <geom name="upper_arm_geom" type="cylinder" size="0.03 0.15" fromto="0 0 0 0 0 0.3"
+              rgba="0.2 0.5 0.8 1"/>
+
+        <!-- 前臂 -->
+        <body name="forearm" pos="0 0 0.3">
+          <!-- Joint 2: 肘关节俯仰（pitch，绕 Y 轴） -->
+          <joint name="elbow_pitch" type="hinge" axis="0 1 0" range="0 135"/>
+          <geom name="forearm_geom" type="cylinder" size="0.025 0.12" fromto="0 0 0 0 0 0.24"
+                rgba="0.8 0.3 0.2 1"/>
+
+          <!-- 末端执行器标记点（测量 FK 用） -->
+          <site name="end_effector" pos="0 0 0.24" size="0.015" rgba="1 0 0 1"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- 三个 position actuator，kp=50 提供足够的跟随刚度 -->
+  <actuator>
+    <position name="act_base"     joint="base_rotation"  kp="50"/>
+    <position name="act_shoulder" joint="shoulder_pitch" kp="50"/>
+    <position name="act_elbow"    joint="elbow_pitch"    kp="50"/>
+  </actuator>
+</mujoco>
