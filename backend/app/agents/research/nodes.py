@@ -40,11 +40,36 @@ def parse_topic(state: ResearchState) -> dict:
     return {"normalized_topic": normalized}
 
 
+def _match_with_llm(topic: str) -> dict | None:
+    """LLM 研究主题拆解。失败返回 None。"""
+    from app.llm import ChatMessage, get_llm
+
+    prompt = (
+        "为主题生成结构化研究计划模板。\n\n"
+        f"主题：{topic}\n\n"
+        "返回 JSON：\n"
+        f'{{"topic": "{topic}", '
+        '"paper": {"title": "推荐阅读的论文", "description": "读什么", "resources": ["链接"]}, '
+        '"code": {"title": "推荐研究的代码库", "description": "看什么", "resources": ["GitHub链接"]}, '
+        '"experiment": {"title": "建议的最小实验", "description": "做什么", "resources": []}, '
+        '"verification": {"title": "验证标准", "description": "怎么算成功", "resources": []}}}\n'
+        "直接输出 JSON。"
+    )
+
+    try:
+        llm = get_llm()
+        return llm.chat_json([
+            ChatMessage(role="system", content="你是机器人/AI研究员。只输出 JSON。"),
+            ChatMessage(role="user", content=prompt),
+        ])
+    except Exception:
+        return None
+
+
 def match_template_node(state: ResearchState) -> dict:
     """节点2：匹配研究模板。
 
-    优先用预设模板（精确 + 别名匹配）；
-    未命中则用 fallback_template 生成通用模板，保证任意主题都有输出。
+    LLM 优先（动态生成），失败时 fallback 预设模板。
 
     Args:
         state: 含 normalized_topic
@@ -53,8 +78,19 @@ def match_template_node(state: ResearchState) -> dict:
         {"template": ResearchTemplate}
     """
     topic = state.get("normalized_topic", "Unknown")
-    template = match_template(topic) or fallback_template(topic)
-    return {"template": dict(template)}
+
+    # 先查预设模板（精确匹配优先）
+    template = match_template(topic)
+    if template is not None:
+        return {"template": dict(template)}
+
+    # LLM 动态生成
+    llm_result = _match_with_llm(topic)
+    if llm_result is not None:
+        return {"template": llm_result}
+
+    # Fallback
+    return {"template": dict(fallback_template(topic))}
 
 
 def decompose_tasks(state: ResearchState) -> dict:

@@ -17,19 +17,68 @@ from app.agents.career.rules import (
 from app.agents.career.state import CareerState, SkillStatus
 
 
+# ============================================================
+# LLM 岗位缺口分析（优先），失败时 fallback 规则查表
+# ============================================================
+
+
+def _analyze_with_llm(target_role: str, skills: list) -> dict | None:
+    """LLM 岗位缺口分析。失败返回 None，fallback 规则查表。"""
+    from app.llm import ChatMessage, get_llm
+
+    skills_str = "\n".join(
+        f"- {s['name']}: Lv{s.get('level', 0)}→Lv{s.get('target_level', 5)} "
+        f"(证据:{s.get('evidence', [])})"
+        for s in skills[:10]
+    )
+
+    prompt = (
+        "分析岗位能力缺口。\n\n"
+        f"目标岗位：{target_role}\n"
+        f"当前技能：\n{skills_str}\n\n"
+        "返回 JSON：\n"
+        '{"required_skills": ["技能1", "技能2", ...], '
+        '"market_insights": "当前市场核心要求（1-2句话）", '
+        '"priority": ["按优先级排序的技能名列表"]}\n'
+        "直接输出 JSON。"
+    )
+
+    try:
+        llm = get_llm()
+        return llm.chat_json([
+            ChatMessage(role="system", content="你是机器人行业猎头和技术面试官。只输出 JSON。"),
+            ChatMessage(role="user", content=prompt),
+        ])
+    except Exception:
+        return None
+
+
 def analyze_target(state: CareerState) -> dict:
     """节点1：分析目标岗位，提取必需技能清单。
 
-    规则查表（ROLE_REQUIRED_SKILLS）。未知岗位返回空列表，
-    由下游节点 fallback 为"全部当前技能按 gap 排序"。
+    LLM 优先（含市场洞察），失败 fallback 固定字典。
 
     Args:
-        state: 含 target_role
+        state: 含 target_role / current_skills
 
     Returns:
         {"required_skills": ["ROS2", "Isaac", ...]}
     """
     target_role = state.get("target_role", "")
+    current = state.get("current_skills", [])
+
+    # LLM 优先
+    llm_result = _analyze_with_llm(target_role, current)
+    if llm_result is not None and llm_result.get("required_skills"):
+        fallback_skills = get_required_skills(target_role)
+        required = list(set(llm_result["required_skills"]) | set(fallback_skills))
+        return {
+            "required_skills": required,
+            "llm_market_insights": llm_result.get("market_insights", ""),
+            "llm_priority": llm_result.get("priority", []),
+        }
+
+    # Fallback: 规则查表
     required = get_required_skills(target_role)
     return {"required_skills": required}
 
