@@ -49,6 +49,15 @@ def start_scheduler() -> None:
         "cron", hour=10, minute=0,
         id="reminder_comeback",
     )
+    # ---- V2: GitHub 同步 Job ----
+    from app.services.github.sync import sync_new_commits
+    _scheduler.add_job(
+        lambda: sync_new_commits(),
+        "interval",
+        minutes=settings.github_poll_interval_minutes,
+        id="github_sync",
+    )
+    # ---------------------------
     _scheduler.start()
     logger.info(
         "Reminder scheduler started (morning=%s, evening=%s)",

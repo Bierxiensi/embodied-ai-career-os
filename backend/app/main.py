@@ -17,6 +17,7 @@ from sqlalchemy import text
 
 from app.api.agent import router as agent_router
 from app.api.career import router as career_router
+from app.api.github import router as github_router
 from app.api.learning_logs import router as learning_logs_router
 from app.api.paper import router as paper_router
 from app.api.planner import router as planner_router
@@ -69,6 +70,7 @@ app.include_router(planner_router, prefix=api_prefix)
 app.include_router(learning_logs_router, prefix=api_prefix)
 app.include_router(reviewer_router, prefix=api_prefix)
 app.include_router(agent_router, prefix=api_prefix)
+app.include_router(github_router, prefix=api_prefix)
 app.include_router(paper_router, prefix=api_prefix)
 
 
