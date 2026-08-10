@@ -1,7 +1,8 @@
 """基础配置。
 
 Phase 1 Day1 仅保留最小配置项；
-后续阶段（Day2 数据库、Day5 Agent）再扩展。
+Phase 1 Day2 扩展数据库配置；
+Phase 3 Week 2 扩展 LLM Provider 配置。
 """
 
 from __future__ import annotations
@@ -22,9 +23,40 @@ class Settings:
     # 允许跨域的前端来源，逗号分隔
     cors_origins: list[str] = field(default_factory=lambda: ["http://localhost:3000"])
 
-    # 数据库连接串。
-    # 开发态默认 SQLite（零配置）；切 PostgreSQL 仅需设置 DATABASE_URL=postgresql+psycopg://user:pwd@host:5432/db
+    # ---------- 数据库 ----------
+    # 默认 SQLite（零配置本地开发）；Docker 环境通过 DATABASE_URL 注入 PG
+    # 格式示例：
+    #   sqlite:///./data/app.db
+    #   postgresql+psycopg2://career:career@postgres:5432/career_os
     database_url: str = "sqlite:///./data/app.db"
+
+    # ---------- LLM Provider ----------
+    # 支持：mock / ollama / deepseek / openai_compatible
+    llm_provider: str = "mock"
+    # API Key（deepseek / openai_compatible 需要）
+    llm_api_key: str = ""
+    # 自定义 API Base URL（openai_compatible 需要）
+    llm_base_url: str = ""
+    # 模型名（openai_compatible / ollama 需要）
+    llm_model: str = ""
+    # Ollama 专属：本地服务地址
+    ollama_base_url: str = "http://localhost:11434/v1"
+    # Ollama 模型名
+    ollama_model: str = "qwen2.5:7b"
+
+    # ---------- Reminder ----------
+    reminder_channel: str = "terminal"        # serverchan | pushplus | email | terminal
+    reminder_channel_key: str = ""            # Server酱 SendKey / PushPlus Token
+    reminder_morning_time: str = "08:30"
+    reminder_evening_time: str = "21:00"
+    reminder_inactivity_days: int = 3
+    reminder_timezone: str = "Asia/Shanghai"
+
+    # ---------- GitHub ----------
+    github_token: str = ""                    # Personal Access Token
+    github_repos: list[str] = field(default_factory=lambda: ["embodied-ai-career-os"])
+    github_poll_interval_minutes: int = 30
+    github_last_sync_file: str = ".github_last_sync"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -38,6 +70,21 @@ class Settings:
             reload=os.getenv("RELOAD", "false").lower() == "true",
             cors_origins=origins,
             database_url=os.getenv("DATABASE_URL", "sqlite:///./data/app.db"),
+            llm_provider=os.getenv("LLM_PROVIDER", "mock"),
+            llm_api_key=os.getenv("LLM_API_KEY", ""),
+            llm_base_url=os.getenv("LLM_BASE_URL", ""),
+            llm_model=os.getenv("LLM_MODEL", ""),
+            ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+            ollama_model=os.getenv("OLLAMA_MODEL", "qwen2.5:7b"),
+            reminder_channel=os.getenv("REMINDER_CHANNEL", "terminal"),
+            reminder_channel_key=os.getenv("REMINDER_CHANNEL_KEY", ""),
+            reminder_morning_time=os.getenv("REMINDER_MORNING_TIME", "08:30"),
+            reminder_evening_time=os.getenv("REMINDER_EVENING_TIME", "21:00"),
+            reminder_inactivity_days=int(os.getenv("REMINDER_INACTIVITY_DAYS", "3")),
+            reminder_timezone=os.getenv("REMINDER_TIMEZONE", "Asia/Shanghai"),
+            github_token=os.getenv("GITHUB_TOKEN", ""),
+            github_repos=[r.strip() for r in os.getenv("GITHUB_REPOS", "embodied-ai-career-os").split(",")],
+            github_poll_interval_minutes=int(os.getenv("GITHUB_POLL_INTERVAL", "30")),
         )
 
 

@@ -38,6 +38,10 @@ async def lifespan(_app: FastAPI):
 
     init_db()
     setup_default_agents()
+    # ---- V2: 启动提醒调度器 ----
+    from app.services.reminder.scheduler import start_scheduler as start_reminder
+    start_reminder()
+    # ---------------------------
     yield
 
 
