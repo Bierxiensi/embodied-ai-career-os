@@ -2,6 +2,7 @@
 
 from app.models.agent_run import AgentRun
 from app.models.career import Career
+from app.models.commit_suggestion import CommitSuggestion
 from app.models.learning_log import LearningLog
 from app.models.paper import Paper
 from app.models.paper_chunk import PaperChunk
@@ -13,6 +14,7 @@ from app.models.task import Task
 __all__ = [
     "AgentRun",
     "Career",
+    "CommitSuggestion",
     "LearningLog",
     "Paper",
     "PaperChunk",
