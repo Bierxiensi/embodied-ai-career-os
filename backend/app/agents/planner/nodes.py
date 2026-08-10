@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 
-from app.agents.planner.generators import get_generator
 from app.agents.planner.state import GapItem, PlannerState
 
 
@@ -53,12 +52,12 @@ def generate_task(state: PlannerState) -> dict:
     """节点3：调用生成器产出任务。
 
     根据 state.generator 选择 rule/llm 生成器（可插拔架构）。
-    默认 rule。
+    默认 rule。LLM 调用失败时自动 fallback RuleGenerator（safe_generate）。
     """
 
-    gen_name = state.get("generator", "rule")
-    generator = get_generator(gen_name)
-    task = generator.generate(state)
+    from app.agents.planner.generators import safe_generate
+
+    task = safe_generate(state)
     return {"task": dict(task)}
 
 

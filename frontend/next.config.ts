@@ -12,6 +12,9 @@ import type { NextConfig } from "next";
  * （表现为按钮 onClick 不触发、状态不更新）。
  */
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   async rewrites() {
     return [
       {

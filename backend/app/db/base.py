@@ -185,7 +185,7 @@ def _seed_if_empty() -> None:
                 goal="打造 ROS2 + VLA 驱动的具身智能真机闭环系统",
                 description="从 Python 控制 → ROS2 → MoveIt2 → ACT → SmolVLA → Isaac Lab → Sim2Real",
                 status="active",
-                current_version="V1",
+                current_version="V0",
                 sort_order=0,
             )
             db.add(p)
@@ -194,7 +194,7 @@ def _seed_if_empty() -> None:
             seed_milestones = [
                 Milestone(project_id=p.id, version="V0", title="Mujoco 仿真控制",
                           goal="Mujoco 仿真机械臂：Python 控制 3-DOF 臂关节角度 → FK 验证 → 轨迹记录",
-                          status="in_progress", sort_order=0),
+                          status="locked", sort_order=0),
                 Milestone(project_id=p.id, version="V1", title="ROS2 基础控制",
                           goal="通过 ROS2 topic 控制 SO101 关节", status="locked", sort_order=1),
                 Milestone(project_id=p.id, version="V2", title="MoveIt2 集成",

@@ -1,0 +1,384 @@
+{
+  "title": "Embodied AI Career OS · Day6 Agent 闭环稳定性测试报告",
+  "timestamp": "2026-08-07T16:39:03.762979",
+  "backend_url": "http://localhost:8000",
+  "db_path": "data/app.db",
+  "summary": {
+    "total": 27,
+    "passed": 26,
+    "failed": 1,
+    "skipped": 0,
+    "pass_rate": 96.3
+  },
+  "suites": {
+    "功能测试": {
+      "total": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    "边界测试": {
+      "total": 7,
+      "pass": 7,
+      "fail": 0
+    },
+    "数据一致性测试": {
+      "total": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    "Task 状态机测试": {
+      "total": 2,
+      "pass": 2,
+      "fail": 0
+    },
+    "稳定性测试": {
+      "total": 3,
+      "pass": 2,
+      "fail": 1
+    },
+    "错误处理测试": {
+      "total": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    "CRUD 端点测试": {
+      "total": 4,
+      "pass": 4,
+      "fail": 0
+    }
+  },
+  "cases": [
+    {
+      "suite": "功能测试",
+      "case_id": "F-01",
+      "name": "正常生成任务（Isaac 最大缺口）+ 持久化 + agent_runs",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2091,
+      "evidence": {
+        "selected_skill": "Isaac",
+        "task_id": 4,
+        "title": "Isaac Sim 基础环境搭建",
+        "duration": 45
+      }
+    },
+    {
+      "suite": "功能测试",
+      "case_id": "F-02",
+      "name": "current_focus 强制聚焦技能（覆盖自动选择）",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2084,
+      "evidence": {
+        "forced_skill": "ROS2"
+      }
+    },
+    {
+      "suite": "功能测试",
+      "case_id": "F-03",
+      "name": "agent_runs 记录内容完整性（input + output JSON）",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 3,
+      "evidence": {
+        "input_keys": [
+          "available_minutes",
+          "target_role",
+          "skills",
+          "energy_level",
+          "current_focus",
+          "generator"
+        ],
+        "output_keys": [
+          "title",
+          "skill",
+          "objective",
+          "duration",
+          "difficulty",
+          "acceptance",
+          "resources",
+          "status"
+        ]
+      }
+    },
+    {
+      "suite": "边界测试",
+      "case_id": "B-01",
+      "name": "空 skills 列表 → fallback 通用任务",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2051,
+      "evidence": {
+        "title": "Unknown 学习与实践",
+        "skill": "Unknown"
+      }
+    },
+    {
+      "suite": "边界测试",
+      "case_id": "B-02",
+      "name": "未知技能（无模板）→ fallback 通用任务",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2043,
+      "evidence": {
+        "title": "QuantumComputing 学习与实践",
+        "acceptance_count": 3
+      }
+    },
+    {
+      "suite": "边界测试",
+      "case_id": "B-03",
+      "name": "极端时长 available_minutes=5（最小值截断）",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2043,
+      "evidence": {
+        "duration": 5
+      }
+    },
+    {
+      "suite": "边界测试",
+      "case_id": "B-04",
+      "name": "极端时长 available_minutes=480（取模板基准）",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2064,
+      "evidence": {
+        "duration": 60,
+        "base_minutes": 60
+      }
+    },
+    {
+      "suite": "边界测试",
+      "case_id": "B-05",
+      "name": "energy_level=low → beginner 难度",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2062,
+      "evidence": {
+        "difficulty": "beginner"
+      }
+    },
+    {
+      "suite": "边界测试",
+      "case_id": "B-06",
+      "name": "energy_level=high → intermediate 难度",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2049,
+      "evidence": {
+        "difficulty": "intermediate"
+      }
+    },
+    {
+      "suite": "边界测试",
+      "case_id": "B-07",
+      "name": "gap 相同时 level 低的优先（排序稳定性）",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2079,
+      "evidence": {
+        "selected": "ROS2",
+        "reason": "gap 相同时 level 低的优先"
+      }
+    },
+    {
+      "suite": "数据一致性测试",
+      "case_id": "C-01",
+      "name": "持久化 task 字段与 Planner 输出完全一致",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2074,
+      "evidence": {
+        "task_id": 5,
+        "all_fields_match": true
+      }
+    },
+    {
+      "suite": "数据一致性测试",
+      "case_id": "C-02",
+      "name": "agent_runs input/output 与请求/响应对应",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2068,
+      "evidence": {
+        "input_match": true,
+        "output_match": true
+      }
+    },
+    {
+      "suite": "数据一致性测试",
+      "case_id": "C-03",
+      "name": "persist=False 时 tasks 不变 + agent_runs 仍记录",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2068,
+      "evidence": {
+        "tasks_delta": 0,
+        "agent_runs_delta": 1,
+        "note": "persist=False 仅跳过持久化，决策仍记录"
+      }
+    },
+    {
+      "suite": "Task 状态机测试",
+      "case_id": "S-01",
+      "name": "Task 状态机 todo → doing → done 完整流转",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 6204,
+      "evidence": {
+        "task_id": 7,
+        "flow": "todo → doing → done ✓"
+      }
+    },
+    {
+      "suite": "Task 状态机测试",
+      "case_id": "S-02",
+      "name": "非法状态 cancelled 被 422 拒绝",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 4111,
+      "evidence": {
+        "illegal_status": "cancelled",
+        "http": 422
+      }
+    },
+    {
+      "suite": "稳定性测试",
+      "case_id": "ST-01",
+      "name": "连续 5 次调用全部成功",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 10325,
+      "evidence": {
+        "success": "5/5"
+      }
+    },
+    {
+      "suite": "稳定性测试",
+      "case_id": "ST-02",
+      "name": "并发 5 个请求（线程池）全部成功",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2161,
+      "evidence": {
+        "concurrent_success": "5/5"
+      }
+    },
+    {
+      "suite": "稳定性测试",
+      "case_id": "ST-03",
+      "name": "单次响应时间 < 2s",
+      "status": "FAIL",
+      "detail": "AssertionError: 响应时间 2.07s 超过 2s 阈值",
+      "elapsed_ms": 2071,
+      "evidence": {}
+    },
+    {
+      "suite": "错误处理测试",
+      "case_id": "E-01",
+      "name": "缺少必填字段 skills → 422",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2051,
+      "evidence": {
+        "http": 422,
+        "missing": "skills"
+      }
+    },
+    {
+      "suite": "错误处理测试",
+      "case_id": "E-02",
+      "name": "available_minutes=1 超范围 → 422",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2043,
+      "evidence": {
+        "http": 422,
+        "invalid_value": 1
+      }
+    },
+    {
+      "suite": "错误处理测试",
+      "case_id": "E-03",
+      "name": "available_minutes=500 超范围 → 422",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2053,
+      "evidence": {
+        "http": 422,
+        "invalid_value": 500
+      }
+    },
+    {
+      "suite": "错误处理测试",
+      "case_id": "E-04",
+      "name": "skill level=6 超范围 → 422",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2059,
+      "evidence": {
+        "http": 422,
+        "invalid_level": 6
+      }
+    },
+    {
+      "suite": "错误处理测试",
+      "case_id": "E-05",
+      "name": "不存在的 task_id 状态更新 → 404",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2066,
+      "evidence": {
+        "http": 404,
+        "task_id": 999999
+      }
+    },
+    {
+      "suite": "CRUD 端点测试",
+      "case_id": "A-01",
+      "name": "GET /api/career 返回正确结构",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2053,
+      "evidence": {
+        "target_role": "Robot AI Engineer"
+      }
+    },
+    {
+      "suite": "CRUD 端点测试",
+      "case_id": "A-02",
+      "name": "GET /api/skills 返回技能列表（≥10）",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2059,
+      "evidence": {
+        "skills_count": 10
+      }
+    },
+    {
+      "suite": "CRUD 端点测试",
+      "case_id": "A-03",
+      "name": "GET /api/tasks 返回任务列表",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 2049,
+      "evidence": {
+        "tasks_count": 8
+      }
+    },
+    {
+      "suite": "CRUD 端点测试",
+      "case_id": "A-04",
+      "name": "PATCH /api/skills/{id} 更新等级 + 恢复",
+      "status": "PASS",
+      "detail": "",
+      "elapsed_ms": 6169,
+      "evidence": {
+        "skill_id": 1,
+        "temp_level": 4,
+        "restored": true
+      }
+    }
+  ]
+}

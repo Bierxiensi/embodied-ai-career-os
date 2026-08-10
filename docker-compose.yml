@@ -1,8 +1,27 @@
 # Embodied AI Career OS - 开发环境编排
-# Phase 1 Day1：仅 frontend + backend 两个服务
-# 数据库（postgres/redis/chromadb）将在 Day2 接入
+# Phase 1 Day1：frontend + backend
+# Phase 1 Day2：postgres 接入（Redis / ChromaDB 预留）
+# Phase 3：PostgreSQL 正式迁移
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: career-os-postgres
+    environment:
+      POSTGRES_USER: career
+      POSTGRES_PASSWORD: career
+      POSTGRES_DB: career_os
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U career -d career_os"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build: ./backend
     container_name: career-os-backend
@@ -13,6 +32,12 @@ services:
     environment:
       - RELOAD=true
       - CORS_ORIGINS=http://localhost:3000
+      - DATABASE_URL=postgresql+psycopg2://career:career@postgres:5432/career_os
+      - REMINDER_CHANNEL=serverchan
+      - REMINDER_CHANNEL_KEY=SCT394127TE2iIn5QKjjleb7fvpaUpBZIN
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -28,3 +53,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  pgdata:

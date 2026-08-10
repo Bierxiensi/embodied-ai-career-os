@@ -1,7 +1,7 @@
-"""Migration runner：执行 SQL 迁移脚本。
+"""Migration runner：通过 SQLAlchemy 执行 SQL 迁移脚本。
 
-由于项目未引入 Alembic（SQLite 开发态，schema 简单），
-用此脚本执行 migrations/*.sql，并支持幂等重跑。
+兼容 SQLite 与 PostgreSQL。
+由于项目未引入 Alembic，用此脚本执行 migrations/*.sql，并支持幂等重跑。
 
 用法：
     cd backend
@@ -14,38 +14,67 @@
 from __future__ import annotations
 
 import argparse
-import os
-import sqlite3
 import sys
 from pathlib import Path
 
+from sqlalchemy import text
+
+from app.core.config import settings
+from app.db.base import SessionLocal, engine
+
 # ===== 配置 =====
 BACKEND_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BACKEND_DIR / "data" / "app.db"
 MIGRATIONS_DIR = BACKEND_DIR / "migrations"
 MIGRATIONS_TABLE = "_migrations_applied"
 
 
-def ensure_migrations_table(conn: sqlite3.Connection) -> None:
-    """创建迁移记录表（如不存在）。"""
-    conn.execute(
-        f"""
-        CREATE TABLE IF NOT EXISTS {MIGRATIONS_TABLE} (
-            name TEXT PRIMARY KEY,
-            applied_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-        """
-    )
-    conn.commit()
+def _is_sqlite() -> bool:
+    """判断当前是否为 SQLite 连接。"""
+    return settings.database_url.startswith("sqlite")
 
 
-def list_applied(conn: sqlite3.Connection) -> set[str]:
+def ensure_migrations_table() -> None:
+    """创建迁移记录表（如不存在）。兼容 SQLite 与 PG。"""
+    db = SessionLocal()
+    try:
+        if _is_sqlite():
+            db.execute(
+                text(
+                    f"""
+                    CREATE TABLE IF NOT EXISTS {MIGRATIONS_TABLE} (
+                        name TEXT PRIMARY KEY,
+                        applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                    """
+                )
+            )
+        else:
+            db.execute(
+                text(
+                    f"""
+                    CREATE TABLE IF NOT EXISTS {MIGRATIONS_TABLE} (
+                        name VARCHAR(200) PRIMARY KEY,
+                        applied_at TIMESTAMP NOT NULL DEFAULT NOW()
+                    )
+                    """
+                )
+            )
+        db.commit()
+    finally:
+        db.close()
+
+
+def list_applied() -> set[str]:
     """返回已应用的迁移名集合。"""
-    ensure_migrations_table(conn)
-    rows = conn.execute(
-        f"SELECT name FROM {MIGRATIONS_TABLE}"
-    ).fetchall()
-    return {r[0] for r in rows}
+    ensure_migrations_table()
+    db = SessionLocal()
+    try:
+        rows = db.execute(
+            text(f"SELECT name FROM {MIGRATIONS_TABLE}")
+        ).fetchall()
+        return {r[0] for r in rows}
+    finally:
+        db.close()
 
 
 def list_migration_files() -> list[str]:
@@ -56,100 +85,121 @@ def list_migration_files() -> list[str]:
     return [f.name for f in files]
 
 
-def apply_migration(conn: sqlite3.Connection, filename: str, sql: str) -> None:
+def apply_migration(filename: str, sql: str) -> None:
     """执行单个迁移脚本。
 
     幂等保护：
-    - SQLite 不支持"ADD COLUMN IF NOT EXISTS"，重复执行会报错
-    - 用 try-except 捕获 duplicate column 错误，视为已应用
+    - 用 try-except 捕获 PostgreSQL 重复列/表错误
+    - SQLite 重复列错误
     - 应用成功后记录到 _migrations_applied 表
     """
-    statements = [s.strip() for s in sql.split(";") if s.strip()]
+    db = SessionLocal()
     name = filename.removesuffix(".sql")
-
     try:
+        # 逐条执行 SQL 语句
+        statements = [s.strip() for s in sql.split(";") if s.strip()]
         for stmt in statements:
-            if stmt:
-                conn.execute(stmt)
-        conn.execute(
-            f"INSERT INTO {MIGRATIONS_TABLE} (name) VALUES (?) "
-            f"ON CONFLICT(name) DO NOTHING",
-            (name,),
-        )
-        conn.commit()
-        print(f"  ✓ 应用迁移: {filename}")
-    except sqlite3.OperationalError as e:
-        # 重复列错误视为已应用（幂等）
-        if "duplicate column" in str(e).lower():
-            print(f"  - 跳过迁移（已应用）: {filename}")
-            conn.rollback()
-            # 确保记录存在
-            conn.execute(
-                f"INSERT INTO {MIGRATIONS_TABLE} (name) VALUES (?) "
-                f"ON CONFLICT(name) DO NOTHING",
-                (name,),
+            db.execute(text(stmt))
+
+        # 记录迁移
+        if _is_sqlite():
+            db.execute(
+                text(
+                    f"INSERT OR IGNORE INTO {MIGRATIONS_TABLE} (name) VALUES (:name)"
+                ),
+                {"name": name},
             )
-            conn.commit()
+        else:
+            db.execute(
+                text(
+                    f"INSERT INTO {MIGRATIONS_TABLE} (name) VALUES (:name) "
+                    f"ON CONFLICT (name) DO NOTHING"
+                ),
+                {"name": name},
+            )
+        db.commit()
+        print(f"  ✓ 应用迁移: {filename}")
+    except Exception as e:
+        err_msg = str(e).lower()
+        # 重复列/表 → 视为已应用（幂等）
+        if any(kw in err_msg for kw in [
+            "duplicate column", "duplicate table",
+            "already exists", "duplicate key",
+        ]):
+            print(f"  - 跳过迁移（已应用）: {filename}")
+            db.rollback()
+            # 确保记录存在
+            try:
+                if _is_sqlite():
+                    db.execute(
+                        text(
+                            f"INSERT OR IGNORE INTO {MIGRATIONS_TABLE} (name) VALUES (:name)"
+                        ),
+                        {"name": name},
+                    )
+                else:
+                    db.execute(
+                        text(
+                            f"INSERT INTO {MIGRATIONS_TABLE} (name) VALUES (:name) "
+                            f"ON CONFLICT (name) DO NOTHING"
+                        ),
+                        {"name": name},
+                    )
+                db.commit()
+            except Exception:
+                db.rollback()
         else:
             print(f"  ✗ 迁移失败: {filename} — {e}")
-            conn.rollback()
+            db.rollback()
             raise
+    finally:
+        db.close()
 
 
 def run_all(only: str | None = None) -> None:
     """执行迁移。"""
-    if not DB_PATH.exists():
-        print(f"✗ 数据库不存在: {DB_PATH}")
-        sys.exit(1)
+    # 确保数据库表存在（首次执行时 _migrations_applied 不存在）
+    ensure_migrations_table()
 
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        applied = list_applied(conn)
-        files = list_migration_files()
+    files = list_migration_files()
+    if not files:
+        print("（无迁移脚本）")
+        return
 
-        if not files:
-            print("（无迁移脚本）")
-            return
+    applied = list_applied()
 
-        for filename in files:
-            if only and not filename.startswith(only):
-                continue
-            name = filename.removesuffix(".sql")
-            if name in applied and not only:
-                continue  # 跳过已应用（除非 --only 强制）
+    for filename in files:
+        if only and not filename.startswith(only):
+            continue
+        name = filename.removesuffix(".sql")
+        if name in applied and not only:
+            continue  # 跳过已应用（除非 --only 强制）
 
-            sql = (MIGRATIONS_DIR / filename).read_text(encoding="utf-8")
-            apply_migration(conn, filename, sql)
-    finally:
-        conn.close()
+        sql = (MIGRATIONS_DIR / filename).read_text(encoding="utf-8")
+        apply_migration(filename, sql)
 
 
 def show_status() -> None:
     """显示迁移应用状态。"""
-    if not DB_PATH.exists():
-        print(f"✗ 数据库不存在: {DB_PATH}")
-        sys.exit(1)
+    ensure_migrations_table()
 
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        applied = list_applied(conn)
-        files = list_migration_files()
+    applied = list_applied()
+    files = list_migration_files()
 
-        print(f"迁移目录: {MIGRATIONS_DIR}")
-        print(f"数据库: {DB_PATH}")
-        print()
-        print(f"{'迁移文件':<50} {'状态':<10}")
-        print("-" * 60)
-        for f in files:
-            name = f.removesuffix(".sql")
-            status = "✓ 已应用" if name in applied else "○ 未应用"
-            print(f"{f:<50} {status}")
-    finally:
-        conn.close()
+    print(f"迁移目录: {MIGRATIONS_DIR}")
+    print(f"数据库 URL: {settings.database_url}")
+    print(f"数据库类型: {'SQLite' if _is_sqlite() else 'PostgreSQL'}")
+    print()
+    print(f"{'迁移文件':<50} {'状态':<10}")
+    print("-" * 60)
+    for f in files:
+        name = f.removesuffix(".sql")
+        status = "✓ 已应用" if name in applied else "○ 未应用"
+        print(f"{f:<50} {status}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="数据库迁移工具")
+    parser = argparse.ArgumentParser(description="数据库迁移工具（SQLite + PG 兼容）")
     parser.add_argument("--only", type=str, help="仅执行指定迁移（前缀匹配）")
     parser.add_argument("--list", action="store_true", help="列出所有迁移文件")
     parser.add_argument("--status", action="store_true", help="查看迁移应用状态")

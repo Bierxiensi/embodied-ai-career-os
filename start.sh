@@ -1,37 +1,54 @@
 #!/usr/bin/env bash
-# Embodied AI Career OS 一键启动脚本
+# Embodied AI Career OS 一键启动脚本（跨平台：Linux / macOS / Git Bash）
 #
-# 用途：沙箱环境清理后，快速恢复前端 + 后端服务
 # 用法：bash start.sh
-#
-# 注意：沙箱内的 localhost:3000 / localhost:8000 仅在沙箱内可访问，
-#       浏览器需通过 IDE 预览域名（*.trae-preview.com）访问。
-
 set -e
 
-PROJECT_DIR="/workspace/embodied-ai-career-os"
+# 自动检测项目根目录（脚本所在目录）
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BACKEND_DIR="$PROJECT_DIR/backend"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
-NPM="/root/.nvm/versions/node/v24.15.0/bin/npm"
-NPX="/root/.nvm/versions/node/v24.15.0/bin/npx"
 
 echo "=========================================="
 echo "  Embodied AI Career OS 启动"
+echo "  Project: $PROJECT_DIR"
 echo "=========================================="
 
-# 1. 清理可能残留的进程
+# 1. 清理残留进程
 echo "[1/4] 清理残留进程..."
-pkill -9 -f "uvicorn app.main" 2>/dev/null || true
-pkill -9 -f "next-server" 2>/dev/null || true
-pkill -9 -f "next dev" 2>/dev/null || true
-sleep 2
+# Windows Git Bash 没有 pkill，用 taskkill 兜底
+if command -v pkill &>/dev/null; then
+  pkill -f "uvicorn app.main" 2>/dev/null || true
+  pkill -f "next dev" 2>/dev/null || true
+  sleep 1
+elif command -v taskkill &>/dev/null; then
+  taskkill //f //im python.exe //fi "WINDOWTITLE eq uvicorn*" 2>/dev/null || true
+  taskkill //f //im node.exe //fi "WINDOWTITLE eq next*" 2>/dev/null || true
+  sleep 1
+fi
+# 兜底：杀端口占用
+pid_8000=$(netstat -ano 2>/dev/null | grep ":8000 " | grep LISTENING | awk '{print $NF}' | head -1 || true)
+pid_3000=$(netstat -ano 2>/dev/null | grep ":3000 " | grep LISTENING | awk '{print $NF}' | head -1 || true)
+[ -n "$pid_8000" ] && { echo "  释放端口 8000 (PID $pid_8000)"; kill "$pid_8000" 2>/dev/null || taskkill //f //pid "$pid_8000" 2>/dev/null || true; }
+[ -n "$pid_3000" ] && { echo "  释放端口 3000 (PID $pid_3000)"; kill "$pid_3000" 2>/dev/null || taskkill //f //pid "$pid_3000" 2>/dev/null || true; }
+sleep 1
 
 # 2. 启动后端
 echo "[2/4] 启动后端 (FastAPI :8000)..."
 cd "$BACKEND_DIR"
-nohup ./.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
+# 优先用 poetry/venv，其次系统 uvicorn
+if [ -f ".venv/bin/uvicorn" ]; then
+  UVICORN=".venv/bin/uvicorn"
+elif [ -f ".venv/Scripts/uvicorn.exe" ]; then
+  UVICORN=".venv/Scripts/uvicorn.exe"
+elif [ -f ".venv/Scripts/uvicorn" ]; then
+  UVICORN=".venv/Scripts/uvicorn"
+else
+  UVICORN="uvicorn"
+fi
+nohup $UVICORN app.main:app --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
 BACKEND_PID=$!
-echo "  后端 PID: $BACKEND_PID"
+echo "  后端 PID: $BACKEND_PID  (uvicorn: $UVICORN)"
 
 # 等待后端就绪
 for i in $(seq 1 30); do
@@ -42,12 +59,12 @@ for i in $(seq 1 30); do
   sleep 1
 done
 
-# 3. 检查前端依赖，丢失则重装
+# 3. 检查前端依赖
 echo "[3/4] 检查前端依赖..."
 if [ ! -f "$FRONTEND_DIR/node_modules/.bin/next" ]; then
   echo "  node_modules 丢失，重新安装..."
   cd "$FRONTEND_DIR"
-  $NPM install --silent 2>&1 | tail -3
+  npm install --silent 2>&1 | tail -3
   echo "  ✓ 依赖安装完成"
 else
   echo "  ✓ 依赖已存在"
@@ -56,7 +73,7 @@ fi
 # 4. 启动前端
 echo "[4/4] 启动前端 (Next.js :3000)..."
 cd "$FRONTEND_DIR"
-nohup $NPX next dev > /tmp/frontend.log 2>&1 &
+nohup npx next dev > /tmp/frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo "  前端 PID: $FRONTEND_PID"
 
@@ -78,8 +95,6 @@ echo "  前端:   http://localhost:3000  (PID $FRONTEND_PID)"
 echo "  Dashboard: http://localhost:3000/dashboard"
 echo ""
 echo "  日志: /tmp/backend.log / /tmp/frontend.log"
-echo ""
-echo "  ⚠ 沙箱内 localhost 仅 curl 可访问；浏览器请使用 IDE 预览域名"
 echo "=========================================="
 
 # 验证
