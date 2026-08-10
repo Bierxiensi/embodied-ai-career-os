@@ -19,10 +19,16 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 @router.get("")
-def list_tasks(db: Session = Depends(get_db)) -> ApiResponse[list[TaskOut]]:
-    """获取任务列表。按创建时间倒序，最新任务在前。"""
+def list_tasks(
+    project_id: int | None = None,
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[TaskOut]]:
+    """获取任务列表。支持按项目过滤。按创建时间倒序。"""
 
-    tasks = db.query(Task).order_by(Task.created_at.desc()).all()
+    q = db.query(Task)
+    if project_id is not None:
+        q = q.filter(Task.project_id == project_id)
+    tasks = q.order_by(Task.created_at.desc()).all()
     return ok([TaskOut.model_validate(t) for t in tasks])
 
 
@@ -44,6 +50,8 @@ def create_task(
         skill_name=payload.skill_name,
         acceptance=payload.acceptance,
         resources=payload.resources,
+        project_id=payload.project_id,
+        milestone_id=payload.milestone_id,
     )
 
     # 自动关联技能外键
