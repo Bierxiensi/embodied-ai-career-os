@@ -43,6 +43,8 @@ export interface Task {
   objective?: string; // 学习目标
   difficulty?: string; // 难度
   resources?: string[]; // 推荐资源
+  projectId?: string | null; // V2: 关联项目
+  milestoneId?: string | null; // V2: 关联里程碑
 }
 
 /** Planner Agent 输入技能项（snake_case，匹配后端契约）。 */
@@ -126,6 +128,34 @@ export interface AgentRunRecord {
 export interface AgentActivity {
   total: number;
   runs: AgentRunRecord[];
+}
+
+// ===== V2: Project Management =====
+
+export interface Milestone {
+  id: string;
+  projectId: string;
+  version: string;
+  title: string;
+  goal: string;
+  status: "locked" | "in_progress" | "completed";
+  sortOrder: number;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  goal: string;
+  description: string | null;
+  status: "active" | "paused" | "completed";
+  currentVersion: string;
+  githubUrl: string | null;
+  readme: string | null;
+  sortOrder: number;
+  milestones: Milestone[];
+  milestoneTotal: number;
+  milestoneCompleted: number;
+  progressPct: number;
 }
 
 // ===== V2: GitHub Commit 感知 =====

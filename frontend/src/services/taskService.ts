@@ -19,6 +19,8 @@ interface TaskDTO {
   skill_name: string | null;
   acceptance: string[];
   resources: string[];
+  project_id: number | null;
+  milestone_id: number | null;
 }
 
 /** 后端 → 前端转换。
@@ -39,12 +41,15 @@ function toTask(dto: TaskDTO): Task {
     objective: dto.objective ?? undefined,
     difficulty: dto.difficulty ?? undefined,
     resources: dto.resources ?? [],
+    projectId: dto.project_id != null ? String(dto.project_id) : null,
+    milestoneId: dto.milestone_id != null ? String(dto.milestone_id) : null,
   };
 }
 
-/** 获取任务列表。 */
-export async function getTasks(): Promise<Task[]> {
-  const dtos = await apiClient.get<TaskDTO[]>("/api/tasks");
+/** 获取任务列表。支持按项目过滤。 */
+export async function getTasks(projectId?: string): Promise<Task[]> {
+  const query = projectId ? `?project_id=${projectId}` : "";
+  const dtos = await apiClient.get<TaskDTO[]>(`/api/tasks${query}`);
   return dtos.map(toTask);
 }
 

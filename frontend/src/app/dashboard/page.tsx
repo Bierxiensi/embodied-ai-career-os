@@ -30,6 +30,7 @@ export default async function DashboardPage() {
           radarSkills={data.radarSkills}
           tasks={data.tasks}
           agentRuns={data.agentRuns}
+          projects={data.projects}
         />
       </main>
     );

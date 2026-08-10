@@ -1,8 +1,9 @@
-import type { AgentRunRecord, Career, Skill, Task } from "@/types";
+import type { AgentRunRecord, Career, Project, Skill, Task } from "@/types";
 import AgentActivity from "./AgentActivity";
 import CareerCard from "./CareerCard";
 import PendingSuggestions from "./PendingSuggestions";
 import GenerateTaskButton from "./GenerateTaskButton";
+import ProjectProgress from "./ProjectProgress";
 import SkillOverview from "./SkillOverview";
 import SkillCard from "./SkillCard";
 import TaskCard from "./TaskCard";
@@ -26,6 +27,7 @@ type Props = {
   radarSkills: Skill[]; // 核心能力子集，SkillOverview 雷达图
   tasks: Task[];
   agentRuns: AgentRunRecord[]; // Phase 2 Day6：Agent Activity 面板
+  projects: Project[]; // V2: 项目进度
 };
 
 export default function Dashboard({
@@ -34,6 +36,7 @@ export default function Dashboard({
   radarSkills,
   tasks,
   agentRuns,
+  projects,
 }: Props) {
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-10">
@@ -51,6 +54,11 @@ export default function Dashboard({
 
       {/* 职业目标卡片 */}
       <CareerCard career={career} />
+
+      {/* V2：项目进度卡片 */}
+      <div className="mt-6">
+        <ProjectProgress projects={projects} />
+      </div>
 
       {/* 技能总览：雷达图 + 缺口汇总（全局视角） */}
       <div className="mt-6">

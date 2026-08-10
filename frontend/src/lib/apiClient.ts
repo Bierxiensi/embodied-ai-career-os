@@ -86,4 +86,6 @@ export const apiClient = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  delete: <T>(url: string) =>
+    request<T>(url, { method: "DELETE" }),
 };
