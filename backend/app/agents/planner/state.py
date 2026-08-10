@@ -43,6 +43,11 @@ class PlannerState(TypedDict, total=False):
     selected_skill: str          # 选中的目标技能
     generator: str               # 使用的生成器：rule / llm
 
+    # ===== V2 Project 上下文 =====
+    project_id: int | None       # 关联项目 ID
+    milestone_id: int | None     # 关联里程碑 ID
+    project_context: str         # 项目上下文文本（注入 prompt）
+
     # ===== 输出 =====
     task: dict                   # 生成的任务（TaskOutput 结构）
     valid: bool                  # 校验结果

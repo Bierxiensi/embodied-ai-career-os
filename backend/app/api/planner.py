@@ -46,6 +46,9 @@ class PlannerRequest(BaseModel):
     generator: str = Field(default="rule")
     # Day6 新增：是否将生成的任务持久化到 tasks 表
     persist: bool = Field(default=True)
+    # V2 Project 模块：关联项目和里程碑
+    project_id: int | None = Field(default=None)
+    milestone_id: int | None = Field(default=None)
 
 
 class GeneratedTaskOut(BaseModel):
@@ -74,6 +77,27 @@ def generate_task(
       3. 按 persist 选项写入 tasks 表
     """
 
+    # V2: 解析项目上下文
+    project_context = ""
+    if req.project_id:
+        from app.models.project import Project
+        from app.models.milestone import Milestone
+        project = db.get(Project, req.project_id)
+        if project:
+            project_context = f"当前项目：{project.name}（{project.goal}）\n"
+            if req.milestone_id:
+                milestone = db.get(Milestone, req.milestone_id)
+                if milestone:
+                    project_context += f"当前里程碑：{milestone.version} {milestone.title}（{milestone.goal}）\n"
+                    done_tasks = (
+                        db.query(Task)
+                        .filter(Task.milestone_id == req.milestone_id, Task.status == "done")
+                        .all()
+                    )
+                    if done_tasks:
+                        project_context += "已完成："
+                        project_context += "、".join(t.title for t in done_tasks)
+
     # 1. 组装状态并执行状态图
     state = {
         "available_minutes": req.available_minutes,
@@ -82,6 +106,9 @@ def generate_task(
         "energy_level": req.energy_level,
         "current_focus": req.current_focus,
         "generator": req.generator,
+        "project_id": req.project_id,
+        "milestone_id": req.milestone_id,
+        "project_context": project_context,
     }
     result = _planner.invoke(state)
     task_data = result.get("task") or {}
@@ -112,6 +139,8 @@ def generate_task(
             skill_name=task_data.get("skill"),
             acceptance=task_data.get("acceptance", []),
             resources=task_data.get("resources", []),
+            project_id=req.project_id,
+            milestone_id=req.milestone_id,
         )
         db.add(new_task)
         db.flush()  # 取自增 ID
