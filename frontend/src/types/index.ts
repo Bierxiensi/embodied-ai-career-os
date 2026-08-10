@@ -127,3 +127,20 @@ export interface AgentActivity {
   total: number;
   runs: AgentRunRecord[];
 }
+
+// ===== V2: GitHub Commit 感知 =====
+
+/** GitHub commit 关联建议。 */
+export interface CommitSuggestion {
+  id: string;
+  commitSha: string;
+  commitMessage: string;
+  repo: string;
+  aiSuggestions: Array<{
+    skill: string;
+    reason: string;
+    confidence: number;
+  }>;
+  summary: string | null;
+  createdAt: string | null;
+}

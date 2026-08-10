@@ -1,6 +1,7 @@
 import type { AgentRunRecord, Career, Skill, Task } from "@/types";
 import AgentActivity from "./AgentActivity";
 import CareerCard from "./CareerCard";
+import PendingSuggestions from "./PendingSuggestions";
 import GenerateTaskButton from "./GenerateTaskButton";
 import SkillOverview from "./SkillOverview";
 import SkillCard from "./SkillCard";
@@ -64,6 +65,11 @@ export default function Dashboard({
           <GenerateTaskButton skills={skills} />
           <TaskCard tasks={tasks} />
         </div>
+      </div>
+
+      {/* V2：GitHub Commit 感知面板（待确认技能关联） */}
+      <div className="mt-6">
+        <PendingSuggestions />
       </div>
 
       {/* Phase 2 Day6：Agent Activity 面板（Multi-Agent 可观测性） */}
