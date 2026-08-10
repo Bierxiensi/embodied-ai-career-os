@@ -51,10 +51,12 @@
     </body>
   </worldbody>
 
-  <!-- 三个 position actuator，kp=50 提供足够的跟随刚度 -->
+  <!-- 三个 position actuator。
+       kp=40 提供适中的跟随刚度，kv=3 提供阻尼。
+       注意：低增益下会有稳态误差，这是真实物理系统的特性。 -->
   <actuator>
-    <position name="act_base"     joint="base_rotation"  kp="50"/>
-    <position name="act_shoulder" joint="shoulder_pitch" kp="50"/>
-    <position name="act_elbow"    joint="elbow_pitch"    kp="50"/>
+    <position name="act_base"     joint="base_rotation"  kp="40" kv="3"/>
+    <position name="act_shoulder" joint="shoulder_pitch" kp="40" kv="3"/>
+    <position name="act_elbow"    joint="elbow_pitch"    kp="40" kv="3"/>
   </actuator>
 </mujoco>
