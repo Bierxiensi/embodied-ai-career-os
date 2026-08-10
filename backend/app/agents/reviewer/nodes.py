@@ -25,6 +25,53 @@ from app.models.skill import Skill
 from app.models.skill_assessment import SkillAssessment
 
 
+# ============================================================
+# LLM 评估（优先），失败时 fallback 规则评分
+# ============================================================
+
+
+def _evaluate_with_llm(task: dict, learning_log: dict) -> dict | None:
+    """LLM 证据评估。失败返回 None，调用方 fallback 规则评分。"""
+    from app.llm import ChatMessage, get_llm
+
+    task_title = task.get("title", "")
+    skill_name = task.get("skill_name", "")
+    acceptance = task.get("acceptance", [])
+    log_content = learning_log.get("content", "")
+    artifact_url = learning_log.get("artifact_url", "")
+
+    prompt = (
+        "你是具身智能学习导师。评估学生的一次学习成果。\n\n"
+        f"任务：{task_title}\n"
+        f"关联技能：{skill_name}\n"
+        f"验收标准：{acceptance}\n"
+        f"学生日志：{log_content}\n"
+        f"产出链接：{artifact_url or '无'}\n\n"
+        "评估维度（每项 0-5 分）：\n"
+        "- understanding: 日志中展现了多深的理解？（0=照抄，5=能迁移到新场景）\n"
+        "- completion: 验收标准达成了几条？\n"
+        "- reflection: 有无自我反思？（总结/改进/难点/收获）\n"
+        "- evidence: artifact 链接是否有效？\n\n"
+        "返回 JSON：\n"
+        '{"understanding": 0-5, "completion": 0-5, "reflection": 0-5, '
+        '"evidence": 0-5, "total_score": 0-100, "summary": "一句话评估"}\n'
+        "直接输出 JSON，不要其他文字。"
+    )
+
+    try:
+        llm = get_llm()
+        result = llm.chat_json([
+            ChatMessage(role="system", content="你是严格的技能评估导师。只输出 JSON。"),
+            ChatMessage(role="user", content=prompt),
+        ])
+        score = int(result.get("total_score", 0))
+        if 0 <= score <= 100:
+            return {"evidence_score": min(score, 100), "llm_evaluation": result}
+    except Exception:
+        pass
+    return None
+
+
 def collect_context(state: ReviewerState) -> dict:
     """节点1：聚合上下文（task + learning_log + skill）。
 
@@ -53,9 +100,19 @@ def collect_context(state: ReviewerState) -> dict:
 
 
 def evaluate_evidence(state: ReviewerState) -> dict:
-    """节点2：计算证据得分（纯函数，无副作用）。"""
+    """节点2：计算证据得分。
+
+    LLM 优先（语义理解），失败时 fallback 规则评分。
+    """
     task = state.get("task", {})
     learning_log = state.get("learning_log", {})
+
+    # LLM 优先
+    llm_result = _evaluate_with_llm(task, learning_log)
+    if llm_result is not None:
+        return llm_result
+
+    # Fallback: 规则评分
     score = score_evidence(task, learning_log)
     return {"evidence_score": score}
 
