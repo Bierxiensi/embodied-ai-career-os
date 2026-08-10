@@ -43,14 +43,42 @@ _INTENT_KEYWORDS: list[tuple[str, list[str]]] = [
 ]
 
 
+def _analyze_intent_llm(user_input: str) -> str | None:
+    """LLM 意图识别。失败返回 None，调用方 fallback 规则路由。"""
+    import json as _json
+
+    from app.llm import ChatMessage, get_llm
+
+    prompt = (
+        "分析用户输入，判断意图类别。\n\n"
+        f'用户输入："{user_input}"\n\n'
+        "意图类别：\n"
+        "- career：职业规划、岗位分析、转型方向、技能缺口、能力评估\n"
+        "- learn：学习、练习、实践、做实验、写代码、跑模型\n"
+        "- complete：完成任务、提交成果、复盘、回顾、打卡\n"
+        "- unknown：无法归类\n\n"
+        "返回 JSON：{\"intent\": \"<类别>\", \"confidence\": 0.0-1.0, \"reason\": \"<一句话理由>\"}\n"
+        "直接输出 JSON，不要其他文字。"
+    )
+
+    try:
+        llm = get_llm()
+        result = llm.chat_json([
+            ChatMessage(role="system", content="你是一个意图分类器。只输出 JSON。"),
+            ChatMessage(role="user", content=prompt),
+        ])
+        intent = result.get("intent", "")
+        if intent in ("career", "learn", "complete", "unknown"):
+            return intent
+    except Exception:
+        pass
+    return None
+
+
 def analyze_intent(state: SupervisorState) -> dict:
     """节点1：识别用户意图。
 
-    规则路由：按关键词优先级匹配。
-    - career 优先：含"成为/职业/规划"等归为职业规划
-    - complete 次之：含"完成/复盘"等归为任务完成
-    - learn 兜底：含"学习/学"等归为学习
-    - 未命中任何关键词 → unknown
+    LLM 优先（理解自然语言语义），失败时 fallback 规则关键词匹配。
 
     Args:
         state: 含 user_input
@@ -58,10 +86,19 @@ def analyze_intent(state: SupervisorState) -> dict:
     Returns:
         {"intent": "learn" | "complete" | "career" | "unknown"}
     """
-    user_input = (state.get("user_input") or "").lower()
+    user_input = (state.get("user_input") or "").strip()
+    if not user_input:
+        return {"intent": "unknown"}
 
+    # LLM 优先
+    llm_result = _analyze_intent_llm(user_input)
+    if llm_result is not None:
+        return {"intent": llm_result}
+
+    # Fallback: 规则关键词匹配
+    user_input_lower = user_input.lower()
     for intent, keywords in _INTENT_KEYWORDS:
-        if any(kw.lower() in user_input for kw in keywords):
+        if any(kw.lower() in user_input_lower for kw in keywords):
             return {"intent": intent}
 
     return {"intent": "unknown"}
