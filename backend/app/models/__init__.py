@@ -1,5 +1,6 @@
 """统一 ORM 模型导出。导入此模块即注册所有模型到 Base.metadata。"""
 
+from app.models.activity_draft import ActivityDraft
 from app.models.agent_run import AgentRun
 from app.models.career import Career
 from app.models.commit_suggestion import CommitSuggestion
@@ -12,6 +13,7 @@ from app.models.skill_assessment import SkillAssessment
 from app.models.task import Task
 
 __all__ = [
+    "ActivityDraft",
     "AgentRun",
     "Career",
     "CommitSuggestion",
