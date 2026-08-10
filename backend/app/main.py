@@ -19,6 +19,7 @@ from app.api.agent import router as agent_router
 from app.api.career import router as career_router
 from app.api.github import router as github_router
 from app.api.learning_logs import router as learning_logs_router
+from app.api.milestones import router as milestones_router
 from app.api.paper import router as paper_router
 from app.api.planner import router as planner_router
 from app.api.projects import router as projects_router
@@ -76,6 +77,7 @@ app.include_router(agent_router, prefix=api_prefix)
 app.include_router(github_router, prefix=api_prefix)
 app.include_router(paper_router, prefix=api_prefix)
 app.include_router(projects_router, prefix=api_prefix)
+app.include_router(milestones_router, prefix=api_prefix)
 
 
 @app.get("/health")
