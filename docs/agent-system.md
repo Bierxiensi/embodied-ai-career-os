@@ -173,3 +173,40 @@ curl http://localhost:8000/api/agent/runs?limit=10
 # 运行全量测试
 cd backend && python tests/test_phase2_week1.py
 ```
+
+## 九、V2 升级（2026-08）
+
+### 9.1 LLM 接入
+
+所有 Agent 节点支持 LLM 驱动（`LLM_PROVIDER=deepseek`），规则引擎保留为 fallback：
+- Supervisor: `analyze_intent` → LLM 意图分类
+- Planner: `LLMGenerator` 增强 prompt（含用户背景 + 能量水平）
+- Reviewer: `evaluate_evidence` → LLM 语义评估（理解深度/完成质量/反思）
+- Career: `analyze_target` → LLM 岗位缺口 + 市场洞察
+- Research: `match_template_node` → LLM 动态研究计划
+
+### 9.2 Reminder Service
+
+APScheduler 驱动的三时段提醒：早间任务推送 / 晚间完成确认 / 中断恢复检测。
+支持 Server酱(微信) / Terminal 双通道。
+
+### 9.3 GitHub 感知
+
+自动拉取 commit → LLM 分析技能关联 → 人工确认 → Reviewer 引用。
+新增模型：CommitSuggestion / ActivityDraft。
+
+### 9.4 工具桥接
+
+Prompts 生成（Trae/Claude Code/ChatGPT/WorkBuddy）+ 上下文恢复包。
+API：POST /api/tools/prompt + GET /api/tools/context。
+
+### 9.5 新增 API 端点
+
+| 端点 | 说明 |
+|---|---|
+| GET /api/github/suggestions | 待确认 commit 建议 |
+| POST /api/github/suggestions/{id}/confirm | 确认技能关联 |
+| POST /api/github/suggestions/{id}/reject | 驳回建议 |
+| POST /api/github/sync | 手动触发 GitHub 同步 |
+| POST /api/tools/prompt | 生成工具适配 prompt |
+| GET /api/tools/context | 获取学习上下文恢复包 |
