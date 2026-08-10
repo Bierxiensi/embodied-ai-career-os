@@ -19,6 +19,8 @@ class TaskOut(BaseModel):
     skill_name: str | None = None
     acceptance: list[str] = []
     resources: list[str] = []
+    project_id: int | None = None
+    milestone_id: int | None = None
 
     @field_validator("acceptance", "resources", mode="before")
     @classmethod
@@ -39,6 +41,8 @@ class TaskCreate(BaseModel):
     acceptance: list[str] = []
     resources: list[str] = []
     status: str = "todo"
+    project_id: int | None = None
+    milestone_id: int | None = None
 
 
 class TaskStatusPatch(BaseModel):

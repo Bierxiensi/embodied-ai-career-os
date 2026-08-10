@@ -1,7 +1,7 @@
 """数据库基础设施。
 
 提供：
-- engine：SQLAlchemy 引擎（按 DATABASE_URL 创建，默认 SQLite）
+- engine：SQLAlchemy 引擎（按 DATABASE_URL 创建，SQLite/PostgreSQL 兼容）
 - SessionLocal：会话工厂
 - Base：所有模型的声明基类
 - get_db：FastAPI 依赖，注入数据库会话
@@ -13,18 +13,26 @@ from __future__ import annotations
 import os
 from collections.abc import Generator
 
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
 
-def _build_engine():
-    """构建引擎。SQLite 需开启外键约束（默认关闭）。"""
+def _is_sqlite(url: str) -> bool:
+    """判断是否为 SQLite 连接。"""
+    return url.startswith("sqlite")
 
-    connect_args = {}
-    if settings.database_url.startswith("sqlite"):
-        # SQLite 多线程支持 + 外键约束
+
+def _build_engine() -> Engine:
+    """构建引擎。
+
+    SQLite：开启外键约束 + check_same_thread=False（多线程）。
+    PostgreSQL：标准连接，无额外参数。
+    """
+    connect_args: dict = {}
+
+    if _is_sqlite(settings.database_url):
         connect_args = {"check_same_thread": False}
 
     engine = create_engine(
@@ -33,12 +41,11 @@ def _build_engine():
         echo=False,
     )
 
-    # SQLite 显式开启外键约束（PRAGMA 仅 SQLite 有效，对 PostgreSQL 无影响）
-    if settings.database_url.startswith("sqlite"):
-        from sqlalchemy import event
+    # SQLite 显式开启外键约束
+    if _is_sqlite(settings.database_url):
 
         @event.listens_for(engine, "connect")
-        def _enable_fk(dbapi_conn, _):  # noqa: ANN001
+        def _enable_sqlite_fk(dbapi_conn, _):  # noqa: ANN001
             cursor = dbapi_conn.cursor()
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
@@ -74,7 +81,7 @@ def init_db() -> None:
     """
 
     # SQLite 文件型数据库需保证 data 目录存在
-    if settings.database_url.startswith("sqlite"):
+    if _is_sqlite(settings.database_url):
         db_path = settings.database_url.replace("sqlite:///./", "")
         db_dir = os.path.dirname(db_path)
         if db_dir:
@@ -93,6 +100,8 @@ def _seed_if_empty() -> None:
     """表为空时插入种子数据。基于 docs/MY_CONTEXT.md 真实自评。"""
 
     from app.models.career import Career
+    from app.models.milestone import Milestone
+    from app.models.project import Project
     from app.models.skill import Skill
     from app.models.task import Task
 
@@ -133,7 +142,7 @@ def _seed_if_empty() -> None:
             for s in seed_skills:
                 db.add(s)
 
-        # Task 种子：3 项，源自 Day3 mock/tasks.ts
+        # Task 种子：3 项
         if db.query(Task).count() == 0:
             seed_tasks = [
                 Task(
@@ -166,6 +175,38 @@ def _seed_if_empty() -> None:
             ]
             for t in seed_tasks:
                 db.add(t)
+
+        # V2 Project 种子
+        if db.query(Project).count() == 0:
+            p = Project(
+                name="SO101 Embodied AI System",
+                goal="打造 ROS2 + VLA 驱动的具身智能真机闭环系统",
+                description="从 Python 控制 → ROS2 → MoveIt2 → ACT → SmolVLA → Isaac Lab → Sim2Real",
+                status="active",
+                current_version="V1",
+                sort_order=0,
+            )
+            db.add(p)
+            db.flush()
+
+            seed_milestones = [
+                Milestone(project_id=p.id, version="V0", title="Python 基础控制",
+                          goal="Python 直接控制 SO101 舵机转动", status="completed", sort_order=0),
+                Milestone(project_id=p.id, version="V1", title="ROS2 基础控制",
+                          goal="通过 ROS2 topic 控制 SO101 关节", status="in_progress", sort_order=1),
+                Milestone(project_id=p.id, version="V2", title="MoveIt2 集成",
+                          goal="MoveIt2 运动规划 + 执行", status="locked", sort_order=2),
+                Milestone(project_id=p.id, version="V3", title="ACT 模仿学习",
+                          goal="ACT 训练 + 泛化实验", status="locked", sort_order=3),
+                Milestone(project_id=p.id, version="V4", title="SmolVLA 接入",
+                          goal="SmolVLA 推理 + 真机测试", status="locked", sort_order=4),
+                Milestone(project_id=p.id, version="V5", title="Isaac Lab 仿真",
+                          goal="仿真环境搭建 + 合成数据生成", status="locked", sort_order=5),
+                Milestone(project_id=p.id, version="V6", title="Sim2Real 闭环",
+                          goal="仿真训练 → 真机部署 → 评估完整闭环", status="locked", sort_order=6),
+            ]
+            for m in seed_milestones:
+                db.add(m)
 
         db.commit()
     finally:

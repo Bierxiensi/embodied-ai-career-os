@@ -48,6 +48,14 @@ class Task(Base):
         Integer, ForeignKey("skills.id", ondelete="SET NULL"), nullable=True
     )
 
+    # V2 Project 模块：可选关联项目和里程碑
+    project_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True
+    )
+    milestone_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("milestones.id", ondelete="SET NULL"), nullable=True
+    )
+
     # 验收标准清单（JSON 数组）
     acceptance: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
