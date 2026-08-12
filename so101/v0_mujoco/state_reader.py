@@ -42,7 +42,7 @@ def record_trajectory(
     """设置目标关节角度，录制运动轨迹，返回时间序列数据。
 
     Args:
-        target_joints: 目标关节角度 (度) [base, shoulder, elbow]
+        target_joints: 目标关节角度 (度) [base, shoulder, elbow, wrist_roll]
         duration_s: 仿真时长 (秒)
 
     Returns:
@@ -97,12 +97,12 @@ def plot_trajectory(records: list[dict], filepath: str | None = None) -> None:
     if n_joints == 1:
         axes = [axes]
 
-    joint_names = ["Base Rotation", "Shoulder Pitch", "Elbow Pitch"]
+    joint_names = ["Base Rotation", "Shoulder Pitch", "Elbow Pitch", "wrist_roll Pitch"]
 
     for i, ax in enumerate(axes):
         joint_key = f"joint_{i}_deg"
         angles = [r[joint_key] for r in records]
-        ax.plot(times, angles, linewidth=2, color=["#4C72B0", "#55A868", "#C44E52"][i])
+        ax.plot(times, angles, linewidth=2, color=["#4C72B0", "#55A868", "#FFF700","#C44E52"][i])
         ax.set_ylabel(f"{joint_names[i]} (°)")
         ax.grid(True, alpha=0.3)
         ax.axhline(y=angles[-1], color="gray", linestyle="--", alpha=0.5, linewidth=0.8)

@@ -38,3 +38,8 @@ env/
 *.db
 *.sqlite3
 data/
+
+
+
+# ===== 自定义 =====
+so101/v0_mujoco/xml

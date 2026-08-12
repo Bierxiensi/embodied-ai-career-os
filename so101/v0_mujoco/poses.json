@@ -1,0 +1,11 @@
+{
+  "step_count": 30000,
+  "poses": [
+    {"label": "Home",       "angles": [0,    0,   0,   0]},
+    {"label": "Reach out",  "angles": [30, -30,  30, 60]},
+    {"label": "Reach up",   "angles": [0,  -30,  60, 90]},
+    {"label": "Retract",    "angles": [0,   20,  0, 30]},
+    {"label": "actuator",    "angles": [0,   40,  -45, 30]},
+    {"label": "Low", "angles": [45, 30, -90, 100]}
+  ]
+}
