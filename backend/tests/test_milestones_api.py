@@ -79,3 +79,29 @@ def test_generate_tasks_from_milestone():
     # 生成的任务应关联 milestone
     for task in data["data"]:
         assert task["milestone_id"] == mid
+
+
+def test_generate_tasks_idempotent():
+    """第二次生成任务应返回已有任务，不重复创建（BUG 1 回归测试）。"""
+    pid = _create_project("Idempotent Test")
+    resp = client.post(f"/api/projects/{pid}/milestones", json={
+        "version": "V1", "title": "ROS2 基础", "goal": "topic 通信 + publisher/subscriber",
+        "status": "in_progress", "sort_order": 1,
+    })
+    mid = resp.json()["data"]["id"]
+
+    payload = {
+        "available_minutes": 120,
+        "skills": [{"name": "ROS2", "level": 1, "target": 4}],
+    }
+    r1 = client.post(f"/api/milestones/{mid}/tasks", json=payload)
+    assert r1.status_code == 200
+    ids1 = [t["id"] for t in r1.json()["data"]]
+
+    r2 = client.post(f"/api/milestones/{mid}/tasks", json=payload)
+    assert r2.status_code == 200
+    ids2 = [t["id"] for t in r2.json()["data"]]
+
+    # 幂等：返回的任务 id 完全一致，未新建
+    assert len(ids1) > 0
+    assert ids1 == ids2

@@ -113,6 +113,21 @@ class GenerateTasksRequest(BaseModel):
     generator: str = "rule"
 
 
+def _task_to_dict(t: Task) -> dict:
+    """Task ORM → 生成任务返回 dict（幂等分支与新建分支共用）。"""
+    return {
+        "id": t.id,
+        "title": t.title,
+        "objective": t.objective,
+        "duration": t.duration,
+        "difficulty": t.difficulty,
+        "status": t.status,
+        "skill_name": t.skill_name,
+        "project_id": t.project_id,
+        "milestone_id": t.milestone_id,
+    }
+
+
 @router.post("/milestones/{milestone_id}/tasks")
 def generate_tasks_from_milestone(
     milestone_id: int,
@@ -126,6 +141,19 @@ def generate_tasks_from_milestone(
     m = db.get(Milestone, milestone_id)
     if m is None:
         raise HTTPException(status_code=404, detail="Milestone not found")
+
+    # 幂等：该里程碑已生成过任务 → 直接返回已有，不重复创建
+    existing = (
+        db.query(Task)
+        .filter(Task.milestone_id == milestone_id)
+        .order_by(Task.id)
+        .all()
+    )
+    if existing:
+        return ok(
+            [_task_to_dict(t) for t in existing],
+            message="该里程碑已生成过任务",
+        )
 
     milestone_tasks = _decompose_milestone(m.goal, req.available_minutes)
 
@@ -145,17 +173,7 @@ def generate_tasks_from_milestone(
         )
         db.add(t)
         db.flush()
-        created.append({
-            "id": t.id,
-            "title": t.title,
-            "objective": t.objective,
-            "duration": t.duration,
-            "difficulty": t.difficulty,
-            "status": t.status,
-            "skill_name": t.skill_name,
-            "project_id": t.project_id,
-            "milestone_id": t.milestone_id,
-        })
+        created.append(_task_to_dict(t))
 
     db.commit()
     return ok(created, message=f"Generated {len(created)} tasks from milestone")
