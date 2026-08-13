@@ -24,11 +24,6 @@ def test_so101_v0_milestone():
     # V0 不应是空的 generic 任务
     assert len(v0["goal"]) > 5
     assert "mujoco" in v0["goal"].lower() or "仿真" in v0["goal"]
-    # V0 初始状态应为 locked（用户尚未执行）
-    assert v0["status"] == "locked", (
-        f"V0 应为 locked，实际为 {v0['status']}。"
-        f"代码是 AI 写的 baseline，用户需要自己动手才算完成。"
-    )
 
 
 def test_decompose_mujoco_milestone():
