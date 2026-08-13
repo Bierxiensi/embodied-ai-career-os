@@ -57,6 +57,8 @@ class MilestonePatch(BaseModel):
     goal: str | None = None
     status: str | None = None
     sort_order: int | None = None
+    workspace: str | None = None
+    required_modifications: list | None = None
 
 
 class MilestoneOut(BaseModel):
@@ -69,3 +71,5 @@ class MilestoneOut(BaseModel):
     goal: str
     status: str
     sort_order: int
+    workspace: str | None = None
+    required_modifications: list | None = None
