@@ -45,8 +45,11 @@ export default function MilestoneTimeline({
   };
 
   const handleToggleStatus = async (m: Milestone) => {
+    // locked → in_progress → completed → (回到) in_progress
     const nextStatus =
-      m.status === "in_progress"
+      m.status === "locked"
+        ? "in_progress"
+        : m.status === "in_progress"
         ? "completed"
         : m.status === "completed"
         ? "in_progress"
@@ -72,7 +75,13 @@ export default function MilestoneTimeline({
                 type="button"
                 onClick={() => handleToggleStatus(m)}
                 className="text-lg cursor-pointer"
-                title={m.status === "in_progress" ? "标记完成" : "标记进行中"}
+                title={
+                  m.status === "locked"
+                    ? "解锁开始"
+                    : m.status === "in_progress"
+                    ? "标记完成"
+                    : "重新打开"
+                }
               >
                 {statusIcon[m.status] || "⬜"}
               </button>
