@@ -27,6 +27,10 @@ interface MilestoneDTO {
   goal: string;
   status: string;
   sort_order: number;
+  workspace?: string | null;
+  required_modifications?: Array<{
+    title: string; goal: string; files: string[]; verification: string;
+  }> | null;
 }
 
 interface MilestoneCreateDTO {
@@ -46,6 +50,8 @@ function toMilestone(dto: MilestoneDTO): Milestone {
     goal: dto.goal,
     status: dto.status as Milestone["status"],
     sortOrder: dto.sort_order,
+    workspace: dto.workspace ?? null,
+    requiredModifications: dto.required_modifications ?? undefined,
   };
 }
 

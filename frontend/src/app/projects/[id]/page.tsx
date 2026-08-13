@@ -76,6 +76,9 @@ export default async function ProjectDetailPage({
               level: s.level,
               target: s.targetLevel,
             }))}
+            generatedMilestoneIds={allTasks
+              .map((t) => t.milestoneId)
+              .filter((x): x is string => x != null)}
           />
         </section>
 

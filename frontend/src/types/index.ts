@@ -132,6 +132,13 @@ export interface AgentActivity {
 
 // ===== V2: Project Management =====
 
+export interface RequiredModification {
+  title: string;
+  goal: string;
+  files: string[];
+  verification: string;
+}
+
 export interface Milestone {
   id: string;
   projectId: string;
@@ -140,6 +147,8 @@ export interface Milestone {
   goal: string;
   status: "locked" | "in_progress" | "completed";
   sortOrder: number;
+  workspace?: string | null;
+  requiredModifications?: RequiredModification[];
 }
 
 export interface Project {
