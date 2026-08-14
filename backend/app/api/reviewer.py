@@ -99,20 +99,36 @@ def review_task(
     # 5. record_agent_run 节点已 commit，此处刷新关联对象
     db.refresh(log)
 
-    # 6. 取 SkillAssessment（最新一条，由 apply_skill_update 节点写入）
+    # 6. 取 SkillAssessment（本任务最新一条，由 apply_skill_update 节点写入）
+    #    按 task_id 过滤，避免返回别的任务的评估；
+    #    无记录时兜底返回空评估（reason 标注原因），而非 model_validate(None) 抛 500。
     from app.models.skill_assessment import SkillAssessment
 
     assessment = (
         db.query(SkillAssessment)
+        .filter(SkillAssessment.task_id == task.id)
         .order_by(SkillAssessment.created_at.desc())
         .first()
+    )
+    assessment_out = (
+        SkillAssessmentOut.model_validate(assessment)
+        if assessment is not None
+        else SkillAssessmentOut(
+            skill_id=None,
+            task_id=task.id,
+            old_level=None,
+            new_level=None,
+            confidence=None,
+            reason="无匹配技能或未生成评估",
+            evidence_score=None,
+        )
     )
 
     return ok(
         ReviewerResult(
             task=task_dict,
             learning_log=LearningLogOut.model_validate(log),
-            assessment=SkillAssessmentOut.model_validate(assessment),
+            assessment=assessment_out,
             updated_skill=result.get("updated_skill", {}),
         ),
         message="Task completed and reviewed",

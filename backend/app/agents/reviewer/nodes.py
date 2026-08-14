@@ -165,6 +165,11 @@ def apply_skill_update(state: ReviewerState) -> dict:
     updated_skill = dict(skill)
     skill_id = skill.get("id")
 
+    # 技能未注册：仅内存更新，标注原因写入 updated_skill，
+    # 让 API 层可区分"评估了但无技能"与"完全没评估"（不再静默跳过）。
+    if skill_id is None:
+        updated_skill["note"] = "技能未注册，仅生成评估未落库"
+
     if db is not None and skill_id is not None:
         # 写 SkillAssessment
         db.add(
