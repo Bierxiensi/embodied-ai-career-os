@@ -10,13 +10,27 @@ from app.models.commit_suggestion import CommitSuggestion
 
 
 def save_suggestion(commit: dict, analysis: dict, repo: str) -> str | None:
-    """存储一条 commit 分析建议。返回 suggestion id，失败返回 None。"""
+    """存储一条 commit 分析建议。返回 suggestion id，失败返回 None。
+
+    commit_sha 去重：同一 sha 已存在则跳过插入，返回已有 id，
+    避免水位回退/重试导致重复 commit 被多次存储。
+    """
     db = SessionLocal()
     try:
+        commit_sha = commit.get("sha", "")
+        # 先查重：已存在则直接返回已有 id，不重复插入
+        existing = (
+            db.query(CommitSuggestion)
+            .filter(CommitSuggestion.commit_sha == commit_sha)
+            .first()
+        )
+        if existing is not None:
+            return existing.id
+
         sid = str(uuid.uuid4())
         db.add(CommitSuggestion(
             id=sid,
-            commit_sha=commit.get("sha", ""),
+            commit_sha=commit_sha,
             commit_message=commit.get("message", ""),
             repo=repo,
             files_changed=[f.get("filename") for f in commit.get("files", [])],

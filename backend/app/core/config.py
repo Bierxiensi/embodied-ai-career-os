@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
+
+# backend 目录（config.py 上溯两级：core → app → backend），用于推导水位文件绝对路径，
+# 避免依赖运行时 cwd 导致相对路径失真。
+_BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass
@@ -54,9 +59,11 @@ class Settings:
 
     # ---------- GitHub ----------
     github_token: str = ""                    # Personal Access Token
+    github_owner: str = "prideandprejudice"   # 仓库 owner（原硬编码于 client.py，现可配置）
     github_repos: list[str] = field(default_factory=lambda: ["embodied-ai-career-os"])
     github_poll_interval_minutes: int = 30
-    github_last_sync_file: str = ".github_last_sync"
+    # 水位文件用绝对路径，避免相对路径在 cwd 变化时失真
+    github_last_sync_file: str = str(_BACKEND_ROOT / ".github_last_sync")
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -83,8 +90,12 @@ class Settings:
             reminder_inactivity_days=int(os.getenv("REMINDER_INACTIVITY_DAYS", "3")),
             reminder_timezone=os.getenv("REMINDER_TIMEZONE", "Asia/Shanghai"),
             github_token=os.getenv("GITHUB_TOKEN", ""),
+            github_owner=os.getenv("GITHUB_OWNER", "prideandprejudice"),
             github_repos=[r.strip() for r in os.getenv("GITHUB_REPOS", "embodied-ai-career-os").split(",")],
             github_poll_interval_minutes=int(os.getenv("GITHUB_POLL_INTERVAL", "30")),
+            github_last_sync_file=os.getenv(
+                "GITHUB_LAST_SYNC_FILE", str(_BACKEND_ROOT / ".github_last_sync")
+            ),
         )
 
 
