@@ -11,6 +11,8 @@ LLM 调用失败时自动回退 RuleGenerator（由 __init__.py 工厂处理）�
 
 from __future__ import annotations
 
+import json
+
 from app.agents.planner.generators import TaskGenerator
 from app.agents.planner.schemas import TaskOutput
 from app.agents.planner.state import PlannerState
@@ -93,6 +95,9 @@ def _build_few_shot_examples() -> str:
         templates = TEMPLATES.get(skill, [])
         if templates:
             t = templates[0]
+            # M4-1 修复：acceptance / resources 是 list，
+            # 原 f-string 直接插值会用 Python repr（单引号），不符合 JSON 规范。
+            # 改用 json.dumps 生成合法 JSON 数组（ensure_ascii=False 保留中文）。
             examples.append(
                 f"示例（{skill} {t['difficulty']}）：\n"
                 f'{{"title": "{t["title"]}", '
@@ -100,8 +105,8 @@ def _build_few_shot_examples() -> str:
                 f'"objective": "{t["objective"]}", '
                 f'"duration": {t["base_minutes"]}, '
                 f'"difficulty": "{t["difficulty"]}", '
-                f'"acceptance": {t["acceptance"]}, '
-                f'"resources": {t["resources"]}, '
+                f'"acceptance": {json.dumps(t["acceptance"], ensure_ascii=False)}, '
+                f'"resources": {json.dumps(t["resources"], ensure_ascii=False)}, '
                 f'"status": "todo"}}'
             )
 
@@ -112,6 +117,14 @@ def _build_few_shot_examples() -> str:
 
 def _validate_and_fill(task_dict: dict, state: PlannerState) -> TaskOutput:
     """校验 LLM 产出并填充缺失字段。"""
+    # M4-2 修复：chat_json 解析失败时返回 {"_parse_error": True, "raw": ...}。
+    # 原实现未检查该标记，仍走兜底填充，生成无意义任务；
+    # 这里命中 _parse_error 即 raise，由外层 safe_generate 降级到 RuleGenerator。
+    if task_dict.get("_parse_error"):
+        raise ValueError(
+            f"LLM JSON 解析失败，raw={task_dict.get('raw', '')[:120]!r}"
+        )
+
     skill = state.get("selected_skill", "")
     available = state.get("available_minutes", 45)
 

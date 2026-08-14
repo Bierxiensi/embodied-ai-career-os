@@ -155,7 +155,8 @@ class OllamaClient(LLMClient):
             return choice.message.content or ""
         except Exception:
             # Ollama 不可用时给出友好提示
+            # M6 修复：第二行原缺 f 前缀，导致 {self._config.ollama_model} 未插值
             raise ConnectionError(
                 f"无法连接 Ollama（{self._config.ollama_base_url}）。"
-                "请确认：1) ollama serve 已启动 2) ollama pull {self._config.ollama_model} 已完成"
+                f"请确认：1) ollama serve 已启动 2) ollama pull {self._config.ollama_model} 已完成"
             )

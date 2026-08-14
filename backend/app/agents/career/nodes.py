@@ -27,7 +27,7 @@ def _analyze_with_llm(target_role: str, skills: list) -> dict | None:
     from app.llm import ChatMessage, get_llm
 
     skills_str = "\n".join(
-        f"- {s['name']}: Lv{s.get('level', 0)}→Lv{s.get('target_level', 5)} "
+        f"- {s['name']}: Lv{s.get('level', 0)}→Lv{s.get('target', 5)} "
         f"(证据:{s.get('evidence', [])})"
         for s in skills[:10]
     )
@@ -71,7 +71,10 @@ def analyze_target(state: CareerState) -> dict:
     llm_result = _analyze_with_llm(target_role, current)
     if llm_result is not None and llm_result.get("required_skills"):
         fallback_skills = get_required_skills(target_role)
-        required = list(set(llm_result["required_skills"]) | set(fallback_skills))
+        # S2 修复：LLM 可能返回非 str 元素（None/int/list），直接 set 合并会抛 TypeError。
+        # 先过滤 str，再用 dict.fromkeys 保序去重（fallback_skills 在后，保留 LLM 顺序优先）。
+        llm_skills = [s for s in llm_result["required_skills"] if isinstance(s, str)]
+        required = list(dict.fromkeys(llm_skills + list(fallback_skills)))
         return {
             "required_skills": required,
             "llm_market_insights": llm_result.get("market_insights", ""),

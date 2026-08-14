@@ -28,6 +28,10 @@ def get_llm() -> LLMClient:
 
     远程 API 不可用时打 warning 并 fallback 到 MockClient。
 
+    M3 修复：仅缓存成功构建的真实 client；fallback 产出的 MockClient 不缓存，
+    避免首次构建失败后被固化，后续无法切换到真实 Provider。
+    主动选择 mock（LLM_PROVIDER=mock）属正常路径，正常缓存。
+
     Returns:
         LLMClient 实例。线程安全（GIL 保护缓存读写）。
     """
@@ -37,9 +41,21 @@ def get_llm() -> LLMClient:
     if cache_key in _llm_cache:
         return _llm_cache[cache_key]
 
-    client = _build_client(provider)
-    _llm_cache[cache_key] = client
-    return client
+    try:
+        client = _try_build(provider)
+        # 仅缓存成功构建的 client（含主动选 mock），
+        # fallback 路径不进缓存，下次调用会重试真实 Provider
+        _llm_cache[cache_key] = client
+        return client
+    except Exception as e:
+        warnings.warn(
+            f"LLM Provider '{provider}' 不可用：{e}。"
+            f"Fallback 到 MockClient（不缓存，下次重试真实 Provider）。"
+            f"配置真实 LLM：设置环境变量 LLM_PROVIDER + API key / base URL。",
+            stacklevel=2,
+        )
+        # MockClient 不缓存：保证配置修复后下次 get_llm() 能切回真实 Provider
+        return MockClient()
 
 
 def _cache_key(provider: str) -> str:
@@ -51,22 +67,12 @@ def _cache_key(provider: str) -> str:
     return provider
 
 
-def _build_client(provider: str) -> LLMClient:
-    """按 provider 构建客户端。失败时 fallback 到 MockClient。"""
-    try:
-        return _try_build(provider)
-    except Exception as e:
-        warnings.warn(
-            f"LLM Provider '{provider}' 不可用：{e}。"
-            f"Fallback 到 MockClient。"
-            f"配置真实 LLM：设置环境变量 LLM_PROVIDER + API key / base URL。",
-            stacklevel=2,
-        )
-        return MockClient()
-
-
 def _try_build(provider: str) -> LLMClient:
-    """尝试构建指定 provider 的客户端。"""
+    """尝试构建指定 provider 的客户端。
+
+    未知 provider 或配置缺失时 raise，由 get_llm 捕获后 fallback MockClient。
+    （改为 raise 而非内部返回 Mock，确保 fallback 路径不进缓存。）
+    """
     config = LLMConfig(
         provider=settings.llm_provider,
         api_key=settings.llm_api_key,
@@ -80,7 +86,6 @@ def _try_build(provider: str) -> LLMClient:
         return MockClient()
 
     if provider == "ollama":
-        # 简单的连接检测：尝试 import openai（构建时做，懒加载在 chat 时再做）
         return OllamaClient(config)
 
     if provider == "deepseek":
@@ -98,10 +103,7 @@ def _try_build(provider: str) -> LLMClient:
             raise ValueError("openai_compatible 需要设置 LLM_BASE_URL 环境变量")
         return OpenAICompatibleClient(config)
 
-    # 未知 provider → fallback
-    warnings.warn(
-        f"未知 LLM_PROVIDER '{provider}'，fallback 到 MockClient。"
-        f"支持：mock / ollama / deepseek / openai_compatible",
-        stacklevel=2,
+    # 未知 provider → raise，由 get_llm fallback MockClient（不缓存）
+    raise ValueError(
+        f"未知 LLM_PROVIDER '{provider}'。支持：mock / ollama / deepseek / openai_compatible"
     )
-    return MockClient()
