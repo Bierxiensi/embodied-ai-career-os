@@ -98,9 +98,9 @@ def run_agent(
 
     失败隔离：单个 Agent 失败不中断整链，status 标记为 failed。
     """
-    # 注入 db session 供需要 DB 的 Agent 使用（如 Reviewer）
-    # Day 5 通过 OrchestratorExecutor 注入，复用请求事务
-    result = run_workflow(req.user_input, req.agent_inputs)
+    # 注入 db session 供需要 DB 的 Agent 使用（如 Reviewer 写 SkillAssessment）
+    # S3 修复：经 run_workflow → AgentWorkflow.run 透传 db，复用请求事务
+    result = run_workflow(req.user_input, req.agent_inputs, db=db)
 
     # 转换为响应模型
     steps = [

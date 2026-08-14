@@ -25,6 +25,9 @@ class KnowledgeState(TypedDict, total=False):
     paper_id: str                          # 可选，限定单篇论文检索
     section: str                           # 可选，按 chunk.section 过滤
     top_k: int                             # 检索返回数量，默认 5
+    # S1 修复：db 必须在 schema 中声明，否则 LangGraph 静默丢弃 API 注入的 db，
+    # 导致 retrieve_node 每次自建 SessionLocal，事务复用失效。
+    db: Any                                # API 层注入的 db session（事务复用）
 
     # ===== 中间态 =====
     retrieved_chunks: list[dict[str, Any]]  # RAG 检索命中的 chunk 列表

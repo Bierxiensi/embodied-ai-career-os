@@ -49,13 +49,14 @@ class AgentWorkflow:
     """
 
     def __init__(self, executor: OrchestratorExecutor | None = None) -> None:
-        # 允许注入自定义 executor（如测试 mock），默认用 AgentExecutor
+        # 允许注入自定义 executor（如测试 mock），默认用 OrchestratorExecutor
         self._executor = executor or OrchestratorExecutor()
 
     def run(
         self,
         user_input: str,
         agent_inputs: dict[str, dict] | None = None,
+        db: Any = None,
     ) -> dict:
         """执行完整工作流：Supervisor 决策 → 按 plan 执行各 Agent。
 
@@ -64,11 +65,17 @@ class AgentWorkflow:
             agent_inputs: 各 Agent 的输入 state 覆盖。
                           key 为 agent name，value 为输入 dict。
                           未提供时用默认输入（Day 5 用最小可用输入）。
+            db: 可选 DB session。注入后复用请求事务（如 Reviewer 写 SkillAssessment）；
+                为 None 时各 Agent 自建 session 或安全降级（不写库）。
 
         Returns:
             工作流执行结果（含 supervisor 结果 + 各 agent 步骤 + 汇总）。
         """
         start_ms = time.perf_counter()
+
+        # S3 修复：注入 db 时重建 executor，让 _record 与节点层都复用请求事务
+        if db is not None:
+            self._executor = OrchestratorExecutor(db=db)
 
         # 1. Supervisor 决策
         supervisor_result = self._run_supervisor(user_input)
@@ -81,7 +88,7 @@ class AgentWorkflow:
         agent_inputs = agent_inputs or {}
         steps: list[dict] = []
         for agent_name in required_agents:
-            step = self._run_single_agent(agent_name, agent_inputs)
+            step = self._run_single_agent(agent_name, agent_inputs, db)
             steps.append(step)
 
         # 3. 汇总结果
@@ -124,6 +131,7 @@ class AgentWorkflow:
         self,
         agent_name: str,
         agent_inputs: dict[str, dict],
+        db: Any = None,
     ) -> dict:
         """执行单个 Agent，封装为步骤结果。
 
@@ -141,7 +149,7 @@ class AgentWorkflow:
             }
 
         # 取输入 state：优先用调用方提供的覆盖，否则用默认最小输入
-        input_state = self._resolve_input(agent_name, agent_inputs)
+        input_state = self._resolve_input(agent_name, agent_inputs, db)
 
         try:
             output = self._executor.run(agent_name, input_state)
@@ -163,6 +171,7 @@ class AgentWorkflow:
         self,
         agent_name: str,
         agent_inputs: dict[str, dict],
+        db: Any = None,
     ) -> dict:
         """解析 Agent 输入 state。
 
@@ -173,13 +182,15 @@ class AgentWorkflow:
             return agent_inputs[agent_name]
 
         # 默认最小输入（各 Agent 的必需字段）
-        # reviewer：不提供 db 则用 None，节点内会安全降级（不写库，仅内存评估）
+        # reviewer：注入 db 复用请求事务（None 时节点内安全降级，不写库）
         # task 用合理示例内容（不依赖存在的 task_id），仅触发证据打分逻辑
         defaults: dict[str, dict] = {
             "planner": {
                 "available_minutes": 45,
                 "skills": [{"name": "Isaac", "level": 0, "target": 4}],
-                "persist": False,
+                # L2 修复：移除 "persist": False。
+                # persist 是 OrchestratorExecutor 的参数而非 state key，
+                # 原值被 PlannerState 静默丢弃；agent_runs 落库由 executor 默认 persist=True 控制。
             },
             "reviewer": {
                 "task": {
@@ -198,7 +209,8 @@ class AgentWorkflow:
                     "duration_minutes": 45,
                     "artifact_url": None,
                 },
-                "db": None,  # orchestrator 内默认不写库，真实场景由调用方注入
+                # S3 修复：透传请求 db，避免节点自建 session；None 时节点安全降级
+                "db": db,
             },
             "career": {
                 "target_role": "Robot AI Engineer",
@@ -252,14 +264,16 @@ class AgentWorkflow:
 def run_workflow(
     user_input: str,
     agent_inputs: dict[str, dict] | None = None,
+    db: Any = None,
 ) -> dict:
     """便捷函数：创建 workflow 并执行。
 
     Args:
         user_input: 用户原始输入
         agent_inputs: 各 Agent 输入覆盖
+        db: 可选 DB session，透传给需要 DB 的 Agent（如 Reviewer）
 
     Returns:
         工作流执行结果
     """
-    return AgentWorkflow().run(user_input, agent_inputs)
+    return AgentWorkflow().run(user_input, agent_inputs, db=db)
