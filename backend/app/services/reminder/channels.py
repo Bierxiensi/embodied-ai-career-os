@@ -51,7 +51,19 @@ class ServerChanChannel(Channel):
                 url, data=data,
                 headers={"Content-Type": "application/json"},
             )
-            urlopen(req, timeout=10)
+            # S6 修复（RAG #6）：原 urlopen 未用 with，resp 可能不关闭；
+            # 且未校验 ServerChan 返回的 errno，HTTP 200 但 errno!=0 仍误报成功。
+            with urlopen(req, timeout=10) as resp:
+                raw = resp.read().decode("utf-8", errors="replace")
+            try:
+                payload = _json.loads(raw)
+            except (ValueError, _json.JSONDecodeError):
+                # 非 JSON 响应视为失败
+                return False
+            # ServerChan 成功时 data.errno == 0；非 0 说明推送失败（如 key 失效、超额度）
+            errno = payload.get("code", payload.get("errno"))
+            if errno is not None and errno != 0:
+                return False
             return True
         except Exception:
             return False
