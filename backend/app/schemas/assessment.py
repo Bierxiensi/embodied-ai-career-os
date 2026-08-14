@@ -15,12 +15,13 @@ class SkillAssessmentOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    skill_id: int
+    # 字段可空：技能未注册 / 未生成评估时，API 层兜底返回空评估而非 500
+    id: int | None = None
+    skill_id: int | None = None
     task_id: int | None = None
-    old_level: int
-    new_level: int
-    confidence: float
-    reason: str
-    evidence_score: int
-    created_at: datetime
+    old_level: int | None = None
+    new_level: int | None = None
+    confidence: float | None = None
+    reason: str = ""
+    evidence_score: int | None = None
+    created_at: datetime | None = None
