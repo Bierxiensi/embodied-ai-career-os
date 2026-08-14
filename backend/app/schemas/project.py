@@ -39,6 +39,11 @@ class ProjectOut(BaseModel):
     github_url: str | None = None
     readme: str | None = None
     sort_order: int
+    # 前端 #1 修复：list 接口附加里程碑进度统计（get 接口也填充）。
+    # 声明为可选，create/patch 等不涉及统计的端点保持默认值，不破坏既有契约。
+    milestone_total: int | None = None
+    milestone_completed: int | None = None
+    progress_pct: int | None = None
 
 
 # ---- Milestone ----

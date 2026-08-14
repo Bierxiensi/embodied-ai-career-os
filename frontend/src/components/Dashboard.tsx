@@ -22,7 +22,8 @@ import TaskCard from "./TaskCard";
  * radarSkills 为雷达图专用核心能力子集（不含已达成优势）。
  */
 type Props = {
-  career: Career;
+  // 前端 #4 修复：career 可空（用户未配置职业目标时为 null）
+  career: Career | null;
   skills: Skill[]; // 全部技能，SkillCard 明细 + GenerateTaskButton 输入
   radarSkills: Skill[]; // 核心能力子集，SkillOverview 雷达图
   tasks: Task[];
@@ -52,8 +53,19 @@ export default function Dashboard({
         </p>
       </header>
 
-      {/* 职业目标卡片 */}
-      <CareerCard career={career} />
+      {/* 职业目标卡片：未配置时显示引导提示，而非误报后端失败（前端 #4） */}
+      {career ? (
+        <CareerCard career={career} />
+      ) : (
+        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <h2 className="text-lg font-semibold text-black dark:text-zinc-50">
+            🎯 职业目标
+          </h2>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            尚未配置职业目标。前往设置页填写目标岗位与薪资预期，解锁能力缺口分析与个性化任务推荐。
+          </p>
+        </section>
+      )}
 
       {/* V2：项目进度卡片 */}
       <div className="mt-6">

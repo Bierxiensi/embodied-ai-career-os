@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from app.core.response import ApiResponse, ok
@@ -19,11 +20,46 @@ from app.schemas.project import (
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
+def _build_milestone_stats(db: Session) -> dict[int, tuple[int, int]]:
+    """一次 group_by 查询所有项目的里程碑统计。
+
+    返回 {project_id: (total, completed)}。
+    前端 #1 + API #9 修复：避免前端逐项目拉 milestones（N+1），
+    list 接口直接附带进度统计。
+    """
+    rows = db.query(
+        Milestone.project_id,
+        func.count(Milestone.id).label("total"),
+        func.sum(case((Milestone.status == "completed", 1), else_=0)).label("completed"),
+    ).group_by(Milestone.project_id).all()
+    return {r.project_id: (int(r.total or 0), int(r.completed or 0)) for r in rows}
+
+
 @router.get("")
 def list_projects(db: Session = Depends(get_db)) -> ApiResponse[list[ProjectOut]]:
-    """获取全部项目，按 sort_order 排序。"""
+    """获取全部项目，按 sort_order 排序，含里程碑进度统计。"""
     projects = db.query(Project).order_by(Project.sort_order).all()
-    return ok([ProjectOut.model_validate(p) for p in projects])
+    stats = _build_milestone_stats(db)
+
+    out: list[ProjectOut] = []
+    for p in projects:
+        total, completed = stats.get(p.id, (0, 0))
+        progress_pct = round(completed / total * 100) if total > 0 else 0
+        out.append(ProjectOut(
+            id=p.id,
+            name=p.name,
+            goal=p.goal,
+            description=p.description,
+            status=p.status,
+            current_version=p.current_version,
+            github_url=p.github_url,
+            readme=p.readme,
+            sort_order=p.sort_order,
+            milestone_total=total,
+            milestone_completed=completed,
+            progress_pct=progress_pct,
+        ))
+    return ok(out)
 
 
 @router.post("")

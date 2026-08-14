@@ -57,7 +57,13 @@ export default function TaskCard({ tasks }: Props) {
 
 /** 单个任务：标题、关联技能、时长、验收清单、状态徽章、复盘入口。 */
 function TaskItem({ task }: { task: Task }) {
-  const config = STATUS_CONFIG[task.status];
+  // 前端 #3 修复：task.status 可能出现非 todo/doing/done 的值（如后端新增状态或脏数据），
+  // 直接索引 STATUS_CONFIG 会得到 undefined，导致 config.className 崩溃。
+  // 兜底到 todo 样式，并用原始状态值作为 label，保证始终可渲染。
+  const config = STATUS_CONFIG[task.status] ?? {
+    label: task.status,
+    className: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+  };
   const [showForm, setShowForm] = useState(false);
   const isCompleted = task.status === "done";
 
