@@ -39,7 +39,9 @@ env/
 *.sqlite3
 data/
 
-
-
 # ===== 自定义 =====
 so101/v0_mujoco/xml
+
+# ===== SSH 密钥（持久化在 /workspace/.ssh，禁止提交）=====
+/.ssh/
+.ssh/

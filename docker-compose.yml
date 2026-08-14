@@ -8,9 +8,9 @@ services:
     image: postgres:16-alpine
     container_name: career-os-postgres
     environment:
-      POSTGRES_USER: career
-      POSTGRES_PASSWORD: career
-      POSTGRES_DB: career_os
+      POSTGRES_USER: ${POSTGRES_USER:-career}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-career}
+      POSTGRES_DB: ${POSTGRES_DB:-career_os}
     ports:
       - "5432:5432"
     volumes:
@@ -32,9 +32,9 @@ services:
     environment:
       - RELOAD=true
       - CORS_ORIGINS=http://localhost:3000
-      - DATABASE_URL=postgresql+psycopg2://career:career@postgres:5432/career_os
-      - REMINDER_CHANNEL=serverchan
-      - REMINDER_CHANNEL_KEY=SCT394127TE2iIn5QKjjleb7fvpaUpBZIN
+      - DATABASE_URL=postgresql+psycopg2://career:${POSTGRES_PASSWORD:-career}@postgres:5432/${POSTGRES_DB:-career_os}
+      - REMINDER_CHANNEL=${REMINDER_CHANNEL:-serverchan}
+      - REMINDER_CHANNEL_KEY=${REMINDER_CHANNEL_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,6 +50,7 @@ services:
       - /app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
     restart: unless-stopped
