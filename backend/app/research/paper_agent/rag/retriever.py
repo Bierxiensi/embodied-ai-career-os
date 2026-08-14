@@ -26,6 +26,7 @@ def search(
     query: str,
     top_k: int = 5,
     section: str | None = None,
+    paper_id: str | None = None,
     embedder: Embedder | None = None,
     store: SQLiteVectorStore | None = None,
 ) -> list[dict[str, Any]]:
@@ -36,6 +37,7 @@ def search(
         query: 自然语言查询（如 "ACT 用了什么数据集"）
         top_k: 返回数量
         section: 可选，按 chunk.section 过滤（method/experiment/conclusion...）
+        paper_id: 可选，限定单篇论文检索（下推到向量库层过滤）
         embedder: 嵌入器，None 用默认
         store: 向量库，None 用默认
 
@@ -53,13 +55,14 @@ def search(
     # 1. 查询向量化
     query_vec = embedder.embed(query)
 
-    # 2. 向量库检索
+    # 2. 向量库检索（paper_id 下推到 store 层过滤）
     hits = store.search(
         db,
         query_vec,
         model_name=embedder.model_name,
         top_k=top_k,
         section=section,
+        paper_id=paper_id,
     )
 
     if not hits:
@@ -93,10 +96,11 @@ def search_by_paper(
 ) -> list[dict[str, Any]]:
     """限定单篇论文内检索（如"这篇论文的方法是什么"）。
 
-    在通用 search 基础上过滤 paper_id，用于 Knowledge Agent 精读场景。
+    RAG #4 修复：paper_id 下推到 store.search（向量库层过滤），
+    而非全局取 top_k*2 再过滤。原实现中目标论文的高分 chunk 可能被
+    其他论文更高分 chunk 挤出 top_k*2，导致召回缺失。
     """
-    hits = search(db, query, top_k=top_k * 2, section=section,
-                  embedder=embedder, store=store)
-    # 过滤指定 paper（多取后过滤，避免 top_k 过小漏结果）
-    filtered = [h for h in hits if h.get("paper_id") == paper_id]
-    return filtered[:top_k]
+    return search(
+        db, query, top_k=top_k, section=section,
+        paper_id=paper_id, embedder=embedder, store=store,
+    )

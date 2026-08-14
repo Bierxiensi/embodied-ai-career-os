@@ -57,6 +57,9 @@ class FieldDiff:
     field: str              # 字段名：method/dataset/contribution/relation
     values: dict[str, str]  # paper_id -> 该字段值
     is_common: bool         # True=所有论文该字段相似，False=存在差异
+    # RAG #12 修复：key 与展示分离。values 用 paper_id 作 key（避免 title 重复覆盖），
+    # titles 提供 paper_id -> title 映射供展示层使用。
+    titles: dict[str, str] = None  # type: ignore[assignment]  # paper_id -> title
 
 
 @dataclass
@@ -144,14 +147,18 @@ def _to_brief(paper: Paper) -> PaperBrief:
 def _compare_fields(briefs: list[PaperBrief]) -> list[FieldDiff]:
     """逐字段对比，判断是否相似。"""
     field_names = ["method", "dataset", "contribution", "relation_to_my_project"]
+    # RAG #12 修复：title 可能重复，用 paper_id 作 key；titles 提供 paper_id -> title 映射
+    titles = {b.paper_id: b.title for b in briefs}
     results: list[FieldDiff] = []
 
     for fname in field_names:
-        values = {b.title: getattr(b, fname) for b in briefs}
+        values = {b.paper_id: getattr(b, fname) for b in briefs}
         # 相似判定：所有论文该字段值相同（精确匹配，保守策略）
         unique_vals = {v.strip().lower() for v in values.values() if v}
         is_common = len(unique_vals) <= 1 and len(unique_vals) >= 1
-        results.append(FieldDiff(field=fname, values=values, is_common=is_common))
+        results.append(FieldDiff(
+            field=fname, values=values, is_common=is_common, titles=titles,
+        ))
 
     return results
 
@@ -173,8 +180,12 @@ def _extract_differences(fields: list[FieldDiff]) -> list[str]:
     diffs = []
     for f in fields:
         if not f.is_common:
-            # 列出各论文的不同值
-            parts = [f"{title}: {val[:60] or '空'}" for title, val in f.values.items()]
+            # RAG #12：values 用 paper_id 作 key，展示时用 titles 映射回 title
+            titles = f.titles or {}
+            parts = [
+                f"{titles.get(pid, pid)}: {val[:60] or '空'}"
+                for pid, val in f.values.items()
+            ]
             diffs.append(f"[{f.field}] 差异：" + " | ".join(parts))
     return diffs
 
@@ -182,7 +193,8 @@ def _extract_differences(fields: list[FieldDiff]) -> list[str]:
 def _extract_project_relations(briefs: list[PaperBrief]) -> dict[str, list[str]]:
     """从 relation_to_my_project 提取各论文命中的项目关键词。
 
-    返回 {paper_title: [命中的项目关键词]}，便于对比各论文与具身智能生态的关联。
+    返回 {paper_id: [命中的项目关键词]}（RAG #12：用 paper_id 作 key 避免 title 重复）。
+    展示层可通过 papers 列表的 paper_id -> title 映射还原标题。
     """
     relations: dict[str, list[str]] = {}
     for b in briefs:
@@ -194,12 +206,19 @@ def _extract_project_relations(briefs: list[PaperBrief]) -> dict[str, list[str]]
                 # 避免重复（如 ACT 与 act）
                 if kw not in hits:
                     hits.append(kw)
-        relations[b.title] = hits
+        relations[b.paper_id] = hits
     return relations
 
 
 def compare_to_dict(result: CompareResult) -> dict[str, Any]:
-    """CompareResult → 可序列化 dict（API 响应用）。"""
+    """CompareResult → 可序列化 dict（API 响应用）。
+
+    RAG #12：内部用 paper_id 作 key 避免重复，序列化时转回 title 作 key 供前端展示。
+    papers 列表同时保留 paper_id + title，前端可按需用 paper_id 精确引用。
+    """
+    # paper_id -> title 映射（用于展示层转换）
+    title_map = {b.paper_id: b.title for b in result.papers}
+
     return {
         "paper_count": result.paper_count,
         "papers": [
@@ -217,12 +236,16 @@ def compare_to_dict(result: CompareResult) -> dict[str, Any]:
         "fields": [
             {
                 "field": f.field,
-                "values": f.values,
+                # values 内部用 paper_id 作 key，输出转 title（展示友好）
+                "values": {title_map.get(pid, pid): val for pid, val in f.values.items()},
                 "is_common": f.is_common,
             }
             for f in result.fields
         ],
         "commonalities": result.commonalities,
         "differences": result.differences,
-        "project_relations": result.project_relations,
+        # project_relations 内部用 paper_id，输出转 title
+        "project_relations": {
+            title_map.get(pid, pid): hits for pid, hits in result.project_relations.items()
+        },
     }

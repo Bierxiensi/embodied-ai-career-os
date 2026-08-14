@@ -214,7 +214,10 @@ def _extract_project_relation(chunks: list[PaperChunk]) -> str:
                 break
 
     if not hit_projects:
-        return "未发现与当前具身智能项目的直接关联"
+        # RAG #13 修复：无命中时返回空字符串，而非 17 字默认文案。
+        # _assess_confidence 的 `if v and len(v) > 5` 会把默认文案计入"已填充"，
+        # 导致置信度虚高（即使其他字段全空也算 medium）。返回空串让其不计入。
+        return ""
 
     relation = f"相关项目: {', '.join(hit_projects)}"
     if first_sentence:

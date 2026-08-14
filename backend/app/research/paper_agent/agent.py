@@ -169,11 +169,21 @@ def index_node(state: PaperAgentState) -> dict:
 
     try:
         # 限定本论文增量索引（只嵌入刚入库的 chunks）
+        # API #2 修复：index 失败不中断已 persist 的论文。
+        # persist_node 已成功落库论文与 chunks，index 仅是增强检索能力，
+        # 失败时返回 partial success（indexed_count=0），论文仍可正常展示与重试索引。
         result = build_index(db, paper_id=paper_id)
         return {
             "indexed_count": result.indexed,
             "index_model": result.model_name,
         }
+    except Exception as e:  # noqa: BLE001
+        # 索引失败：记录日志但不抛出，保留已 persist 的论文数据
+        import logging
+        logging.getLogger(__name__).warning(
+            "index_node 构建索引失败（论文 %s 已 persist，索引可重试）: %s", paper_id, e
+        )
+        return {"indexed_count": 0, "index_model": ""}
     finally:
         if own_session:
             db.close()

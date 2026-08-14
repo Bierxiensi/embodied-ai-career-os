@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import threading
 import warnings
 from abc import ABC, abstractmethod
 from typing import Any
@@ -118,6 +119,9 @@ class SentenceTransformerEmbedder(Embedder):
     ) -> None:
         self._model_name = model_name
         self._model: Any = None  # 懒加载
+        # RAG #14 修复：多线程并发首次 embed 时，_ensure_model 可能重复加载模型
+        # （GIL 不保护"检查-然后设置"的复合操作）。用 Lock 保护懒加载。
+        self._model_lock = threading.Lock()
 
     @property
     def dim(self) -> int:
@@ -131,8 +135,14 @@ class SentenceTransformerEmbedder(Embedder):
         return self._model_name
 
     def _ensure_model(self) -> None:
-        """懒加载模型，线程安全由 GIL 保证（CPython）。"""
-        if self._model is None:
+        """懒加载模型，线程安全（RAG #14：Lock 保护避免并发重复加载）。"""
+        # 双重检查：已加载直接返回，避免无谓加锁
+        if self._model is not None:
+            return
+        with self._model_lock:
+            # 持锁后再次检查，防止等待锁的线程重复加载
+            if self._model is not None:
+                return
             try:
                 from sentence_transformers import SentenceTransformer
             except ImportError as e:

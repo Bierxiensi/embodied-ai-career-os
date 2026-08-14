@@ -20,7 +20,10 @@ Phase 3 Week 1：
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+import logging
+import os
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -33,7 +36,40 @@ from app.research.paper_agent.rag.indexer import build_index
 from app.research.paper_agent.rag.retriever import search as rag_search
 from app.research.paper_agent.rag.embedder import get_embedder
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/paper", tags=["paper"])
+
+# API #3 修复：file_path 校验。允许的论文文件扩展名。
+_ALLOWED_EXTS = {".pdf", ".md", ".markdown", ".txt"}
+
+
+def _validate_file_path(file_path: str) -> str:
+    """校验 ingest 文件路径：扩展名 + 路径穿越防护。
+
+    Returns:
+        解析后的绝对路径。
+
+    Raises:
+        HTTPException 422: 扩展名不支持或路径含穿越序列。
+    """
+    if not file_path or not file_path.strip():
+        raise HTTPException(status_code=422, detail="file_path 不能为空")
+
+    # 扩展名校验
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in _ALLOWED_EXTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"不支持的文件类型: {ext}，允许: {sorted(_ALLOWED_EXTS)}",
+        )
+
+    # 路径穿越防护：拒绝含 .. 的相对路径穿越（绝对路径解析后校验）
+    raw = file_path.strip()
+    if ".." in raw.split(os.sep):
+        raise HTTPException(status_code=422, detail="file_path 含非法路径穿越序列")
+
+    return raw
 
 
 # ============================================================
@@ -70,13 +106,33 @@ def ingest_paper(
 
     Day 5 起 ingest 自动建 RAG 索引，无需再手动调 /api/paper/index。
     auto_index=False 可关闭（批量 ingest 后统一索引场景）。
+
+    API #2/#3 修复：file_path 校验 + 异常分类（404 文件不存在 / 422 解析失败 / 500 内部错误）。
     """
+    # API #3：file_path 校验（扩展名 + 路径穿越）
+    file_path = _validate_file_path(payload.file_path)
+
+    # 文件不存在提前返回 404（避免进入 graph 后才报错，分类更清晰）
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail=f"文件不存在: {file_path}")
+
     graph = build_paper_graph()
-    out = graph.invoke({
-        "file_path": payload.file_path,
-        "auto_index": payload.auto_index,
-        "db": db,
-    })
+    try:
+        out = graph.invoke({
+            "file_path": file_path,
+            "auto_index": payload.auto_index,
+            "db": db,
+        })
+    except FileNotFoundError as e:
+        # parser 层抛出的文件缺失（兜底，前面已预检）
+        raise HTTPException(status_code=404, detail=f"文件不存在: {e}") from e
+    except ValueError as e:
+        # 解析失败（如 PDF 损坏、编码错误）
+        raise HTTPException(status_code=422, detail=f"论文解析失败: {e}") from e
+    except Exception as e:  # noqa: BLE001
+        # 内部错误：rollback 已在 persist_node 处理，这里返回 500
+        logger.exception("ingest_paper 内部错误: %s", e)
+        raise HTTPException(status_code=500, detail=f"内部错误: {e}") from e
 
     summary = out.get("summary", {})
     return ok(IngestResponse(
@@ -338,6 +394,12 @@ def compare_papers_endpoint(
     """
     from app.research.paper_agent.comparator import compare_papers, compare_to_dict
 
-    result = compare_papers(db, payload.paper_ids)
+    # API #4 修复：compare_papers 在 paper_ids 不足 2 篇或论文不存在时抛 ValueError，
+    # 原实现未捕获导致 500。改为返回 400，让前端正确提示参数问题。
+    try:
+        result = compare_papers(db, payload.paper_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
     data = compare_to_dict(result)
     return ok(CompareResponse(**data))

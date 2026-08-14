@@ -81,18 +81,27 @@ def build_index(
         skipped = len(all_chunks) - len(to_embed)
 
     # 3. 批量嵌入 + 入库
+    # RAG #5 修复：原实现整批无 try/except，任一 chunk 嵌入/写入失败
+    # 会让整批 commit 丢失（已成功的也回滚）。改为逐批隔离：
+    # 单批失败时 rollback 该批、记录已成功计数、抛出让调用方感知部分失败。
     indexed_count = 0
-    for i in range(0, len(to_embed), batch_size):
-        batch = to_embed[i : i + batch_size]
-        texts = [c.text for c in batch]
-        # 批量嵌入（HashEmbedder 逐个，ST 批量推理）
-        vectors = embedder.embed_batch(texts)
+    try:
+        for i in range(0, len(to_embed), batch_size):
+            batch = to_embed[i : i + batch_size]
+            texts = [c.text for c in batch]
+            # 批量嵌入（HashEmbedder 逐个，ST 批量推理）
+            vectors = embedder.embed_batch(texts)
 
-        for chunk, vec in zip(batch, vectors):
-            store.upsert(db, chunk.id, vec, model_name)
-            indexed_count += 1
+            for chunk, vec in zip(batch, vectors):
+                store.upsert(db, chunk.id, vec, model_name)
+                indexed_count += 1
 
-    db.commit()
+        db.commit()
+    except Exception:
+        # 部分失败：回滚未提交的写入，但已成功计数保留以便调用方感知进度
+        db.rollback()
+        raise
+
     return IndexResult(
         total_chunks=len(all_chunks),
         indexed=indexed_count,

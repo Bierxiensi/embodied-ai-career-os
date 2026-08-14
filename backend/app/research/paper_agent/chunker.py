@@ -18,7 +18,9 @@ import uuid
 from app.research.paper_agent.schema import PaperChunk, PaperMeta
 
 # ===== 分块参数 =====
-MAX_TOKENS = 800              # 单 chunk 最大 token 数
+# RAG #2 修复：800 超过 all-MiniLM-L6-v2 的 256 token 截断上限，
+# 超长 chunk 会被模型截断导致尾部语义丢失。改为 256 对齐模型上限。
+MAX_TOKENS = 256              # 单 chunk 最大 token 数
 OVERLAP_TOKENS = 100          # 滑窗重叠 token 数
 MIN_CHUNK_TOKENS = 50         # 小于此值合并到上一 chunk（避免碎片）
 
@@ -78,10 +80,13 @@ def chunk(
 
     # 2. 段落 + 滑窗切分
     chunks: list[PaperChunk] = []
-    char_cursor = 0  # 全局字符偏移游标
     page_count = meta.get("page_count", 1) or 1
 
     for section_name, section_text, section_offset in sections:
+        # RAG #3 修复：char_cursor 同步到 section 起始，再按段落递增 len(para)，
+        # 使 char_offset 反映 chunk 在原文中的真实位置。
+        # 原实现所有段落共用 section_offset，导致同 section 内多个 chunk 偏移失真。
+        char_cursor = section_offset
         # 段落切分（双换行）
         paragraphs = [p.strip() for p in section_text.split("\n\n") if p.strip()]
 
@@ -89,23 +94,34 @@ def chunk(
             para_tokens = _estimate_tokens(para)
 
             if para_tokens <= MAX_TOKENS:
-                # 单段不超限，直接成 chunk
+                # 单段不超限
                 if para_tokens >= MIN_CHUNK_TOKENS or not chunks:
+                    # 正常成 chunk（RAG #3: 用 char_cursor 而非 section_offset）
                     chunks.append(_make_chunk(
                         para, section_name, paper_id,
-                        char_offset=section_offset,
+                        char_offset=char_cursor,
                         page_count=page_count,
                         full_text=text,
                     ))
+                else:
+                    # RAG #1 修复：小段落（< MIN_CHUNK_TOKENS）且已有上一 chunk 时，
+                    # 合并到上一 chunk（追加文本 + 更新 token 计数），而非丢弃。
+                    # 原实现落入 else 分支什么也不做，导致短段落信息丢失。
+                    last = chunks[-1]
+                    last["text"] = last.get("text", "") + "\n\n" + para
+                    last["token_count"] = _estimate_tokens(last["text"])
             else:
                 # 单段超限，滑窗切分
                 for sub in _sliding_window(para):
                     chunks.append(_make_chunk(
                         sub, section_name, paper_id,
-                        char_offset=section_offset,
+                        char_offset=char_cursor,
                         page_count=page_count,
                         full_text=text,
                     ))
+
+            # RAG #3 修复：每个段落后递增 char_cursor（按 para 实际长度）
+            char_cursor += len(para)
 
     return chunks
 

@@ -57,6 +57,7 @@ class VectorStore(ABC):
         model_name: str,
         top_k: int = 5,
         section: str | None = None,
+        paper_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """检索 top-k 最相似 chunk。
 
@@ -65,6 +66,8 @@ class VectorStore(ABC):
             model_name: 限定嵌入模型，避免跨模型比较
             top_k: 返回数量
             section: 可选，按 chunk.section 过滤
+            paper_id: 可选，限定单篇论文检索（RAG #4：下推到向量库层过滤，
+                避免全局取 top_k 后再过滤导致该论文 chunk 被挤出召回）
 
         Returns:
             [{"chunk_id", "text", "section", "page", "score"}, ...]
@@ -132,6 +135,7 @@ class SQLiteVectorStore(VectorStore):
         model_name: str,
         top_k: int = 5,
         section: str | None = None,
+        paper_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """检索 top-k：加载同模型向量 → 纯 Python 余弦 → 排序截断。"""
         # 查询同模型的 embedding，join paper_chunks 取原文 + section
@@ -142,6 +146,9 @@ class SQLiteVectorStore(VectorStore):
         )
         if section:
             query = query.filter(PaperChunk.section == section)
+        # RAG #4 修复：paper_id 下推到向量库层过滤，避免全局取 top_k 后再过滤
+        if paper_id:
+            query = query.filter(PaperChunk.paper_id == paper_id)
 
         rows = query.all()
         if not rows:
