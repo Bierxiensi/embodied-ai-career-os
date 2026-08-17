@@ -56,6 +56,7 @@ export default function ProjectProgress({ projects }: { projects: Project[] }) {
             <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
               {p.currentVersion}:{" "}
               {p.milestones.find((m) => m.status === "in_progress")?.title ||
+                p.milestones.find((m) => m.status === "needs_baseline")?.title ||
                 p.milestones.find((m) => m.status === "locked")?.title ||
                 "全部完成"}
             </p>

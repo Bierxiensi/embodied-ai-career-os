@@ -145,7 +145,7 @@ export interface Milestone {
   version: string;
   title: string;
   goal: string;
-  status: "locked" | "in_progress" | "completed";
+  status: "locked" | "in_progress" | "needs_baseline" | "completed";
   sortOrder: number;
   workspace?: string | null;
   requiredModifications?: RequiredModification[];

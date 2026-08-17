@@ -175,6 +175,8 @@ def generate_tasks_from_milestone(
         db.flush()
         created.append(_task_to_dict(t))
 
+    # 标记 milestone 为 needs_baseline，触发引导流程
+    m.status = "needs_baseline"
     db.commit()
     return ok(created, message=f"Generated {len(created)} tasks from milestone")
 

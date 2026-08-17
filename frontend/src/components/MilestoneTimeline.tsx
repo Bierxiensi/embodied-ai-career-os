@@ -8,12 +8,14 @@ import { useState } from "react";
 const statusIcon: Record<string, string> = {
   completed: "✅",
   in_progress: "●",
+  needs_baseline: "●",
   locked: "🔒",
 };
 
 const statusColor: Record<string, string> = {
   completed: "text-green-600 dark:text-green-400",
   in_progress: "text-blue-600 dark:text-blue-400",
+  needs_baseline: "text-amber-600 dark:text-amber-400",
   locked: "text-zinc-400 dark:text-zinc-500",
 };
 
@@ -40,6 +42,10 @@ export default function MilestoneTimeline({
         available_minutes: 120,
         skills,
       });
+      // 标记 milestone 为 needs_baseline，触发引导流程
+      await projectService.patchMilestone(milestoneId, {
+        status: "needs_baseline",
+      });
       router.refresh();
     } finally {
       setGenerating(null);
@@ -52,6 +58,8 @@ export default function MilestoneTimeline({
         ? "in_progress"
         : m.status === "in_progress"
         ? "completed"
+        : m.status === "needs_baseline"
+        ? "in_progress" // 点击回到 in_progress（允许重新生成）
         : m.status === "completed"
         ? "in_progress"
         : m.status;
@@ -99,16 +107,16 @@ export default function MilestoneTimeline({
                   </p>
                 </div>
               </div>
-              {m.status === "in_progress" && (
+              {(m.status === "in_progress" || m.status === "needs_baseline") && (
                 <button
                   type="button"
                   onClick={() => handleGenerateTasks(m.id)}
-                  disabled={generating === m.id || hasTasks}
+                  disabled={generating === m.id || hasTasks || m.status === "needs_baseline"}
                   className="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   {generating === m.id
                     ? "生成中..."
-                    : hasTasks
+                    : hasTasks || m.status === "needs_baseline"
                     ? "任务已生成"
                     : "生成任务"}
                 </button>
@@ -143,6 +151,23 @@ export default function MilestoneTimeline({
                     ))}
                   </ul>
                 )}
+              </div>
+            )}
+
+            {/* needs_baseline 引导：去 Claude Code 生成 baseline */}
+            {m.status === "needs_baseline" && !m.workspace && (
+              <div className="mt-3 border-t border-amber-200 dark:border-amber-800 pt-3">
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 p-3">
+                  <span className="text-amber-600 dark:text-amber-400 text-sm">⏳</span>
+                  <div>
+                    <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                      Baseline 待生成
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                      在 Claude Code 说「开始 {m.version}」，AI 会生成参考代码并回退核心逻辑供你练习。
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

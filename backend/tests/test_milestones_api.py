@@ -80,6 +80,11 @@ def test_generate_tasks_from_milestone():
     for task in data["data"]:
         assert task["milestone_id"] == mid
 
+    # 生成任务后，milestone 状态应变为 needs_baseline
+    resp = client.get(f"/api/projects/{pid}")
+    milestone = [m for m in resp.json()["data"]["milestones"] if m["id"] == mid][0]
+    assert milestone["status"] == "needs_baseline"
+
 
 def test_generate_tasks_idempotent():
     """第二次生成任务应返回已有任务，不重复创建（BUG 1 回归测试）。"""
@@ -105,3 +110,8 @@ def test_generate_tasks_idempotent():
     # 幂等：返回的任务 id 完全一致，未新建
     assert len(ids1) > 0
     assert ids1 == ids2
+
+    # 幂等：第二次调用不改变 milestone 状态（仍为 needs_baseline）
+    resp = client.get(f"/api/projects/{pid}")
+    milestone = [m for m in resp.json()["data"]["milestones"] if m["id"] == mid][0]
+    assert milestone["status"] == "needs_baseline"
