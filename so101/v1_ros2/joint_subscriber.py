@@ -17,45 +17,45 @@
 
 import math
 
-# TODO: 你来实现
-# 提示：
-# 1. import rclpy 和 Node
-# 2. import std_msgs.msg.Float64MultiArray
-# 3. 创建 JointSubscriber 类继承 Node
-# 4. 在 __init__ 中创建 subscription
-# 5. 实现 joint_callback 处理关节命令
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import Float64MultiArray
 
 
-class JointSubscriber:
+class JointSubscriber(Node):
     """订阅 /joint_commands 并打印关节角度。"""
 
     def __init__(self):
         # TODO: 你来实现
-        # 提示：
-        # 1. super().__init__("joint_subscriber")
-        # 2. self.subscription = self.create_subscription(
-        #        Float64MultiArray,
-        #        "joint_commands",
-        #        self.joint_callback,
-        #        10,
-        #    )
-        raise NotImplementedError("请实现 JointSubscriber.__init__")
+        super().__init__("joint_subscriber")
+        self.subscription = self.create_subscription(
+            Float64MultiArray,
+            "joint_commands",
+            self.joint_callback,
+            10,
+        )
 
-    def joint_callback(self, msg):
+    def joint_callback(self, msg: Float64MultiArray):
         """收到关节命令时的回调。"""
-        # TODO: 你来实现
-        # 提示：
-        # 1. 打印日志：收到关节命令
-        # 2. 转换为度数：degrees = [math.degrees(rad) for rad in msg.data]
-        # 3. 逐关节打印：关节 0: 30.0° | 关节 1: -30.0° | ...
-        raise NotImplementedError("请实现 joint_callback")
+        self.get_logger().info(f"收到关节命令: [{', '.join(f'{x:.3f}' for x in msg.data)}] rad")
+
+        degrees = [math.degrees(rad) for rad in msg.data]
+        for i, deg in enumerate(degrees):
+          print(f"关节 {i}: {deg:.1f}°", end=" | ")
+        print()  # 换行
 
 
 def main(args=None):
-    # TODO: 你来实现
-    # 提示：和 simple_subscriber.py 的 main 类似
-    raise NotImplementedError("请实现 main")
-
+    rclpy.init(args=args)
+    node = JointSubscriber()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():  # Ctrl+C 时 spin 已自动关闭 context，避免重复 shutdown
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

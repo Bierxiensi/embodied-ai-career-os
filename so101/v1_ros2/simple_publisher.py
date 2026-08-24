@@ -19,19 +19,20 @@
 # 3. 创建 Publisher 类继承 Node
 # 4. 在 __init__ 中创建 publisher 和 timer
 # 5. 实现 timer_callback 发布消息
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
 
-
-class SimplePublisher:
+class SimplePublisher(Node):
     """发布字符串消息到 /chatter topic。"""
 
     def __init__(self):
         # TODO: 你来实现
         # 提示：
-        # 1. super().__init__("talker")
-        # 2. self.publisher_ = self.create_publisher(...)
-        # 3. self.timer = self.create_timer(0.5, self.timer_callback)
-        # 4. self.count = 0
-        raise NotImplementedError("请实现 SimplePublisher.__init__")
+        super().__init__("talker") # 初始化节点
+        self.publisher_ = self.create_publisher(String, "chatter", 10) # 创建 publisher
+        self.timer = self.create_timer(0.5, self.timer_callback) # 创建定时器
+        self.count = 0 # 初始化计数器
 
     def timer_callback(self):
         # TODO: 你来实现
@@ -41,19 +42,32 @@ class SimplePublisher:
         # 3. 发布消息
         # 4. 打印日志
         # 5. self.count += 1
-        raise NotImplementedError("请实现 timer_callback")
-
+        msg = String()
+        msg.data = f"Hello ROS2: {self.count}"
+        self.publisher_.publish(msg)
+        self.get_logger().info(f"Publishing: '{msg.data}'")
+        self.count += 1
 
 def main(args=None):
     # TODO: 你来实现
     # 提示：
-    # 1. rclpy.init(args=args)
-    # 2. node = SimplePublisher()
-    # 3. rclpy.spin(node)
-    # 4. KeyboardInterrupt 处理
+    # 1. 初始化 ROS2 节点
+    # 2. 创建 SimplePublisher 实例
+    # 3. 运行节点
+    # 4. 处理 KeyboardInterrupt 异常
     # 5. 清理资源
-    raise NotImplementedError("请实现 main")
-
+    rclpy.init(args=args)
+    node = SimplePublisher()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        # 确保在 Ctrl+C 时关闭 context
+        if rclpy.ok():
+            # 关闭 context
+            rclpy.shutdown()    
 
 if __name__ == "__main__":
     main()

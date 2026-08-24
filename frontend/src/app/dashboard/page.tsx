@@ -1,13 +1,11 @@
 /** Dashboard 页面（Server Component）。
  *
- * Day6 闭环入口：Server Component 负责数据获取，Dashboard 组件纯展示。
- *
  * 数据流：
  *   page.tsx (server) → getDashboardData() → services → /api/* → FastAPI → PostgreSQL
  *   ↓
- *   Dashboard 组件渲染（含 GenerateTaskButton client component）
+ *   Dashboard 组件渲染（匹配 Ardot 设计稿）
  *   ↓
- *   点击生成任务 → POST /api/planner/generate → router.refresh() → 重新渲染
+ *   SubNav 点击生成任务 → POST /api/planner/generate → router.refresh() → 重新渲染
  *
  * 错误处理：后端不可用时展示降级提示，避免整页白屏。
  */
@@ -23,7 +21,7 @@ export default async function DashboardPage() {
     const data = await getDashboardData();
 
     return (
-      <main className="min-h-full bg-zinc-50 dark:bg-black">
+      <main className="min-h-full" style={{ background: "var(--color-canvas)" }}>
         <Dashboard
           career={data.career}
           skills={data.skills}
@@ -42,15 +40,29 @@ export default async function DashboardPage() {
         : "无法连接后端服务，请确认 FastAPI 已启动（localhost:8000）";
 
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-        <div className="max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center dark:border-red-900 dark:bg-zinc-950">
-          <h1 className="text-lg font-semibold text-red-600 dark:text-red-400">
+      <main
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: "var(--color-canvas)" }}
+      >
+        <div
+          className="max-w-md text-center"
+          style={{
+            padding: 32,
+            background: "var(--color-card)",
+            border: "1px solid var(--color-rose)",
+            borderRadius: "var(--radius-card-lg)",
+          }}
+        >
+          <h1
+            className="text-lg font-semibold"
+            style={{ color: "var(--color-rose-deep)" }}
+          >
             后端连接失败
           </h1>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm" style={{ color: "var(--color-ink-48)" }}>
             {message}
           </p>
-          <p className="mt-4 text-xs text-zinc-400 dark:text-zinc-600">
+          <p className="mt-4 text-xs" style={{ color: "var(--color-ink-48)" }}>
             请执行：cd backend &amp;&amp; uvicorn app.main:app --reload --port 8000
           </p>
         </div>

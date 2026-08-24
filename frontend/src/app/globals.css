@@ -1,8 +1,52 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════
+   Design Tokens (from Ardot canvas — 27 variables)
+   ═══════════════════════════════════════════════════════════ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colors */
+  --color-canvas: #F5F5F7;
+  --color-card: #FFFFFF;
+  --color-ink: #1D1D1F;
+  --color-ink-80: #3A3A3C;
+  --color-ink-48: #787880;
+  --color-hairline: #E0E0E0;
+  --color-hairline-soft: #E8E8ED;
+  --color-primary: #0066CC;
+  --color-primary-soft: #EAF3FC;
+  --color-emerald: #10B981;
+  --color-emerald-soft: #DDF4EA;
+  --color-amber: #F59E0B;
+  --color-amber-soft: #FEF3C7;
+  --color-rose: #F43F5E;
+  --color-sky: #0EA5E9;
+  --color-violet: #8B5CF6;
+  --color-navy: #1E3A5F;
+  --color-zinc-100: #F4F4F5;
+  --color-on-primary: #FFFFFF;
+
+  /* Semantic extensions */
+  --color-amber-deep: #B45309;
+  --color-emerald-deep: #047857;
+  --color-rose-deep: #B91C1C;
+  --color-ink-32: #52525B;
+  --color-ink-28: #71717A;
+
+  /* Radius */
+  --radius-card-lg: 18px;
+  --radius-item-md: 11px;
+  --radius-item-sm: 8px;
+  --radius-pill: 999px;
+
+  /* Spacing */
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Legacy tokens (kept for compatibility) */
+  --background: #F5F5F7;
+  --foreground: #1D1D1F;
 }
 
 @theme inline {
@@ -16,11 +60,26 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --color-canvas: #1A1A1C;
+    --color-card: #232325;
+    --color-ink: #F5F5F7;
+    --color-ink-80: #D1D1D6;
+    --color-ink-48: #9898A0;
+    --color-hairline: #38383A;
+    --color-hairline-soft: #2C2C2E;
+    --color-ink-32: #A1A1AA;
+    --color-ink-28: #9898A0;
+    --color-zinc-100: #2C2C2E;
+    --color-primary-soft: #0A2A4A;
+    --color-emerald-soft: #0A3A2A;
+    --color-amber-soft: #3A2A0A;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

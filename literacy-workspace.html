@@ -1,0 +1,743 @@
+<!-- 本工作台通过 WorkBuddy 资料库能力（library skill）搭建、存储和部署 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>宝宝识字启蒙台</title>
+<style>
+  :root{
+    --sky:#3BA7FF; --sky-d:#1E86E0;
+    --sun:#FFC93C; --sun-d:#E8A200;
+    --coral:#FF6B6B; --coral-d:#E23B3B;
+    --leaf:#4ECE8E; --leaf-d:#2FA86A;
+    --grape:#9B6BFF; --grape-d:#7A45E0;
+    --ink:#33303A; --muted:#8A8594;
+    --bg:#FFF7EC; --card:#FFFFFF; --line:#F0E6D6;
+    --radius:26px; --shadow:0 8px 24px rgba(255,170,80,.16);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#FFF7EC 0%,#FDEFFB 100%);
+    color:var(--ink); min-height:100vh; font-size:18px;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom));}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;}
+  .brand .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--sun),var(--coral));display:flex;align-items:center;justify-content:center;color:#fff;}
+  .sync{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);padding:6px 10px;border-radius:999px;}
+  .sync .dot{width:8px;height:8px;border-radius:50%;background:var(--leaf);}
+
+  /* ---------- Mode tabs ---------- */
+  .tabs{display:flex;gap:10px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .tab{flex:1;border:none;background:transparent;font-size:18px;font-weight:800;padding:12px;border-radius:999px;color:var(--muted);cursor:pointer;min-height:50px;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .tab.active{background:linear-gradient(135deg,var(--sky),var(--grape));color:#fff;box-shadow:0 6px 16px rgba(120,90,240,.3);}
+
+  .screen{display:none;}
+  .screen.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* ---------- Cards ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .card h2{margin:0 0 10px;font-size:19px;display:flex;align-items:center;gap:8px;}
+  .muted{color:var(--muted);}
+
+  /* ---------- Today / Agenda ---------- */
+  .agenda{background:linear-gradient(135deg,#FFF3D6,#FFE3F3);border:2px solid #FFD89B;}
+  .agenda .tag{display:inline-flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;color:var(--coral-d);margin-bottom:10px;}
+  .agenda .row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border-radius:16px;padding:10px 14px;margin-top:8px;}
+  .agenda .row.overdue{border:2px solid var(--coral);}
+  .agenda .row .label{font-weight:700;}
+  .agenda .row .sub{font-size:13px;color:var(--muted);}
+  .mini-btn{border:none;background:var(--coral);color:#fff;font-weight:800;border-radius:999px;padding:8px 14px;font-size:14px;min-height:40px;cursor:pointer;}
+
+  /* ---------- Flip cards ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-top:6px;}
+  .flip{perspective:900px;height:184px;cursor:pointer;}
+  .flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+  .flip.flipped .flip-inner{transform:rotateY(180deg);}
+  .face{position:absolute;inset:0;backface-visibility:hidden;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;border:2px solid var(--line);background:#fff;box-shadow:var(--shadow);}
+  .face.front{background:linear-gradient(160deg,#EAF6FF,#F3ECFF);}
+  .face.back{transform:rotateY(180deg);background:linear-gradient(160deg,#FFF6E6,#FFEAF4);}
+  .picto{width:96px;height:96px;color:var(--sky-d);}
+  .bigchar{font-size:64px;font-weight:900;line-height:1;color:var(--ink);}
+  .py{font-size:18px;color:var(--grape-d);font-weight:800;margin-top:6px;}
+  .mean{font-size:15px;color:var(--muted);margin-top:4px;}
+  .ex{font-size:15px;color:var(--leaf-d);font-weight:800;margin-top:6px;}
+  .learned-badge{position:absolute;top:8px;right:8px;background:var(--leaf);color:#fff;border-radius:999px;font-size:12px;padding:3px 8px;font-weight:800;}
+  .learn-btn{margin-top:12px;width:100%;border:none;border-radius:16px;background:linear-gradient(135deg,var(--leaf),var(--sky));color:#fff;font-weight:800;font-size:17px;min-height:50px;cursor:pointer;}
+
+  /* ---------- Big action buttons ---------- */
+  .action{display:flex;gap:12px;flex-wrap:wrap;}
+  .big-btn{flex:1;min-width:150px;border:none;border-radius:22px;padding:18px;font-size:19px;font-weight:800;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:108px;justify-content:center;box-shadow:var(--shadow);}
+  .big-btn.k1{background:linear-gradient(135deg,var(--sun),var(--coral));}
+  .big-btn.k2{background:linear-gradient(135deg,var(--grape),var(--sky));}
+  .big-btn.k3{background:linear-gradient(135deg,var(--leaf),var(--sky));}
+  .big-btn svg{width:40px;height:40px;}
+
+  /* ---------- Level / points ---------- */
+  .level-box{display:flex;align-items:center;gap:14px;}
+  .level-num{font-size:40px;font-weight:900;color:var(--grape-d);}
+  .bar{flex:1;height:20px;background:#FFE9D6;border-radius:999px;overflow:hidden;}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--sun),var(--coral));border-radius:999px;transition:width .4s;}
+  .pts{font-size:30px;font-weight:900;color:var(--coral-d);}
+
+  /* ---------- Rewards ---------- */
+  .reward{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FFF7FB;border:2px solid #FFD6EC;border-radius:18px;padding:12px 14px;margin-top:10px;}
+  .reward .nm{font-weight:800;font-size:17px;}
+  .reward .cost{color:var(--grape-d);font-weight:800;}
+  .reward .req{border:none;background:var(--grape);color:#fff;border-radius:999px;padding:10px 16px;font-weight:800;min-height:46px;cursor:pointer;}
+  .reward .req:disabled{background:#D9CFEF;cursor:not-allowed;}
+
+  /* ---------- Modal ---------- */
+  .mask{position:fixed;inset:0;background:rgba(40,30,60,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:50;}
+  .mask.show{display:flex;}
+  .modal{background:#fff;border-radius:24px;padding:22px;width:100%;max-width:440px;max-height:88vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal h3{margin:0 0 14px;font-size:21px;display:flex;align-items:center;gap:8px;}
+  .modal .close{float:right;border:none;background:#F2EEF7;color:var(--muted);width:38px;height:38px;border-radius:50%;font-size:20px;cursor:pointer;}
+  label{display:block;font-weight:700;margin:12px 0 6px;font-size:15px;}
+  input,select,textarea{width:100%;padding:14px;font-size:17px;border:2px solid var(--line);border-radius:14px;font-family:inherit;background:#FFFDF9;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sky);}
+  .btn{border:none;border-radius:14px;padding:14px 18px;font-size:17px;font-weight:800;cursor:pointer;min-height:50px;}
+  .btn.primary{background:linear-gradient(135deg,var(--sky),var(--grape));color:#fff;width:100%;margin-top:8px;}
+  .btn.ghost{background:#F2EEF7;color:var(--ink);width:100%;margin-top:8px;}
+  .btn.danger{background:#FFE3E3;color:var(--coral-d);width:100%;margin-top:8px;}
+
+  /* ---------- Parent ---------- */
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .stat{background:#F7F4FF;border:1px solid #E9E1FB;border-radius:16px;padding:14px;text-align:center;}
+  .stat .v{font-size:28px;font-weight:900;color:var(--grape-d);}
+  .stat .l{font-size:13px;color:var(--muted);margin-top:4px;}
+  .list-item{background:#FAFAFF;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:10px;}
+  .pw-input{letter-spacing:14px;text-align:center;font-size:26px;font-weight:800;}
+  .redempt{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#FFF7F0;border:2px solid #FFD9B0;border-radius:16px;padding:12px 14px;margin-top:10px;}
+  .redempt .ap{display:flex;gap:8px;}
+  .redempt .ap .ok{border:none;background:var(--leaf);color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;min-height:44px;}
+  .redempt .ap .no{border:none;background:#FFE0E0;color:var(--coral-d);border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;min-height:44px;}
+
+  .toast{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-weight:700;font-size:15px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:99;max-width:90%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  .foot-note{text-align:center;font-size:12px;color:var(--muted);margin-top:18px;line-height:1.6;}
+
+  @media (max-width:560px){
+    body{font-size:17px;}
+    .wrap{padding:14px 12px calc(92px + env(safe-area-inset-bottom));}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;}
+    .flip{height:170px;}
+    .bigchar{font-size:54px;}
+    .stat-row{grid-template-columns:repeat(3,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V7a2 2 0 0 1 2-2h9l5 5v9a0 0 0 0 1 0 0H6a2 2 0 0 1-2-2Z"/><path d="M14 5v5h5"/><path d="M8 13h7M8 16h5"/></svg>
+      </span>
+      <span>宝宝识字启蒙台</span>
+    </div>
+    <div class="sync"><span class="dot"></span><span id="syncText">已托管·本机保存</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabChild" onclick="switchMode('child')">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      宝贝学字
+    </button>
+    <button class="tab" id="tabParent" onclick="switchMode('parent')">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6Z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
+      家长
+    </button>
+  </div>
+
+  <!-- ================= CHILD MODE ================= -->
+  <div class="screen active" id="screenChild">
+
+    <div class="card agenda" id="agendaCard"></div>
+
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--sun-d)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        今天的象形字（点卡片翻一翻）
+      </h2>
+      <div class="grid" id="todayGrid"></div>
+    </div>
+
+    <div class="action" style="margin-bottom:16px;">
+      <button class="big-btn k1" onclick="startPractice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M6 15l3-7 3 5 2-3 4 5"/></svg>
+        组词游戏
+      </button>
+      <button class="big-btn k2" onclick="openRewards()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+        我的奖励
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--grape-d)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5Z"/></svg>
+        闯关积分
+      </h2>
+      <div class="level-box">
+        <div style="text-align:center;">
+          <div class="level-num" id="levelNum">1</div>
+          <div class="muted" style="font-size:12px;">关卡</div>
+        </div>
+        <div style="flex:1;">
+          <div class="bar"><i id="levelBar" style="width:0%"></i></div>
+          <div class="muted" style="font-size:13px;margin-top:6px;" id="levelHint">再攒 50 分升下一级</div>
+        </div>
+        <div style="text-align:center;">
+          <div class="pts" id="ptsNum">0</div>
+          <div class="muted" style="font-size:12px;">积分</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot-note">每天认 5 个象形字，翻卡片、玩游戏、攒积分换奖励～<br>数据保存在本设备，可让家长导出备份。</div>
+  </div>
+
+  <!-- ================= PARENT MODE ================= -->
+  <div class="screen" id="screenParent">
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--grape-d)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        学习统计
+      </h2>
+      <div class="stat-row">
+        <div class="stat"><div class="v" id="stLearned">0</div><div class="l">已学字</div></div>
+        <div class="stat"><div class="v" id="stPoints">0</div><div class="l">总积分</div></div>
+        <div class="stat"><div class="v" id="stStreak">0</div><div class="l">连续天数</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--sky-d)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v8M8 12h8"/><circle cx="12" cy="12" r="9"/></svg>
+        基础设置
+      </h2>
+      <label>宝贝称呼</label>
+      <input id="setName" maxlength="8" />
+      <label>每天学几个字</label>
+      <input id="setDaily" type="number" min="1" max="20" />
+      <label>家长密码（4 位数字）</label>
+      <input id="setPw" type="number" maxlength="4" inputmode="numeric" placeholder="4 位数字" />
+      <button class="btn primary" onclick="saveSettings()">保存设置</button>
+    </div>
+
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--leaf-d)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        字卡库（<span id="wordCount">0</span> 字）
+      </h2>
+      <div id="wordList"></div>
+      <button class="btn ghost" onclick="openAddWord()">＋ 添加新字</button>
+    </div>
+
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--coral-d)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5Z"/></svg>
+        奖励管理
+      </h2>
+      <div id="rewardList"></div>
+      <button class="btn ghost" onclick="openAddReward()">＋ 添加奖励</button>
+    </div>
+
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--grape-d)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+        兑换审批
+      </h2>
+      <div id="redemptList"></div>
+    </div>
+
+    <div class="card">
+      <h2>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 21h16"/></svg>
+        数据备份
+      </h2>
+      <button class="btn ghost" onclick="exportData()">导出 JSON 备份</button>
+      <button class="btn ghost" onclick="importData()">导入恢复</button>
+      <button class="btn danger" onclick="confirmClear()">清空全部数据</button>
+    </div>
+
+    <div class="foot-note">链接公开可访问，页面不预填真实隐私数据；密码仅防误触，非真加密。</div>
+  </div>
+
+</div>
+
+<!-- ===== Modals ===== -->
+<div class="mask" id="maskPw">
+  <div class="modal">
+    <h3><button class="close" onclick="closeMask('maskPw')">×</button>家长验证</h3>
+    <p class="muted" style="margin:0 0 6px;">请输入 4 位家长密码</p>
+    <input class="pw-input" id="pwInput" type="password" maxlength="4" inputmode="numeric" placeholder="••••" />
+    <div id="pwErr" style="color:var(--coral-d);font-size:14px;min-height:20px;margin-top:8px;"></div>
+    <button class="btn primary" onclick="checkPw()">进入家长模式</button>
+  </div>
+</div>
+
+<div class="mask" id="maskReward">
+  <div class="modal">
+    <h3><button class="close" onclick="closeMask('maskReward')">×</button>我的奖励</h3>
+    <div id="rewardBox"></div>
+  </div>
+</div>
+
+<div class="mask" id="maskPractice">
+  <div class="modal">
+    <h3><button class="close" onclick="closeMask('maskPractice')">×</button>组词游戏</h3>
+    <div id="practiceBox"></div>
+  </div>
+</div>
+
+<div class="mask" id="maskAddWord">
+  <div class="modal">
+    <h3><button class="close" onclick="closeMask('maskAddWord')">×</button>添加新字</h3>
+    <label>汉字</label><input id="awChar" maxlength="2" placeholder="如：花" />
+    <label>拼音</label><input id="awPy" maxlength="8" placeholder="如：huā" />
+    <label>意思</label><input id="awMean" maxlength="10" placeholder="如：花朵" />
+    <label>组词（用空格分开，至少 1 个）</label><input id="awWords" placeholder="如：花朵 花草 花园" />
+    <button class="btn primary" onclick="addWord()">添加</button>
+  </div>
+</div>
+
+<div class="mask" id="maskAddReward">
+  <div class="modal">
+    <h3><button class="close" onclick="closeMask('maskAddReward')">×</button>添加奖励</h3>
+    <label>奖励名称</label><input id="arName" maxlength="12" placeholder="如：看一集动画片" />
+    <label>需要多少积分</label><input id="arCost" type="number" min="1" placeholder="如：30" />
+    <button class="btn primary" onclick="addReward()">添加</button>
+  </div>
+</div>
+
+<div class="mask" id="maskImport">
+  <div class="modal">
+    <h3><button class="close" onclick="closeMask('maskImport')">×</button>导入恢复</h3>
+    <p class="muted">粘贴之前导出的 JSON 备份内容：</p>
+    <textarea id="importText" rows="8" style="width:100%;"></textarea>
+    <button class="btn primary" onclick="doImport()">恢复数据</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== 象形字库（手绘 SVG） ===================== */
+const PICTO = {
+  ri:'<circle cx="60" cy="60" r="38" fill="#FFC93C" stroke="#E8A200" stroke-width="4"/><circle cx="60" cy="60" r="9" fill="#E8A200"/>',
+  yue:'<path d="M78 28 A36 36 0 1 0 78 92 A28 28 0 1 1 78 28 Z" fill="#FFE08A" stroke="#E0A800" stroke-width="4"/>',
+  shan:'<path d="M18 96 L46 44 L66 82 L82 54 L102 96 Z" fill="#9BD0A0" stroke="#4E9E5F" stroke-width="4" stroke-linejoin="round"/>',
+  shui:'<path d="M22 45 q15 -14 30 0 t30 0" fill="none" stroke="#3BA7FF" stroke-width="5" stroke-linecap="round"/><path d="M22 65 q15 -14 30 0 t30 0" fill="none" stroke="#3BA7FF" stroke-width="5" stroke-linecap="round"/><path d="M22 85 q15 -14 30 0 t30 0" fill="none" stroke="#3BA7FF" stroke-width="5" stroke-linecap="round"/>',
+  huo:'<path d="M60 24 C45 45 40 56 49 70 C41 68 36 78 43 86 C51 96 70 96 78 86 C84 76 78 68 70 70 C80 54 73 44 60 24 Z" fill="#FF6B6B" stroke="#E23B3B" stroke-width="3"/>',
+  mu:'<path d="M60 102 L60 56" stroke="#9B6B3F" stroke-width="7" stroke-linecap="round"/><path d="M60 60 L34 34 M60 60 L86 34 M60 76 L40 56 M60 76 L80 56" stroke="#4ECE8E" stroke-width="6" stroke-linecap="round"/><path d="M60 102 L46 82 M60 102 L74 82" stroke="#9B6B3F" stroke-width="5" stroke-linecap="round"/>',
+  ren:'<circle cx="60" cy="32" r="11" fill="#FF9F43"/><path d="M60 46 L60 82 M60 56 L40 96 M60 56 L80 96" stroke="#FF9F43" stroke-width="7" stroke-linecap="round" fill="none"/>',
+  kou:'<ellipse cx="60" cy="62" rx="36" ry="27" fill="#FF9B9B" stroke="#E25555" stroke-width="4"/>',
+  mu2:'<path d="M22 60 Q60 30 98 60 Q60 90 22 60 Z" fill="#fff" stroke="#5B8C6E" stroke-width="4"/><circle cx="60" cy="60" r="11" fill="#5B8C6E"/>',
+  tian:'<rect x="28" y="28" width="64" height="64" rx="6" fill="#FBE7B2" stroke="#C9A24B" stroke-width="4"/><line x1="60" y1="28" x2="60" y2="92" stroke="#C9A24B" stroke-width="4"/><line x1="28" y1="60" x2="92" y2="60" stroke="#C9A24B" stroke-width="4"/>',
+  yu:'<path d="M34 56 Q24 56 25 68 Q25 80 42 80 L80 80 Q95 80 95 67 Q95 55 82 56 Q80 40 62 43 Q45 43 42 56 Z" fill="#CFE8FF" stroke="#7FB8E6" stroke-width="3"/>',
+  chuan:'<path d="M40 22 q-9 22 0 42 q9 22 0 42" fill="none" stroke="#3BA7FF" stroke-width="5" stroke-linecap="round"/><path d="M62 22 q-9 22 0 42 q9 22 0 42" fill="none" stroke="#3BA7FF" stroke-width="5" stroke-linecap="round"/><path d="M84 22 q-9 22 0 42 q9 22 0 42" fill="none" stroke="#3BA7FF" stroke-width="5" stroke-linecap="round"/>',
+  shi:'<path d="M30 82 L40 50 L70 42 L92 62 L84 90 L40 94 Z" fill="#B8C0CC" stroke="#7A8696" stroke-width="4" stroke-linejoin="round"/>',
+  tu:'<path d="M18 90 L102 90" stroke="#8B5E3C" stroke-width="5" stroke-linecap="round"/><path d="M60 90 L60 54 M60 66 L45 50 M60 66 L75 50" stroke="#4ECE8E" stroke-width="5" stroke-linecap="round"/>',
+  niao:'<path d="M30 70 Q40 44 66 50 Q82 52 90 42 Q94 56 80 62 Q90 70 78 73 Q70 86 54 79 Q40 81 35 70 Z" fill="#FFD27A" stroke="#E0A040" stroke-width="3"/><circle cx="72" cy="52" r="3" fill="#5a3b10"/>',
+  yu2:'<path d="M30 60 Q55 34 86 60 Q55 86 30 60 Z" fill="#7AD0E0" stroke="#3BA0B8" stroke-width="3"/><path d="M30 60 L14 47 L14 73 Z" fill="#7AD0E0" stroke="#3BA0B8" stroke-width="3"/><circle cx="72" cy="58" r="3.5" fill="#3BA0B8"/>',
+  men:'<rect x="30" y="28" width="24" height="74" rx="3" fill="#F0C9A0" stroke="#B98A5A" stroke-width="3"/><rect x="66" y="28" width="24" height="74" rx="3" fill="#F0C9A0" stroke="#B98A5A" stroke-width="3"/>',
+  zhou:'<path d="M24 72 L96 72 L82 92 L38 92 Z" fill="#C9A06A" stroke="#8B6334" stroke-width="3"/><line x1="60" y1="72" x2="60" y2="34" stroke="#8B6334" stroke-width="4"/><path d="M60 38 L86 66 L60 66 Z" fill="#FF9F43" stroke="#E07b1f" stroke-width="2"/>',
+  che:'<circle cx="42" cy="82" r="13" fill="#fff" stroke="#8B6334" stroke-width="4"/><circle cx="82" cy="82" r="13" fill="#fff" stroke="#8B6334" stroke-width="4"/><path d="M30 78 L54 50 L90 50 L96 78 Z" fill="#9B6BFF" stroke="#7A45E0" stroke-width="3"/>',
+  yun:'<path d="M36 76 Q20 76 22 62 Q22 50 40 52 Q46 36 62 42 Q78 36 82 54 Q98 54 95 70 Q98 80 82 80 Z" fill="#E8F1FF" stroke="#9DBBE0" stroke-width="3"/>',
+  xing:'<path d="M60 24 L70 52 L98 52 L75 70 L84 98 L60 80 L36 98 L45 70 L22 52 L50 52 Z" fill="#FFC93C" stroke="#E8A200" stroke-width="3" stroke-linejoin="round"/>',
+  zhu:'<path d="M48 100 L48 36 M48 50 L36 40 M48 60 L34 52 M48 70 L36 64 M72 100 L72 36 M72 50 L84 40 M72 62 L86 54" stroke="#4ECE8E" stroke-width="5" stroke-linecap="round" fill="none"/>',
+  he:'<path d="M60 100 L60 40" stroke="#4ECE8E" stroke-width="5" stroke-linecap="round"/><path d="M60 46 Q48 30 38 34 M60 46 Q72 30 82 34 M60 58 Q50 46 42 50 M60 58 Q70 46 78 50" stroke="#4ECE8E" stroke-width="4" fill="none" stroke-linecap="round"/>',
+  guo:'<path d="M60 100 L60 56" stroke="#9B6B3F" stroke-width="5" stroke-linecap="round"/><path d="M60 60 L40 40 M60 60 L80 40" stroke="#4ECE8E" stroke-width="5" stroke-linecap="round"/><circle cx="44" cy="38" r="8" fill="#FF6B6B"/><circle cx="78" cy="40" r="8" fill="#FF6B6B"/><circle cx="60" cy="50" r="8" fill="#FF6B6B"/>',
+  xin:'<path d="M60 92 C18 62 30 30 50 36 C58 38 60 46 60 50 C60 46 62 38 70 36 C90 30 102 62 60 92 Z" fill="#FF6B8A" stroke="#E23B5B" stroke-width="3"/>'
+};
+
+const DEFAULT_WORDS = [
+  {id:'w_ri',char:'日',py:'rì',mean:'太阳',words:['日月','日子','日出'],pic:'ri'},
+  {id:'w_yue',char:'月',py:'yuè',mean:'月亮',words:['月亮','月儿','月光'],pic:'yue'},
+  {id:'w_shan',char:'山',py:'shān',mean:'山',words:['大山','火山','上山'],pic:'shan'},
+  {id:'w_shui',char:'水',py:'shuǐ',mean:'水',words:['喝水','河水','水果'],pic:'shui'},
+  {id:'w_huo',char:'火',py:'huǒ',mean:'火',words:['火车','火山','火苗'],pic:'huo'},
+  {id:'w_mu',char:'木',py:'mù',mean:'树木',words:['木马','木头','树木'],pic:'mu'},
+  {id:'w_ren',char:'人',py:'rén',mean:'人',words:['大人','小人','人口'],pic:'ren'},
+  {id:'w_kou',char:'口',py:'kǒu',mean:'嘴巴',words:['门口','开口','口红'],pic:'kou'},
+  {id:'w_mu2',char:'目',py:'mù',mean:'眼睛',words:['耳目','目光','目送'],pic:'mu2'},
+  {id:'w_tian',char:'田',py:'tián',mean:'田地',words:['田地','田园','水田'],pic:'tian'},
+  {id:'w_yu',char:'雨',py:'yǔ',mean:'雨',words:['下雨','雨水','雨天'],pic:'yu'},
+  {id:'w_chuan',char:'川',py:'chuān',mean:'河流',words:['山川','河川','平川'],pic:'chuan'},
+  {id:'w_shi',char:'石',py:'shí',mean:'石头',words:['石头','石子','宝石'],pic:'shi'},
+  {id:'w_tu',char:'土',py:'tǔ',mean:'泥土',words:['土地','泥土','土豆'],pic:'tu'},
+  {id:'w_niao',char:'鸟',py:'niǎo',mean:'小鸟',words:['小鸟','鸟儿','飞鸟'],pic:'niao'},
+  {id:'w_yu2',char:'鱼',py:'yú',mean:'鱼',words:['小鱼','金鱼','鱼儿'],pic:'yu2'},
+  {id:'w_men',char:'门',py:'mén',mean:'门',words:['大门','门口','开门'],pic:'men'},
+  {id:'w_zhou',char:'舟',py:'zhōu',mean:'小船',words:['小舟','轻舟','舟车'],pic:'zhou'},
+  {id:'w_che',char:'车',py:'chē',mean:'车',words:['火车','汽车','小车'],pic:'che'},
+  {id:'w_yun',char:'云',py:'yún',mean:'云',words:['白云','云朵','乌云'],pic:'yun'},
+  {id:'w_xing',char:'星',py:'xīng',mean:'星星',words:['星星','星空','星光'],pic:'xing'},
+  {id:'w_zhu',char:'竹',py:'zhú',mean:'竹子',words:['竹子','竹叶','竹林'],pic:'zhu'},
+  {id:'w_he',char:'禾',py:'hé',mean:'禾苗',words:['禾苗','禾田','禾谷'],pic:'he'},
+  {id:'w_guo',char:'果',py:'guǒ',mean:'水果',words:['水果','果实','苹果'],pic:'guo'},
+  {id:'w_xin',char:'心',py:'xīn',mean:'心',words:['开心','小心','爱心'],pic:'xin'}
+];
+
+const DEFAULT_REWARDS = [
+  {id:'r1',name:'看一集动画片',cost:30},
+  {id:'r2',name:'去公园玩',cost:50},
+  {id:'r3',name:'买一个小玩具',cost:100}
+];
+
+/* ===================== 状态管理 ===================== */
+const KEY='wb_literacy_v1';
+let S=null;
+function load(){
+  try{S=JSON.parse(localStorage.getItem(KEY));}catch(e){S=null;}
+  if(!S||!S.init){
+    S={
+      init:true,
+      words:DEFAULT_WORDS.slice(),
+      rewards:DEFAULT_REWARDS.slice(),
+      learned:{},          // id -> isoDate
+      points:0,
+      assignments:{},      // dateStr -> [ids]
+      redemptions:[],      // {id,rewardId,name,cost,status,date}
+      settings:{dailyCount:5,childName:'宝贝',password:'1234'}
+    };
+    save();
+  }
+  if(!S.settings)S.settings={dailyCount:5,childName:'宝贝',password:'1234'};
+  if(!S.rewards)S.rewards=DEFAULT_REWARDS.slice();
+  if(!S.words)S.words=DEFAULT_WORDS.slice();
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(S));}
+function dateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayStr(){return dateStr(new Date());}
+function wordById(id){return S.words.find(w=>w.id===id);}
+
+/* ===================== 今日 / 待补 计算 ===================== */
+function ensureToday(){
+  const t=todayStr();
+  if(!S.assignments[t]){
+    const used=new Set();
+    Object.values(S.assignments).forEach(arr=>arr.forEach(id=>used.add(id)));
+    const learnedIds=new Set(Object.keys(S.learned));
+    const pool=S.words.filter(w=>!used.has(w.id)&&!learnedIds.has(w.id)).map(w=>w.id);
+    S.assignments[t]=pool.slice(0,S.settings.dailyCount);
+    save();
+  }
+}
+function getAgenda(){
+  ensureToday();
+  const t=todayStr();
+  const overdue=[];
+  Object.keys(S.assignments).forEach(d=>{
+    if(d<t){
+      S.assignments[d].forEach(id=>{
+        if(!S.learned[id]){
+          const w=wordById(id);
+          if(w)overdue.push({w,d});
+        }
+      });
+    }
+  });
+  const today=(S.assignments[t]||[]).map(wordById).filter(Boolean);
+  const todayLearned=today.filter(w=>S.learned[w.id]).length;
+  return {overdue,today,todayLearned};
+}
+
+/* ===================== 渲染：孩子模式 ===================== */
+function renderChild(){
+  const {overdue,today,todayLearned}=getAgenda();
+  const card=document.getElementById('agendaCard');
+  let html='<span class="tag">✦ 今天要处理</span>';
+  if(overdue.length){
+    html+='<div class="row overdue"><div><div class="label">有 '+overdue.length+' 个字还没学会</div><div class="sub">昨天的字先补上吧！</div></div><button class="mini-btn" onclick="jumpToOverdue()">去补学</button></div>';
+  }
+  html+='<div class="row"><div><div class="label">今天学 '+today.length+' 个字</div><div class="sub">已学会 '+todayLearned+' / '+today.length+'</div></div><div style="font-size:26px;">'+(todayLearned>=today.length?'🎉':'✏️')+'</div></div>';
+  card.innerHTML=html;
+
+  const grid=document.getElementById('todayGrid');
+  grid.innerHTML='';
+  today.forEach(w=>{
+    const isL=!!S.learned[w.id];
+    const div=document.createElement('div');
+    div.className='flip'+(isL?'':'');
+    div.setAttribute('onclick','flipCard(this)');
+    div.innerHTML=
+      '<div class="flip-inner">'+
+        '<div class="face front">'+(isL?'<div class="learned-badge">会了</div>':'')+
+          '<svg class="picto" viewBox="0 0 120 120">'+(PICTO[w.pic]||'')+'</svg>'+
+          '<div class="bigchar" style="font-size:34px;color:var(--grape-d);margin-top:4px;">'+w.char+'</div>'+
+        '</div>'+
+        '<div class="face back">'+
+          '<div class="bigchar">'+w.char+'</div>'+
+          '<div class="py">'+w.py+'</div>'+
+          '<div class="mean">'+w.mean+'</div>'+
+          '<div class="ex">例：'+w.words[0]+'</div>'+
+        '</div>'+
+      '</div>'+
+      (isL?'':'<button class="learn-btn" onclick="event.stopPropagation();markLearned(\''+w.id+'\')">我学会了 +10</button>');
+    grid.appendChild(div);
+  });
+
+  const lvl=Math.floor(S.points/50)+1;
+  const prog=S.points%50;
+  document.getElementById('levelNum').textContent=lvl;
+  document.getElementById('levelBar').style.width=(prog/50*100)+'%';
+  document.getElementById('ptsNum').textContent=S.points;
+  document.getElementById('levelHint').textContent='再攒 '+(50-prog)+' 分升下一级';
+}
+function flipCard(el){el.classList.toggle('flipped');}
+function markLearned(id){
+  if(S.learned[id])return;
+  S.learned[id]=new Date().toISOString();
+  S.points+=10;save();renderChild();
+  toast('太棒了！+10 积分 🌟');
+}
+function jumpToOverdue(){
+  document.getElementById('agendaCard').scrollIntoView({behavior:'smooth'});
+  toast('把下面的字卡翻一翻，点「我学会了」就能补学哦');
+}
+
+/* ===================== 组词游戏 ===================== */
+let pq=null;
+function startPractice(){
+  ensureToday();
+  const learnedIds=Object.keys(S.learned);
+  const cand=S.words.filter(w=>learnedIds.includes(w.id)&&w.words&&w.words[0]&&w.words[0].length>=2);
+  if(cand.length===0){
+    openMask('maskPractice');
+    document.getElementById('practiceBox').innerHTML='<p class="muted">先学会几个字，再来玩组词游戏吧！翻一翻上面的卡片，点「我学会了」。</p>';
+    return;
+  }
+  const w=cand[Math.floor(Math.random()*cand.length)];
+  const word2=w.words[0];
+  const friend=word2[1];
+  const others=new Set();
+  S.words.forEach(o=>{if(o.id!==w.id&&o.words&&o.words[0]&&o.words[0].length>=2)others.add(o.words[0][1]);});
+  let opts=[friend];
+  const arr=[...others];
+  while(opts.length<3&&arr.length){opts.push(arr.splice(Math.floor(Math.random()*arr.length),1)[0]);}
+  // fallback distractors from chars
+  while(opts.length<3)opts.push('字');
+  opts=opts.sort(()=>Math.random()-0.5);
+  pq={char:w.char,friend,opts,correct:false};
+  openMask('maskPractice');
+  renderPractice();
+}
+function renderPractice(){
+  const b=document.getElementById('practiceBox');
+  if(!pq){b.innerHTML='';return;}
+  if(pq.done){
+    b.innerHTML='<div style="text-align:center;padding:10px 0;">'+
+      (pq.win?'<div style="font-size:56px;">🎉</div><p style="font-weight:800;font-size:20px;color:var(--leaf-d);">答对啦！+5 积分</p>':'<div style="font-size:56px;">💪</div><p style="font-weight:800;font-size:20px;color:var(--coral-d);">再试一次就好！</p>')+
+      '<p class="muted">「'+pq.char+'」和「'+pq.friend+'」是好朋友，组成「'+pq.char+pq.friend+'」。</p>'+
+      '<button class="btn primary" onclick="startPractice()">再来一题</button>'+
+      '<button class="btn ghost" onclick="closeMask(\'maskPractice\')">关闭</button></div>';
+    return;
+  }
+  b.innerHTML='<p style="font-weight:800;font-size:18px;text-align:center;">哪个字能和「<span style="color:var(--grape-d);font-size:24px;">'+pq.char+'</span>」做朋友？</p>'+
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:14px;">'+
+    pq.opts.map((o,i)=>'<button class="big-btn k3" style="min-width:90px;min-height:90px;font-size:40px;" onclick="answerPractice(\''+o+'\')">'+o+'</button>').join('')+
+    '</div>'+
+    '<p class="muted" style="text-align:center;margin-top:14px;">点一个字，看看能不能组成词～</p>';
+}
+function answerPractice(ch){
+  pq.done=true;pq.win=(ch===pq.friend);
+  if(pq.win){S.points+=5;save();renderChild();}
+  renderPractice();
+}
+
+/* ===================== 奖励 ===================== */
+function openRewards(){
+  openMask('maskReward');
+  renderRewards();
+}
+function renderRewards(){
+  const box=document.getElementById('rewardBox');
+  let html='<div style="text-align:center;margin-bottom:8px;"><div class="pts" style="font-size:34px;">'+S.points+'</div><div class="muted">我的积分</div></div>';
+  if(S.rewards.length===0){html+='<p class="muted">家长还没有设置奖励哦，请家长去「奖励管理」添加。</p>';}
+  S.rewards.forEach(r=>{
+    const can=S.points>=r.cost;
+    const pending=S.redemptions.some(x=>x.rewardId===r.id&&x.status==='pending');
+    html+='<div class="reward"><div><div class="nm">'+r.name+'</div><div class="cost">'+r.cost+' 分</div></div>'+
+      (pending?'<button class="req" disabled>已申请</button>':
+       '<button class="req" '+(can?'':'disabled')+' onclick="requestReward(\''+r.id+'\')">'+(can?'兑换':'分不够')+'</button>')+'</div>';
+  });
+  box.innerHTML=html;
+}
+function requestReward(rid){
+  const r=S.rewards.find(x=>x.id===rid);if(!r)return;
+  if(S.points<r.cost){toast('积分还不够，继续加油！');return;}
+  S.redemptions.push({id:'rd'+Date.now(),rewardId:rid,name:r.name,cost:r.cost,status:'pending',date:new Date().toISOString()});
+  save();renderRewards();
+  toast('已告诉爸爸妈妈啦！等家长同意后就能兑换 🎁');
+}
+
+/* ===================== 家长模式 ===================== */
+let parentOk=false;
+function switchMode(m){
+  if(m==='parent'&&!parentOk){
+    document.getElementById('pwInput').value='';
+    document.getElementById('pwErr').textContent='';
+    openMask('maskPw');
+    return;
+  }
+  document.getElementById('tabChild').classList.toggle('active',m==='child');
+  document.getElementById('tabParent').classList.toggle('active',m==='parent');
+  document.getElementById('screenChild').classList.toggle('active',m==='child');
+  document.getElementById('screenParent').classList.toggle('active',m==='parent');
+  if(m==='parent')renderParent();
+}
+function checkPw(){
+  const v=document.getElementById('pwInput').value;
+  if(v===S.settings.password){
+    parentOk=true;closeMask('maskPw');switchMode('parent');
+  }else{
+    document.getElementById('pwErr').textContent='密码不对，再试一次（默认 1234）';
+  }
+}
+function renderParent(){
+  const learnedCount=Object.keys(S.learned).length;
+  document.getElementById('stLearned').textContent=learnedCount;
+  document.getElementById('stPoints').textContent=S.points;
+  document.getElementById('stStreak').textContent=computeStreak();
+  document.getElementById('setName').value=S.settings.childName;
+  document.getElementById('setDaily').value=S.settings.dailyCount;
+  document.getElementById('setPw').value='';
+  // word list
+  const wl=document.getElementById('wordList');
+  document.getElementById('wordCount').textContent=S.words.length;
+  wl.innerHTML=S.words.map(w=>'<div class="list-item" style="display:flex;align-items:center;gap:10px;">'+
+    '<svg class="picto" style="width:44px;height:44px;" viewBox="0 0 120 120">'+(PICTO[w.pic]||'')+'</svg>'+
+    '<div style="flex:1;"><b style="font-size:18px;">'+w.char+'</b> <span class="muted">'+w.py+' · '+w.mean+'</span><br><span class="muted" style="font-size:13px;">'+w.words.join('、')+'</span></div>'+
+    '<button class="mini-btn" style="background:#FFE0E0;color:var(--coral-d);" onclick="delWord(\''+w.id+'\')">删</button></div>').join('');
+  // rewards
+  const rl=document.getElementById('rewardList');
+  rl.innerHTML=S.rewards.map(r=>'<div class="list-item" style="display:flex;align-items:center;justify-content:space-between;">'+
+    '<span><b>'+r.name+'</b> <span class="muted">'+r.cost+'分</span></span>'+
+    '<button class="mini-btn" style="background:#FFE0E0;color:var(--coral-d);" onclick="delReward(\''+r.id+'\')">删</button></div>').join('');
+  // redemptions
+  const rd=document.getElementById('redemptList');
+  const pending=S.redemptions.filter(x=>x.status==='pending');
+  if(pending.length===0){rd.innerHTML='<p class="muted">暂无待审批的兑换申请。</p>';}
+  else{
+    rd.innerHTML=pending.map(x=>'<div class="redempt"><div><b>'+x.name+'</b><div class="muted" style="font-size:13px;">'+x.cost+' 分 · '+dateStr(new Date(x.date))+'</div></div>'+
+      '<div class="ap"><button class="ok" onclick="approveRd(\''+x.id+'\',true)">同意</button><button class="no" onclick="approveRd(\''+x.id+'\',false)">拒绝</button></div></div>').join('');
+  }
+}
+function computeStreak(){
+  const dates=Object.values(S.assignments).flat().filter(id=>S.learned[id]).length?
+    Object.keys(S.learned).map(d=>dateStr(new Date(d))).sort():[];
+  if(dates.length===0)return 0;
+  const set=new Set(dates);
+  let streak=0;const d=new Date();
+  // 从今天往前数（今天没学也算断，但从昨天起）
+  d.setDate(d.getDate()-1);
+  while(set.has(dateStr(d))){streak++;d.setDate(d.getDate()-1);}
+  return streak;
+}
+function saveSettings(){
+  const name=document.getElementById('setName').value.trim()||'宝贝';
+  let daily=parseInt(document.getElementById('setDaily').value,10);
+  if(!daily||daily<1)daily=5;if(daily>20)daily=20;
+  const pw=document.getElementById('setPw').value.trim();
+  S.settings.childName=name;S.settings.dailyCount=daily;
+  if(/^\d{4}$/.test(pw))S.settings.password=pw;
+  save();toast('设置已保存'+(/^\d{4}$/.test(pw)?'，新密码生效':'（密码需 4 位数字才修改）'));
+  renderParent();
+}
+function openAddWord(){
+  ['awChar','awPy','awMean','awWords'].forEach(id=>document.getElementById(id).value='');
+  openMask('maskAddWord');
+}
+function addWord(){
+  const char=document.getElementById('awChar').value.trim();
+  const py=document.getElementById('awPy').value.trim();
+  const mean=document.getElementById('awMean').value.trim();
+  const words=document.getElementById('awWords').value.trim().split(/\s+/).filter(Boolean);
+  if(!char){toast('请填写汉字');return;}
+  if(words.length===0)words.push(char);
+  S.words.push({id:'w'+Date.now(),char,py:py||char,mean:mean||char,words,pic:null});
+  save();closeMask('maskAddWord');renderParent();toast('已添加新字：'+char);
+}
+function delWord(id){
+  if(confirm('确定删除这个字吗？')){S.words=S.words.filter(w=>w.id!==id);save();renderParent();}
+}
+function openAddReward(){
+  document.getElementById('arName').value='';document.getElementById('arCost').value='';
+  openMask('maskAddReward');
+}
+function addReward(){
+  const name=document.getElementById('arName').value.trim();
+  const cost=parseInt(document.getElementById('arCost').value,10);
+  if(!name||!cost||cost<1){toast('请填写名称和积分');return;}
+  S.rewards.push({id:'r'+Date.now(),name,cost});save();closeMask('maskAddReward');renderParent();toast('已添加奖励');
+}
+function delReward(id){
+  if(confirm('确定删除该奖励吗？')){S.rewards=S.rewards.filter(r=>r.id!==id);save();renderParent();}
+}
+function approveRd(id,ok){
+  const x=S.redemptions.find(r=>r.id===id);if(!x)return;
+  if(ok){
+    if(S.points<x.cost){toast('积分不足，无法兑换');return;}
+    S.points-=x.cost;x.status='approved';
+    toast('已兑换：'+x.name+'（-'+x.cost+'分）');
+  }else{x.status='rejected';toast('已拒绝该申请');}
+  save();renderParent();renderChild();
+}
+
+/* ===================== 备份 ===================== */
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='识字启蒙备份_'+todayStr()+'.json';a.click();
+  toast('已导出备份文件');
+}
+function importData(){openMask('maskImport');}
+function doImport(){
+  try{
+    const obj=JSON.parse(document.getElementById('importText').value);
+    if(!obj.words){toast('格式不对，无法导入');return;}
+    S=obj;save();closeMask('maskImport');parentOk=false;
+    switchMode('child');renderChild();toast('数据已恢复');
+  }catch(e){toast('导入失败，请检查内容');}
+}
+function confirmClear(){
+  if(confirm('清空全部数据？此操作不可恢复！建议先导出备份。')){
+    localStorage.removeItem(KEY);S=null;load();
+    parentOk=false;switchMode('child');renderChild();toast('已清空，恢复示例数据');
+  }
+}
+
+/* ===================== 通用 ===================== */
+function openMask(id){document.getElementById(id).classList.add('show');}
+function closeMask(id){
+  document.getElementById(id).classList.remove('show');
+  if(id==='maskPractice')pq=null;
+}
+let toastTimer=null;
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+// 点击遮罩空白处关闭（非密码框）
+document.querySelectorAll('.mask').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m&&m.id!=='maskPw'){m.classList.remove('show');if(m.id==='maskPractice')pq=null;}});
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('maskPw').classList.contains('show'))checkPw();});
+
+/* ===================== 启动 ===================== */
+load();renderChild();
+</script>
+</body>
+</html>

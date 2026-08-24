@@ -19,49 +19,50 @@
 
 import math
 
-# TODO: 你来实现
-# 提示：
-# 1. import rclpy 和 Node
-# 2. import std_msgs.msg.Float64MultiArray
-# 3. 创建 JointPublisher 类继承 Node
-# 4. 在 __init__ 中创建 publisher 和 timer
-# 5. 实现 timer_callback 发送预设关节角度序列
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import Float64MultiArray
 
 
-class JointPublisher:
+class JointPublisher(Node):
     """发布 SO101 关节角度到 /joint_commands topic。"""
 
     def __init__(self):
-        # TODO: 你来实现
-        # 提示：
-        # 1. super().__init__("joint_publisher")
-        # 2. self.publisher_ = self.create_publisher(Float64MultiArray, "joint_commands", 10)
-        # 3. self.timer = self.create_timer(1.0, self.timer_callback)
-        # 4. self.step = 0
-        raise NotImplementedError("请实现 JointPublisher.__init__")
+        super().__init__("joint_publisher")
+        self.publisher_ = self.create_publisher(Float64MultiArray, "joint_commands", 10)
+        self.timer = self.create_timer(1.0, self.timer_callback)
+        self.step = 0
 
     def timer_callback(self):
         """按预设序列发送关节角度（Home → Reach out → Reach up → Retract）。"""
-        # TODO: 你来实现
-        # 提示：
-        # 1. 定义 4 组目标姿态（弧度）
-        #    poses = [
-        #        [0.0, 0.0, 0.0, 0.0],               # Home
-        #        [0.524, -0.524, 0.524, 1.047],       # Reach out (30°, -30°, 30°, 60°)
-        #        [0.0, -0.785, 1.571, 0.0],           # Reach up (0°, -45°, 90°, 0°)
-        #        [-0.524, 0.524, -0.524, -1.047],     # Retract (-30°, 30°, -30°, -60°)
-        #    ]
-        # 2. 取当前姿态：pose = poses[self.step % len(poses)]
-        # 3. 创建 Float64MultiArray 消息
-        # 4. 发布并打印日志
-        # 5. self.step += 1
-        raise NotImplementedError("请实现 timer_callback")
+        poses = [
+          [0.0, 0.0, 0.0, 0.0],               # Home
+          [0.524, -0.524, 0.524, 1.047],       # Reach out (30°, -30°, 30°, 60°)
+          [0.0, -0.785, 1.571, 0.0],           # Reach up (0°, -45°, 90°, 0°)
+          [-0.524, 0.524, -0.524, -1.047],     # Retract (-30°, 30°, -30°, -60°)
+        ]
+
+        pose = poses[self.step % len(poses)]
+        msg = Float64MultiArray()
+        msg.data = pose
+
+        self.publisher_.publish(msg)
+        self.get_logger().info("发送关节角度: %s rad" % pose)
+
+        self.step += 1
 
 
 def main(args=None):
-    # TODO: 你来实现
-    # 提示：和 simple_publisher.py 的 main 类似
-    raise NotImplementedError("请实现 main")
+    rclpy.init(args=args)
+    node = JointPublisher()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+          rclpy.shutdown()
 
 
 if __name__ == "__main__":

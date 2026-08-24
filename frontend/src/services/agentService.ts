@@ -67,3 +67,24 @@ export async function getAgentRuns(
     runs: dto.runs.map(toAgentRunRecord),
   };
 }
+
+/** 后端 /api/agent/run 的精简响应（前端只关心 summary 状态用于反馈）。 */
+export interface AgentRunOutcome {
+  summary: {
+    overall_status: string;
+    success_count: number;
+    failed_count: number;
+    total_agents: number;
+  };
+}
+
+/** 触发统一 Agent 执行入口（自然语言驱动的多 Agent 协作 / 重试）。 */
+export async function runAgent(
+  userInput: string,
+  agentInputs?: Record<string, Record<string, unknown>>
+): Promise<AgentRunOutcome> {
+  return apiClient.post<AgentRunOutcome>("/api/agent/run", {
+    user_input: userInput,
+    agent_inputs: agentInputs ?? null,
+  });
+}

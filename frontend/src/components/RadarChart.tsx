@@ -118,8 +118,7 @@ export default function RadarChart({
           key={i}
           points={points}
           fill="none"
-          stroke="currentColor"
-          strokeOpacity={0.12}
+          stroke="#E8E8ED"
           strokeWidth={1}
         />
       ))}
@@ -132,27 +131,27 @@ export default function RadarChart({
           y1={cy}
           x2={end.x}
           y2={end.y}
-          stroke="currentColor"
-          strokeOpacity={0.1}
+          stroke="#E8E8ED"
           strokeWidth={1}
         />
       ))}
 
-      {/* 目标能力多边形（虚线轮廓） */}
+      {/* 目标能力多边形 */}
       <polygon
         points={targetPoints}
-        fill="rgba(14,165,233,0.08)"
-        stroke="#0ea5e9"
-        strokeWidth={1.5}
-        strokeDasharray="4 3"
+        fill="#E0F2FE"
+        stroke="#38BDF8"
+        strokeWidth={2}
+        strokeLinejoin="round"
       />
 
       {/* 当前能力多边形（实线填充） */}
       <polygon
         points={currentPoints}
-        fill="rgba(16,185,129,0.18)"
-        stroke="#10b981"
+        fill="#DDF4EA"
+        stroke="#10B981"
         strokeWidth={2}
+        strokeLinejoin="round"
       />
 
       {/* 当前能力顶点圆点 + 标签 + tooltip 触发区 */}
@@ -171,7 +170,7 @@ export default function RadarChart({
               y={labelPos.y}
               textAnchor="middle"
               dominantBaseline="middle"
-              className="fill-zinc-600 dark:fill-zinc-300"
+              fill="#71717A"
               style={{ fontSize: 11, fontWeight: isHover ? 700 : 500 }}
             >
               {skill.name}
@@ -181,10 +180,8 @@ export default function RadarChart({
             <circle
               cx={x}
               cy={y}
-              r={isHover ? 5 : 3.5}
-              fill="#10b981"
-              stroke="white"
-              strokeWidth={1.5}
+              r={isHover ? 5 : 4}
+              fill="#10B981"
             />
 
             {/* 透明热区，便于 hover */}

@@ -40,7 +40,7 @@ env/
 data/
 
 # ===== 自定义 =====
-so101/v0_mujoco/xml
+so101/xml
 
 # ===== SSH 密钥（持久化在 /workspace/.ssh，禁止提交）=====
 /.ssh/

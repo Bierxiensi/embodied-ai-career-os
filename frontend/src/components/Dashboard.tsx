@@ -1,34 +1,33 @@
 import type { AgentRunRecord, Career, Project, Skill, Task } from "@/types";
-import AgentActivity from "./AgentActivity";
-import CareerCard from "./CareerCard";
-import PendingSuggestions from "./PendingSuggestions";
-import GenerateTaskButton from "./GenerateTaskButton";
-import ProjectProgress from "./ProjectProgress";
-import SkillOverview from "./SkillOverview";
-import SkillCard from "./SkillCard";
-import TaskCard from "./TaskCard";
+import GlobalNav from "./GlobalNav";
+import SubNav from "./SubNav";
+import KpiCards from "./KpiCards";
+import SkillRadarCard from "./SkillRadarCard";
+import QuickActions from "./QuickActions";
+import TodayTasks from "./TodayTasks";
+import ProjectProgressCard from "./ProjectProgressCard";
+import AgentActivityCard from "./AgentActivityCard";
 
-/** Dashboard 布局容器。组合 Career / SkillOverview / Skill / Task / AgentActivity 卡片。
+/** Dashboard 布局容器 — 匹配 Ardot 设计稿。
  *
- * Day6：数据由 Server Component（app/dashboard/page.tsx）通过 services 获取后注入，
- * 组件本身保持纯展示。GenerateTaskButton 为 Client Component，触发 Planner Agent
- * 后通过 router.refresh() 让 Server Component 重新拉取任务列表。
- *
- * Day7：TaskCard 改为 Client Component（含"完成并复盘"交互），
- * 提交复盘后 router.refresh() 触发技能雷达图实时更新。
- *
- * Phase 2 Day6：新增 AgentActivity 面板，展示 Multi-Agent 执行可观测性。
- *
- * radarSkills 为雷达图专用核心能力子集（不含已达成优势）。
+ * 布局结构：
+ *   GlobalNav (黑色顶栏)
+ *   SubNav (标题 + 日期 + 生成今日任务)
+ *   content-container
+ *     ├── PageHeader
+ *     ├── KpiCards (4列)
+ *     ├── main-grid-row1 (雷达图 690px + 快捷操作 flex-1)
+ *     ├── main-grid-row2 (今日任务 690px + 项目进度 flex-1)
+ *     ├── AgentActivityCard
+ *     └── Footer
  */
 type Props = {
-  // 前端 #4 修复：career 可空（用户未配置职业目标时为 null）
   career: Career | null;
-  skills: Skill[]; // 全部技能，SkillCard 明细 + GenerateTaskButton 输入
-  radarSkills: Skill[]; // 核心能力子集，SkillOverview 雷达图
+  skills: Skill[];
+  radarSkills: Skill[];
   tasks: Task[];
-  agentRuns: AgentRunRecord[]; // Phase 2 Day6：Agent Activity 面板
-  projects: Project[]; // V2: 项目进度
+  agentRuns: AgentRunRecord[];
+  projects: Project[];
 };
 
 export default function Dashboard({
@@ -40,66 +39,79 @@ export default function Dashboard({
   projects,
 }: Props) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-10">
-      <header className="mb-8">
-        <p className="mb-2 text-xs font-medium tracking-widest text-zinc-400 uppercase dark:text-zinc-600">
-          Phase 2 · Week 1 · Multi-Agent
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight text-black dark:text-zinc-50">
-          Embodied AI Career OS
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          AI 驱动的具身智能职业成长操作系统
-        </p>
-      </header>
+    <div className="flex min-h-screen flex-col" style={{ background: "var(--color-canvas)" }}>
+      {/* Global Nav */}
+      <GlobalNav />
 
-      {/* 职业目标卡片：未配置时显示引导提示，而非误报后端失败（前端 #4） */}
-      {career ? (
-        <CareerCard career={career} />
-      ) : (
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="text-lg font-semibold text-black dark:text-zinc-50">
-            🎯 职业目标
-          </h2>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            尚未配置职业目标。前往设置页填写目标岗位与薪资预期，解锁能力缺口分析与个性化任务推荐。
+      {/* Sub Nav */}
+      <SubNav skills={skills} />
+
+      {/* Content Container */}
+      <div
+        className="flex flex-col"
+        style={{
+          gap: "var(--spacing-lg)",
+          padding: "36px clamp(20px, 8vw, 120px) 48px",
+        }}
+      >
+        {/* Page Header */}
+        <div className="flex flex-col" style={{ gap: 8 }}>
+          <span
+            className="text-xs font-semibold uppercase"
+            style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+          >
+            PHASE 2 · WEEK 1 · MULTI-AGENT
+          </span>
+          <h1
+            className="font-semibold"
+            style={{ fontSize: 40, color: "var(--color-ink)", letterSpacing: "-0.02em" }}
+          >
+            Embodied AI Career OS
+          </h1>
+          <p className="text-[17px]" style={{ color: "var(--color-ink-48)" }}>
+            AI 驱动的具身智能职业成长操作系统 · 今日聚焦 VLA 与 Sim2Real
           </p>
-        </section>
-      )}
+        </div>
 
-      {/* V2：项目进度卡片 */}
-      <div className="mt-6">
-        <ProjectProgress projects={projects} />
-      </div>
+        {/* KPI Cards Row */}
+        <KpiCards
+          career={career}
+          tasks={tasks}
+          agentRuns={agentRuns}
+          readiness={computeReadiness(radarSkills)}
+        />
 
-      {/* 技能总览：雷达图 + 缺口汇总（全局视角） */}
-      <div className="mt-6">
-        <SkillOverview skills={radarSkills} />
-      </div>
+        {/* Main Grid Row 1: Radar + Quick Actions */}
+        <div className="flex" style={{ gap: "var(--spacing-lg)" }}>
+          <SkillRadarCard skills={radarSkills} />
+          <div className="flex flex-1 flex-col" style={{ gap: "var(--spacing-lg)" }}>
+            <QuickActions skills={radarSkills} />
+          </div>
+        </div>
 
-      {/* 技能明细与任务两栏布局，窄屏自动堆叠 */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SkillCard skills={skills} />
-        <div className="flex flex-col gap-3">
-          {/* 触发 Planner Agent 生成任务，成功后刷新任务列表 */}
-          <GenerateTaskButton skills={skills} />
-          <TaskCard tasks={tasks} />
+        {/* Main Grid Row 2: Tasks + Projects */}
+        <div className="flex" style={{ gap: "var(--spacing-lg)" }}>
+          <TodayTasks tasks={tasks} />
+          <ProjectProgressCard projects={projects} />
+        </div>
+
+        {/* Agent Activity */}
+        <AgentActivityCard runs={agentRuns} limit={5} />
+
+        {/* Footer */}
+        <div className="flex justify-center" style={{ paddingTop: 8 }}>
+          <span className="text-xs font-medium" style={{ color: "#A1A1AA" }}>
+            Keep simple · Build fast · Use AI agents
+          </span>
         </div>
       </div>
-
-      {/* V2：GitHub Commit 感知面板（待确认技能关联） */}
-      <div className="mt-6">
-        <PendingSuggestions />
-      </div>
-
-      {/* Phase 2 Day6：Agent Activity 面板（Multi-Agent 可观测性） */}
-      <div className="mt-6">
-        <AgentActivity runs={agentRuns} />
-      </div>
-
-      <footer className="mt-10 text-center text-xs text-zinc-400 dark:text-zinc-600">
-        Keep simple · Build fast · Use AI agents
-      </footer>
     </div>
   );
+}
+
+/** 计算 AI 就绪度百分比。 */
+function computeReadiness(skills: Skill[]): number {
+  const totalCurrent = skills.reduce((s, sk) => s + sk.level, 0);
+  const totalTarget = skills.reduce((s, sk) => s + sk.targetLevel, 0);
+  return totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
 }

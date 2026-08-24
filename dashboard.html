@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embodied AI Career OS — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   Design Tokens (from Ardot canvas — 27 variables)
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  /* Colors */
+  --color-canvas: #F5F5F7;
+  --color-card: #FFFFFF;
+  --color-ink: #1D1D1F;
+  --color-ink-80: #3A3A3C;
+  --color-ink-48: #787880;
+  --color-hairline: #E0E0E0;
+  --color-hairline-soft: #E8E8ED;
+  --color-primary: #0066CC;
+  --color-primary-soft: #EAF3FC;
+  --color-emerald: #10B981;
+  --color-emerald-soft: #DDF4EA;
+  --color-amber: #F59E0B;
+  --color-amber-soft: #FEF3C7;
+  --color-rose: #F43F5E;
+  --color-sky: #0EA5E9;
+  --color-violet: #8B5CF6;
+  --color-navy: #1E3A5F;
+  --color-zinc-100: #F4F4F5;
+  --color-on-primary: #FFFFFF;
+
+  /* Semantic extensions */
+  --color-amber-deep: #B45309;
+  --color-emerald-deep: #047857;
+  --color-rose-deep: #B91C1C;
+  --color-ink-32: #52525B;
+  --color-ink-28: #71717A;
+
+  /* Radius */
+  --radius-card-lg: 18px;
+  --radius-item-md: 11px;
+  --radius-item-sm: 8px;
+  --radius-pill: 999px;
+
+  /* Spacing */
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Reset & Base
+   ═══════════════════════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #2A2A2C;
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Stage — holds both desktop & mobile frames
+   ═══════════════════════════════════════════════════════════ */
+.stage {
+  display: flex;
+  gap: 60px;
+  padding: 48px;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  flex-wrap: wrap;
+}
+
+.frame-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Desktop Frame (1440px)
+   ═══════════════════════════════════════════════════════════ */
+.desktop-wrapper {
+  position: relative;
+  transform-origin: top left;
+}
+
+.desktop-frame {
+  width: 1440px;
+  background: var(--color-canvas);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+}
+
+/* ── Global Nav ── */
+.global-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 24px;
+  background: #000000;
+}
+.nav-left-cluster {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.nav-logo-mark {
+  width: 20px;
+  height: 20px;
+  position: relative;
+}
+.nav-logo-mark svg { width: 100%; height: 100%; }
+.nav-wordmark {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-canvas);
+}
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+.nav-links a {
+  font-size: 12px;
+  text-decoration: none;
+  color: #86868B;
+  font-weight: 400;
+}
+.nav-links a.active {
+  color: var(--color-canvas);
+  font-weight: 500;
+}
+.nav-right-cluster {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.nav-search-icon {
+  width: 16px;
+  height: 16px;
+}
+.nav-search-icon svg { width: 100%; height: 100%; }
+.nav-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+}
+
+/* ── Sub Nav ── */
+.sub-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 24px;
+  background: var(--color-canvas);
+  border-bottom: 1px solid var(--color-hairline);
+}
+.sub-nav-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.sub-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.sub-nav-date {
+  font-size: 14px;
+  color: var(--color-ink-48);
+  font-weight: 400;
+}
+.btn-generate {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 18px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+/* ── Content Container ── */
+.content-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: 36px 120px 48px;
+}
+
+/* ── Page Header ── */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.phase-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink-48);
+  letter-spacing: 0.04em;
+}
+.page-title {
+  font-size: 40px;
+  font-weight: 600;
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
+}
+.page-subtitle {
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--color-ink-48);
+}
+
+/* ── KPI Cards Row ── */
+.kpi-row {
+  display: flex;
+  gap: var(--spacing-md);
+}
+.kpi-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: 22px;
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+.kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kpi-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-item-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kpi-icon svg { width: 100%; height: 100%; }
+.kpi-icon.target { background: var(--color-primary-soft); }
+.kpi-icon.gauge { background: var(--color-primary-soft); }
+.kpi-icon.check { background: var(--color-amber-soft); }
+.kpi-icon.robot { background: var(--color-emerald-soft); }
+.kpi-label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink-48);
+}
+.kpi-value {
+  font-size: 34px;
+  font-weight: 600;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.kpi-track {
+  width: 100%;
+  height: 5px;
+  background: #F4F4F5;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.kpi-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+.kpi-fill.emerald { background: var(--color-emerald); }
+.kpi-fill.primary { background: var(--color-primary); }
+.kpi-fill.amber { background: var(--color-amber); }
+.kpi-sub {
+  font-size: 12px;
+  color: var(--color-ink-48);
+  font-weight: 400;
+}
+.kpi-sub.emerald { color: var(--color-emerald-deep); font-weight: 500; }
+.kpi-sub.amber { color: var(--color-amber-deep); }
+
+/* ── Main Grid Row 1 ── */
+.main-grid-row1 {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+.skill-radar-card {
+  width: 690px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+.radar-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.radar-card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.radar-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+}
+.legend-dot.current { background: var(--color-emerald); }
+.legend-dot.target { background: var(--color-primary); }
+.legend-text {
+  font-size: 12px;
+  color: var(--color-ink-48);
+}
+.radar-body {
+  display: flex;
+  gap: 28px;
+}
+.radar-chart {
+  width: 360px;
+  height: 360px;
+  position: relative;
+  flex-shrink: 0;
+}
+.radar-chart svg { width: 100%; height: 100%; }
+.radar-axis-label {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-ink-28);
+  white-space: nowrap;
+}
+.readiness-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 88px;
+}
+.readiness-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink-48);
+  letter-spacing: 0.04em;
+}
+.readiness-value {
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.gap-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-80);
+  margin-top: 4px;
+}
+.gap-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gap-skill-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+.gap-track {
+  flex: 1;
+  height: 5px;
+  background: #F4F4F5;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.gap-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+.gap-fill.rose { background: var(--color-rose); }
+.gap-fill.amber { background: var(--color-amber); }
+.gap-value {
+  font-size: 12px;
+  color: var(--color-ink-48);
+  white-space: nowrap;
+}
+
+/* ── Right Column ── */
+.right-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+.quick-actions-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+.card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.actions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+.action-tile {
+  width: calc(50% - 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-item-md);
+  cursor: pointer;
+}
+.action-tile.primary {
+  background: var(--color-primary);
+  height: 110px;
+}
+.action-tile.secondary {
+  background: var(--color-zinc-100);
+  height: 110px;
+}
+.action-tile.secondary-compact {
+  background: var(--color-zinc-100);
+  height: 72px;
+}
+.tile-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-item-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tile-icon.on-primary {
+  background: rgba(255,255,255,0.18);
+}
+.tile-icon.on-secondary {
+  background: var(--color-primary-soft);
+}
+.tile-icon svg { width: 100%; height: 100%; }
+.tile-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.action-tile.primary .tile-label { color: var(--color-on-primary); }
+.action-tile.secondary .tile-label,
+.action-tile.secondary-compact .tile-label { color: var(--color-ink); }
+.tile-desc {
+  font-size: 12px;
+  font-weight: 400;
+}
+.action-tile.primary .tile-desc { color: #B8D4F0; }
+.action-tile.secondary .tile-desc,
+.action-tile.secondary-compact .tile-desc { color: var(--color-ink-48); }
+
+/* ── Main Grid Row 2 ── */
+.main-grid-row2 {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+.today-tasks-card {
+  width: 690px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: var(--spacing-lg);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+.project-progress-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: var(--spacing-lg);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-head-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.card-head-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink-48);
+}
+
+/* ── Task Row ── */
+.task-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: #FAFAFB;
+  border-radius: var(--radius-item-md);
+}
+.task-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-pill.doing { background: var(--color-amber-soft); color: var(--color-amber-deep); }
+.status-pill.todo { background: #F5F5F5; color: var(--color-ink-32); }
+.status-pill.done { background: var(--color-emerald-soft); color: var(--color-emerald-deep); }
+.status-pill.active { background: var(--color-emerald-soft); color: var(--color-emerald-deep); }
+.status-pill.paused { background: var(--color-amber-soft); color: var(--color-amber-deep); }
+.task-agent {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink-48);
+}
+.task-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.task-meta {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-ink-48);
+}
+
+/* ── Project Row ── */
+.project-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #FAFAFB;
+  border-radius: var(--radius-item-md);
+}
+.project-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.project-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.project-track {
+  width: 100%;
+  height: 6px;
+  background: #E8E8ED;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.project-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.project-fill.emerald { background: var(--color-emerald); }
+.project-fill.amber { background: var(--color-amber); }
+.project-milestone {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-ink-48);
+}
+
+/* ── Agent Activity ── */
+.agent-activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: var(--spacing-lg);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card-lg);
+  overflow: hidden;
+}
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: #FAFAFB;
+  border-radius: var(--radius-item-md);
+}
+.activity-bar {
+  width: 4px;
+  height: 44px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.activity-bar.sky { background: var(--color-sky); }
+.activity-bar.violet { background: var(--color-violet); }
+.activity-bar.rose { background: var(--color-rose); }
+.activity-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.activity-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.activity-agent {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.activity-status {
+  font-size: 12px;
+  font-weight: 600;
+}
+.activity-status.success { color: var(--color-emerald-deep); }
+.activity-status.failed { color: var(--color-rose-deep); }
+.activity-desc {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-ink-48);
+}
+
+/* ── Footer ── */
+.dashboard-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 8px;
+}
+.footer-tagline {
+  font-size: 12px;
+  font-weight: 500;
+  color: #A1A1AA;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Mobile Frame (390px)
+   ═══════════════════════════════════════════════════════════ */
+.mobile-wrapper {
+  position: relative;
+  transform-origin: top left;
+}
+.mobile-frame {
+  width: 390px;
+  background: var(--color-canvas);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 32px;
+}
+.mobile-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 56px 20px 20px;
+}
+.mobile-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink-48);
+  letter-spacing: 0.04em;
+}
+.mobile-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
+}
+.mobile-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink-32);
+}
+.mobile-kpi-row {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: 0 20px;
+}
+.mobile-kpi-row.row2 {
+  padding-top: 12px;
+}
+.mobile-kpi-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--spacing-md);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-item-md);
+}
+.mobile-kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-ink-48);
+}
+.mobile-kpi-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.mobile-kpi-sub {
+  font-size: 11px;
+}
+.mobile-kpi-sub.emerald { color: var(--color-emerald-deep); font-weight: 600; }
+.mobile-kpi-sub.neutral { color: var(--color-ink-48); font-weight: 400; }
+.mobile-tile-wrap {
+  padding: var(--spacing-md) 20px 0;
+}
+.mobile-action-tile {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: var(--color-primary);
+  border-radius: 14px;
+  cursor: pointer;
+}
+.mobile-tile-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mobile-tile-icon svg { width: 100%; height: 100%; }
+.mobile-tile-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mobile-tile-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-on-primary);
+}
+.mobile-tile-desc {
+  font-size: 12px;
+  color: #B8D4F0;
+}
+.mobile-today-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  padding: 16px 20px 0;
+}
+.mobile-task-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 20px 0;
+}
+.mobile-task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+}
+.mobile-task-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mobile-task-pill {
+  font-size: 10px;
+  font-weight: 600;
+}
+.mobile-task-pill.doing { color: var(--color-amber-deep); }
+.mobile-task-pill.todo { color: var(--color-ink-32); }
+.mobile-task-meta {
+  font-size: 11px;
+  color: var(--color-ink-48);
+}
+.mobile-task-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.mobile-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+}
+.mobile-footer-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: #A1A1AA;
+}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ═══════════════════════════════════════════════════════
+       DESKTOP 1440
+       ═══════════════════════════════════════════════════════ -->
+  <div>
+    <div class="frame-label">Desktop · 1440px</div>
+    <div class="desktop-wrapper" id="desktopWrapper">
+      <div class="desktop-frame">
+
+        <!-- Global Nav -->
+        <nav class="global-nav">
+          <div class="nav-left-cluster">
+            <div class="nav-logo-mark">
+              <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="7" cy="7" r="4" fill="#0066CC"/>
+                <circle cx="13" cy="13" r="4" fill="#10B981"/>
+                <path d="M7 7L13 13" stroke="#F5F5F7" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <span class="nav-wordmark">Career OS</span>
+            <div class="nav-links">
+              <a href="#" class="active">概览</a>
+              <a href="#">项目</a>
+              <a href="#">技能</a>
+              <a href="#">任务</a>
+            </div>
+          </div>
+          <div class="nav-right-cluster">
+            <div class="nav-search-icon">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="7" cy="7" r="5" stroke="#86868B" stroke-width="1.5"/>
+                <path d="M11 11L15 15" stroke="#86868B" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="nav-avatar"></div>
+          </div>
+        </nav>
+
+        <!-- Sub Nav -->
+        <div class="sub-nav">
+          <span class="sub-nav-title">概览</span>
+          <div class="sub-nav-right">
+            <span class="sub-nav-date">8 月 20 日 星期四</span>
+            <button class="btn-generate">生成今日任务</button>
+          </div>
+        </div>
+
+        <!-- Content Container -->
+        <div class="content-container">
+
+          <!-- Page Header -->
+          <div class="page-header">
+            <span class="phase-kicker">PHASE 2 · WEEK 1 · MULTI-AGENT</span>
+            <h1 class="page-title">Embodied AI Career OS</h1>
+            <p class="page-subtitle">AI 驱动的具身智能职业成长操作系统 · 今日聚焦 VLA 与 Sim2Real</p>
+          </div>
+
+          <!-- KPI Cards Row -->
+          <div class="kpi-row">
+            <!-- KPI Career -->
+            <div class="kpi-card">
+              <div class="kpi-head">
+                <div class="kpi-icon target">
+                  <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="15" cy="15" r="11.25" stroke="#0066CC" stroke-width="1.5" fill="none"/>
+                    <circle cx="15" cy="15" r="5.625" stroke="#0066CC" stroke-width="1.5" fill="none"/>
+                    <circle cx="15" cy="15" r="1.625" fill="#0066CC"/>
+                  </svg>
+                </div>
+                <span class="kpi-label">职业目标进度</span>
+              </div>
+              <span class="kpi-value">65%</span>
+              <div class="kpi-track"><div class="kpi-fill emerald" style="width:65%"></div></div>
+              <span class="kpi-sub">目标 Robot AI Engineer · 2027</span>
+            </div>
+            <!-- KPI Readiness -->
+            <div class="kpi-card">
+              <div class="kpi-head">
+                <div class="kpi-icon gauge">
+                  <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4.5 21A11 11 0 0 1 25.5 21" stroke="#0066CC" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                    <path d="M18 17L21 20" stroke="#0066CC" stroke-width="1.5" stroke-linecap="round"/>
+                    <circle cx="15" cy="20" r="2" fill="#0066CC"/>
+                  </svg>
+                </div>
+                <span class="kpi-label">AI 能力就绪度</span>
+              </div>
+              <span class="kpi-value">72%</span>
+              <div class="kpi-track"><div class="kpi-fill primary" style="width:72%"></div></div>
+              <span class="kpi-sub emerald">较上周 +4%</span>
+            </div>
+            <!-- KPI Tasks -->
+            <div class="kpi-card">
+              <div class="kpi-head">
+                <div class="kpi-icon check">
+                  <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="15" cy="15" r="11.25" stroke="#0066CC" stroke-width="1.5" fill="none"/>
+                    <circle cx="15" cy="15" r="5.625" stroke="#0066CC" stroke-width="1.5" fill="none"/>
+                    <circle cx="15" cy="15" r="1.625" fill="#0066CC"/>
+                  </svg>
+                </div>
+                <span class="kpi-label">今日任务</span>
+              </div>
+              <span class="kpi-value">3/5</span>
+              <div class="kpi-track"><div class="kpi-fill amber" style="width:60%"></div></div>
+              <span class="kpi-sub amber">2 项待完成</span>
+            </div>
+            <!-- KPI Agents -->
+            <div class="kpi-card">
+              <div class="kpi-head">
+                <div class="kpi-icon robot">
+                  <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="15" cy="15" r="11.25" stroke="#0066CC" stroke-width="1.5" fill="none"/>
+                    <circle cx="15" cy="15" r="5.625" stroke="#0066CC" stroke-width="1.5" fill="none"/>
+                    <circle cx="15" cy="15" r="1.625" fill="#0066CC"/>
+                  </svg>
+                </div>
+                <span class="kpi-label">Agent 执行</span>
+              </div>
+              <span class="kpi-value">28</span>
+              <div class="kpi-track"><div class="kpi-fill emerald" style="width:86%"></div></div>
+              <span class="kpi-sub emerald">成功率 86% · 本周</span>
+            </div>
+          </div>
+
+          <!-- Main Grid Row 1: Radar + Quick Actions -->
+          <div class="main-grid-row1">
+            <!-- Skill Radar Card -->
+            <div class="skill-radar-card">
+              <div class="radar-card-head">
+                <span class="radar-card-title">能力雷达</span>
+                <div class="radar-legend">
+                  <div class="legend-item">
+                    <span class="legend-dot current"></span>
+                    <span class="legend-text">当前</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-dot target"></span>
+                    <span class="legend-text">目标</span>
+                  </div>
+                </div>
+              </div>
+              <div class="radar-body">
+                <!-- Radar Chart -->
+                <div class="radar-chart">
+                  <svg width="360" height="360" viewBox="0 0 360 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Grid hexagons -->
+                    <path d="M180 40L301 110L301 250L180 320L59 250L59 110Z" stroke="#E8E8ED" stroke-width="1" fill="none"/>
+                    <path d="M180 96L253 138L253 222L180 264L107 222L107 138Z" stroke="#E8E8ED" stroke-width="1" fill="none"/>
+                    <path d="M180 152L204 166L204 194L180 208L156 194L156 166Z" stroke="#E8E8ED" stroke-width="1" fill="none"/>
+                    <!-- Axis lines (1px offset to avoid degenerate geometry) -->
+                    <path d="M180 180L181 40" stroke="#E8E8ED" stroke-width="1"/>
+                    <path d="M180 180L301 110" stroke="#E8E8ED" stroke-width="1"/>
+                    <path d="M180 180L301 250" stroke="#E8E8ED" stroke-width="1"/>
+                    <path d="M181 320L180 180" stroke="#E8E8ED" stroke-width="1"/>
+                    <path d="M180 180L59 250" stroke="#E8E8ED" stroke-width="1"/>
+                    <path d="M180 180L59 110" stroke="#E8E8ED" stroke-width="1"/>
+                    <!-- Target polygon (sky/blue) -->
+                    <path d="M180 40L301 110L277 236L180 292L83 236L107 138Z" fill="#E0F2FE" stroke="#38BDF8" stroke-width="2" stroke-linejoin="round"/>
+                    <!-- Current polygon (emerald/green) -->
+                    <path d="M180 68L301 110L229 208L180 236L156 194L107 138Z" fill="#DDF4EA" stroke="#10B981" stroke-width="2" stroke-linejoin="round"/>
+                    <!-- Current data points -->
+                    <circle cx="180" cy="68" r="4" fill="#10B981"/>
+                    <circle cx="301" cy="110" r="4" fill="#10B981"/>
+                    <circle cx="229" cy="208" r="4" fill="#10B981"/>
+                    <circle cx="180" cy="236" r="4" fill="#10B981"/>
+                    <circle cx="156" cy="194" r="4" fill="#10B981"/>
+                    <circle cx="107" cy="138" r="4" fill="#10B981"/>
+                  </svg>
+                  <span class="radar-axis-label" style="top:10px;left:159px">ROS2</span>
+                  <span class="radar-axis-label" style="top:96px;left:306px">Python</span>
+                  <span class="radar-axis-label" style="top:240px;left:306px">C++</span>
+                  <span class="radar-axis-label" style="top:334px;left:158px">强化学习</span>
+                  <span class="radar-axis-label" style="top:240px;left:12px">VLA</span>
+                  <span class="radar-axis-label" style="top:96px;left:0">Sim2Real</span>
+                </div>
+                <!-- Readiness Panel -->
+                <div class="readiness-panel">
+                  <span class="readiness-label">ROBOT AI READINESS</span>
+                  <span class="readiness-value">72%</span>
+                  <span class="gap-title">最大缺口 Top 3</span>
+                  <div class="gap-row">
+                    <span class="gap-skill-name">VLA</span>
+                    <div class="gap-track"><div class="gap-fill rose" style="width:25%"></div></div>
+                    <span class="gap-value">1/4</span>
+                  </div>
+                  <div class="gap-row">
+                    <span class="gap-skill-name">C++</span>
+                    <div class="gap-track"><div class="gap-fill amber" style="width:50%"></div></div>
+                    <span class="gap-value">2/4</span>
+                  </div>
+                  <div class="gap-row">
+                    <span class="gap-skill-name">强化学习</span>
+                    <div class="gap-track"><div class="gap-fill amber" style="width:50%"></div></div>
+                    <span class="gap-value">2/4</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+              <!-- Quick Actions -->
+              <div class="quick-actions-card">
+                <span class="card-title">快捷操作</span>
+                <div class="actions-grid">
+                  <!-- Tile 1: Generate Tasks (primary) -->
+                  <div class="action-tile primary">
+                    <div class="tile-icon on-primary">
+                      <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 4L18 12L26 13L20 18L22 26L15 22L8 26L10 18L4 13L12 12L15 4Z" fill="#FFFFFF"/>
+                      </svg>
+                    </div>
+                    <span class="tile-label">生成今日任务</span>
+                    <span class="tile-desc">Planner Agent · 智能规划</span>
+                  </div>
+                  <!-- Tile 2: Projects (secondary) -->
+                  <div class="action-tile secondary">
+                    <div class="tile-icon on-secondary">
+                      <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 10L15 5L25 10L15 15L5 10Z" stroke="#0066CC" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                        <path d="M5 15L15 20L25 15" stroke="#0066CC" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                        <path d="M5 20L15 25L25 20" stroke="#0066CC" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <span class="tile-label">项目管理</span>
+                    <span class="tile-desc">2 个进行中 · 1 个已暂停</span>
+                  </div>
+                  <!-- Tile 3: Skills (compact) -->
+                  <div class="action-tile secondary-compact">
+                    <span class="tile-label">技能图谱</span>
+                    <span class="tile-desc">14 项技能 · 6 项核心能力</span>
+                  </div>
+                  <!-- Tile 4: Journal (compact) -->
+                  <div class="action-tile secondary-compact">
+                    <span class="tile-label">复盘日志</span>
+                    <span class="tile-desc">本周 3 篇 · Reviewer 评估</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Grid Row 2: Tasks + Projects -->
+          <div class="main-grid-row2">
+            <!-- Today Tasks Card -->
+            <div class="today-tasks-card">
+              <div class="card-head">
+                <span class="card-head-title">今日任务</span>
+                <span class="card-head-sub">已规划 3 项 · 完成 1 项</span>
+              </div>
+              <!-- Task 1: Doing -->
+              <div class="task-row">
+                <div class="task-row-top">
+                  <span class="status-pill doing">进行中</span>
+                  <span class="task-agent">Planner · 预计 45 min</span>
+                </div>
+                <span class="task-title">运行 LeRobot Sim2Real Episode 0 闭环验证</span>
+                <span class="task-meta">验收 · 仿真 50 步无报错  ·  录制约 3 min 视频</span>
+              </div>
+              <!-- Task 2: Todo -->
+              <div class="task-row">
+                <div class="task-row-top">
+                  <span class="status-pill todo">待办</span>
+                  <span class="task-agent">Research · 预计 30 min</span>
+                </div>
+                <span class="task-title">阅读 OpenVLA 论文 §3 模型架构</span>
+                <span class="task-meta">验收 · 输出 200 字结构化笔记  ·  标注可借鉴的 Sim2Real 策略</span>
+              </div>
+              <!-- Task 3: Done -->
+              <div class="task-row">
+                <div class="task-row-top">
+                  <span class="status-pill done">已完成</span>
+                  <span class="task-agent">Career · 实际 1h 20min</span>
+                </div>
+                <span class="task-title">搭建 Skills RAG 索引 (Milestone 1)</span>
+                <span class="task-meta">验收 · 14 项技能已入库  ·  RAG 检索 Top-5 命中率 92%</span>
+              </div>
+            </div>
+
+            <!-- Project Progress Card -->
+            <div class="project-progress-card">
+              <div class="card-head">
+                <span class="card-head-title">项目进度</span>
+                <span class="card-head-sub">1 个进行中 · 1 个暂停</span>
+              </div>
+              <!-- Project 1: SO-101 -->
+              <div class="project-row">
+                <div class="project-row-top">
+                  <span class="project-title">SO-101 VLA 训练管线</span>
+                  <span class="status-pill active">进行中</span>
+                </div>
+                <div class="project-track"><div class="project-fill emerald" style="width:62%"></div></div>
+                <span class="project-milestone">Milestone 2 · Sim2Real 闭环验证  ·  6 / 10 步</span>
+              </div>
+              <!-- Project 2: Knowledge -->
+              <div class="project-row">
+                <div class="project-row-top">
+                  <span class="project-title">具身智能知识库</span>
+                  <span class="status-pill paused">已暂停</span>
+                </div>
+                <div class="project-track"><div class="project-fill amber" style="width:35%"></div></div>
+                <span class="project-milestone">Milestone 1 · ROS2 笔记结构化  ·  14 / 40 步</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agent Activity -->
+          <div class="agent-activity-card">
+            <div class="card-head">
+              <span class="card-head-title">Agent 执行动态</span>
+              <span class="card-head-sub">本周 28 次调用 · 成功率 86%</span>
+            </div>
+            <!-- Activity 1: Planner -->
+            <div class="activity-row">
+              <div class="activity-bar sky"></div>
+              <div class="activity-content">
+                <div class="activity-top">
+                  <span class="activity-agent">Planner</span>
+                  <span class="activity-status success">success</span>
+                </div>
+                <span class="activity-desc">已为今日生成 3 个任务 · 2.3s · trace a1b2c3d4</span>
+              </div>
+            </div>
+            <!-- Activity 2: Reviewer -->
+            <div class="activity-row">
+              <div class="activity-bar violet"></div>
+              <div class="activity-content">
+                <div class="activity-top">
+                  <span class="activity-agent">Reviewer</span>
+                  <span class="activity-status success">success</span>
+                </div>
+                <span class="activity-desc">Skills RAG 评估完成 · 14 / 14 项通过 · 4.7s</span>
+              </div>
+            </div>
+            <!-- Activity 3: Research -->
+            <div class="activity-row">
+              <div class="activity-bar rose"></div>
+              <div class="activity-content">
+                <div class="activity-top">
+                  <span class="activity-agent">Research</span>
+                  <span class="activity-status failed">failed</span>
+                </div>
+                <span class="activity-desc">OpenVLA 论文抓取失败 · HTTP 404 · 1.1s · trace e5f6g7h8</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="dashboard-footer">
+            <span class="footer-tagline">Keep simple  ·  Build fast  ·  Use AI agents</span>
+          </div>
+
+        </div><!-- /content-container -->
+      </div><!-- /desktop-frame -->
+    </div><!-- /desktop-wrapper -->
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MOBILE 390
+       ═══════════════════════════════════════════════════════ -->
+  <div>
+    <div class="frame-label">Mobile · 390px</div>
+    <div class="mobile-wrapper" id="mobileWrapper">
+      <div class="mobile-frame">
+
+        <!-- Header -->
+        <div class="mobile-header">
+          <span class="mobile-kicker">PHASE 2 · WEEK 1</span>
+          <span class="mobile-title">Embodied AI Career OS</span>
+          <span class="mobile-subtitle">AI 驱动的具身智能职业成长操作系统</span>
+        </div>
+
+        <!-- KPI Row 1 -->
+        <div class="mobile-kpi-row">
+          <div class="mobile-kpi-card">
+            <span class="mobile-kpi-label">职业进度</span>
+            <span class="mobile-kpi-value">65%</span>
+            <span class="mobile-kpi-sub neutral">Phase 2 / 4</span>
+          </div>
+          <div class="mobile-kpi-card">
+            <span class="mobile-kpi-label">AI 就绪度</span>
+            <span class="mobile-kpi-value">72%</span>
+            <span class="mobile-kpi-sub emerald">↑ 4% 本周</span>
+          </div>
+        </div>
+
+        <!-- KPI Row 2 -->
+        <div class="mobile-kpi-row row2">
+          <div class="mobile-kpi-card">
+            <span class="mobile-kpi-label">今日任务</span>
+            <span class="mobile-kpi-value">3 / 5</span>
+            <span class="mobile-kpi-sub emerald">1 已完成</span>
+          </div>
+          <div class="mobile-kpi-card">
+            <span class="mobile-kpi-label">Agent 调用</span>
+            <span class="mobile-kpi-value">28</span>
+            <span class="mobile-kpi-sub neutral">成功率 86%</span>
+          </div>
+        </div>
+
+        <!-- Action Tile -->
+        <div class="mobile-tile-wrap">
+          <div class="mobile-action-tile">
+            <div class="mobile-tile-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3L14 9L20 10L15 14L17 20L12 17L7 20L9 14L4 10L10 9L12 3Z" fill="#FFFFFF"/>
+              </svg>
+            </div>
+            <div class="mobile-tile-content">
+              <span class="mobile-tile-title">生成今日任务</span>
+              <span class="mobile-tile-desc">Planner Agent · 智能规划</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today Label -->
+        <div class="mobile-today-label">今日任务</div>
+
+        <!-- Mobile Tasks -->
+        <div class="mobile-task-wrap">
+          <div class="mobile-task-card">
+            <div class="mobile-task-top">
+              <span class="mobile-task-pill doing">进行中</span>
+              <span class="mobile-task-meta">Planner · 45 min</span>
+            </div>
+            <span class="mobile-task-title">运行 LeRobot Sim2Real Episode 0</span>
+          </div>
+          <div class="mobile-task-card">
+            <div class="mobile-task-top">
+              <span class="mobile-task-pill todo">待办</span>
+              <span class="mobile-task-meta">Research · 30 min</span>
+            </div>
+            <span class="mobile-task-title">阅读 OpenVLA 论文 §3 模型架构</span>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mobile-footer">
+          <span class="mobile-footer-text">Keep simple  ·  Build fast  ·  Use AI agents</span>
+        </div>
+
+      </div><!-- /mobile-frame -->
+    </div><!-- /mobile-wrapper -->
+  </div>
+
+</div><!-- /stage -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// Responsive Scaling — preserve original canvas + proportional
+// ═══════════════════════════════════════════════════════════
+(function() {
+  const desktopWrapper = document.getElementById('desktopWrapper');
+  const mobileWrapper = document.getElementById('mobileWrapper');
+  const DESKTOP_WIDTH = 1440;
+  const MOBILE_WIDTH = 390;
+
+  function scaleFrames() {
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+    const stagePadding = 96; // 48px * 2
+    const gap = 60;
+
+    // Determine available width for desktop
+    const availW = winW - stagePadding;
+    const showSideBySide = availW >= (DESKTOP_WIDTH + MOBILE_WIDTH + gap);
+
+    if (showSideBySide) {
+      // Both fit side by side at 1:1
+      const maxScale = Math.min(1, (winH - stagePadding) / 1800);
+      const scale = Math.min(maxScale, 1);
+      desktopWrapper.style.transform = `scale(${scale})`;
+      mobileWrapper.style.transform = `scale(${scale})`;
+    } else {
+      // Scale desktop to fit available width (account for mobile if visible)
+      const desktopScale = Math.min(1, availW / DESKTOP_WIDTH);
+      desktopWrapper.style.transform = `scale(${desktopScale})`;
+
+      // Mobile: scale to fit or 1:1 if enough space
+      const mobileAvailW = winW - stagePadding;
+      const mobileScale = Math.min(1, mobileAvailW / MOBILE_WIDTH);
+      mobileWrapper.style.transform = `scale(${mobileScale})`;
+    }
+
+    // Adjust wrapper heights to prevent layout gaps from scaled children
+    desktopWrapper.style.height = '';
+    mobileWrapper.style.height = '';
+    requestAnimationFrame(() => {
+      const ds = desktopWrapper.getBoundingClientRect();
+      const ms = mobileWrapper.getBoundingClientRect();
+      desktopWrapper.style.height = ds.height + 'px';
+      mobileWrapper.style.height = ms.height + 'px';
+    });
+  }
+
+  // Debounced resize
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(scaleFrames, 100);
+  });
+
+  // Initial scale
+  scaleFrames();
+})();
+</script>
+</body>
+</html>
