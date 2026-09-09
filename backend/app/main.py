@@ -18,6 +18,8 @@ from sqlalchemy import text
 from app.api.agent import router as agent_router
 from app.api.career import router as career_router
 from app.api.github import router as github_router
+from app.api.job_applications import router as job_applications_router
+from app.api.job_hunt import router as job_hunt_router
 from app.api.learning_logs import router as learning_logs_router
 from app.api.dashboard import router as dashboard_router
 from app.api.milestones import router as milestones_router
@@ -87,6 +89,8 @@ app.include_router(paper_router, prefix=api_prefix)
 app.include_router(projects_router, prefix=api_prefix)
 app.include_router(milestones_router, prefix=api_prefix)
 app.include_router(dashboard_router, prefix=api_prefix)
+app.include_router(job_applications_router, prefix=api_prefix)
+app.include_router(job_hunt_router, prefix=api_prefix)
 
 
 @app.get("/health")

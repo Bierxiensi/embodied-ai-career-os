@@ -4,6 +4,7 @@ from app.models.activity_draft import ActivityDraft
 from app.models.agent_run import AgentRun
 from app.models.career import Career
 from app.models.commit_suggestion import CommitSuggestion
+from app.models.job_application import JobApplication
 from app.models.learning_log import LearningLog
 from app.models.milestone import Milestone
 from app.models.paper import Paper
@@ -19,6 +20,7 @@ __all__ = [
     "AgentRun",
     "Career",
     "CommitSuggestion",
+    "JobApplication",
     "LearningLog",
     "Milestone",
     "Paper",

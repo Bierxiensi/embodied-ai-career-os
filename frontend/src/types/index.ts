@@ -183,3 +183,127 @@ export interface CommitSuggestion {
   summary: string | null;
   createdAt: string | null;
 }
+
+// ===== 求职看板（Job Hunt Dashboard）=====
+
+/** 求职投递状态机：applied → screening → interview → offer，任意阶段可 rejected。 */
+export type JobAppStatus =
+  | "applied"
+  | "screening"
+  | "interview"
+  | "offer"
+  | "rejected";
+
+/** 目标岗位画像（来自后端 TARGET_ROLES 配置 + 实时匹配度计算）。 */
+export interface TargetRole {
+  key: string;
+  name: string;
+  priority: "主攻" | "折中" | "保底";
+  salaryRange: string;
+  note: string;
+  matchPct: number;
+  skills: Array<{
+    name: string;
+    level: number;
+    required: number;
+    gap: number;
+    missing: boolean;
+  }>;
+}
+
+/** 技能缺口项（按 gap 降序）。 */
+export interface SkillGap {
+  name: string;
+  category: string;
+  level: number;
+  targetLevel: number;
+  gap: number;
+  evidence: string[];
+}
+
+/** 求职项目里程碑。 */
+export interface JobMilestone {
+  id: string;
+  version: string;
+  title: string;
+  goal: string;
+  status: string;
+  sortOrder: number;
+}
+
+/** 求职项目（含里程碑进度）。 */
+export interface JobProject {
+  id: string | null;
+  name: string | null;
+  currentVersion: string | null;
+  milestones: JobMilestone[];
+  milestoneTotal: number;
+  milestoneCompleted: number;
+}
+
+/** 求职任务摘要项。 */
+export interface JobTaskItem {
+  id: string;
+  title: string;
+  skillName: string | null;
+  status: string;
+  duration: number | null;
+  objective: string | null;
+}
+
+/** 一条投递记录。 */
+export interface JobApplication {
+  id: string;
+  company: string;
+  role: string;
+  track: string;
+  source: string | null;
+  status: JobAppStatus;
+  salaryRange: string | null;
+  appliedAt: string | null;
+  nextAction: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 求职看板聚合数据（GET /api/job-hunt）。 */
+export interface JobHuntBoard {
+  career: {
+    targetRole: string | null;
+    salaryTarget: number | null;
+    timeframe: string | null;
+    notes: string | null;
+  } | null;
+  offerDeadline: string;
+  daysLeft: number;
+  targetRoles: TargetRole[];
+  skillGaps: SkillGap[];
+  jobProject: JobProject | null;
+  tasks: {
+    total: number;
+    done: number;
+    doing: number;
+    todo: number;
+    items: JobTaskItem[];
+  };
+  applications: {
+    total: number;
+    byStatus: Record<JobAppStatus, number>;
+    responseRate: number;
+    items: JobApplication[];
+  };
+}
+
+/** 新建投递记录入参。 */
+export interface JobApplicationCreate {
+  company: string;
+  role: string;
+  track?: string;
+  source?: string | null;
+  status?: JobAppStatus;
+  salaryRange?: string | null;
+  appliedAt?: string | null;
+  nextAction?: string | null;
+  notes?: string | null;
+}

@@ -10,6 +10,7 @@ export default function GlobalNav() {
   const links = [
     { href: "/dashboard", label: "概览" },
     { href: "/projects", label: "项目" },
+    { href: "/jobs", label: "求职" },
     { href: "/agents", label: "Agent" },
   ];
 
