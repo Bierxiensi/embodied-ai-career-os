@@ -41,6 +41,8 @@ data/
 
 # ===== 自定义 =====
 so101/xml
+# 启动脚本产生的日志与端口记录
+.workbuddy/logs/
 
 # ===== SSH 密钥（持久化在 /workspace/.ssh，禁止提交）=====
 /.ssh/

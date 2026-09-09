@@ -160,9 +160,29 @@ Avoid over engineering.
 - Docker Compose
 
 
-## 快速启动
+## 快速启动（推荐：一键脚本）
 
 ```bash
+bash start.sh            # 自动补 .env / 建 venv / 装依赖，并启动前后端
+bash scripts/smoke.sh    # 冒烟验证：健康检查 + 核心 API + 页面可访问性
+bash stop.sh             # 停止服务并释放 8000 / 3000 端口
+```
+
+首次执行会自动安装依赖（约 2-5 分钟）。启动后访问：
+
+- Dashboard: http://localhost:3000/dashboard
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- API 文档: http://localhost:8000/docs
+- 健康检查: http://localhost:8000/health
+- 数据库检查: http://localhost:8000/health/db
+
+日志位于 `.workbuddy/logs/backend.log` 与 `.workbuddy/logs/frontend.log`。
+
+## Docker 方式
+
+```bash
+cp .env.example .env
 docker compose up --build
 ```
 
@@ -203,3 +223,7 @@ npm run dev
 - `knowledge/` — 知识库资源（Phase 2 填充）
 - `deploy/` — 部署配置（后续阶段填充）
 - `docs/` — 项目文档
+- `scripts/` — 运维脚本（`smoke.sh` 冒烟测试）
+
+脚本约定：`start.sh` 具备环境自愈能力（`.env` / `.venv` / `node_modules`
+缺失时自动补齐），换机或新克隆仓库直接执行 `bash start.sh` 即可。
