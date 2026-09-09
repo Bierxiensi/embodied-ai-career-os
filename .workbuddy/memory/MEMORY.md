@@ -8,7 +8,11 @@
 - **后端**：FastAPI 风格（路径 /api/career/... /api/tasks/...），snake_case 存储，
   前端用 adapter 转换为 camelCase
 - **数据形态**：Career / Skill / Task（STATUS_CONFIG: todo/doing/done）/ Project / Milestone /
-  AgentRunRecord / CommitSuggestion
+  AgentRunRecord / CommitSuggestion / **JobApplication**（求职投递：applied→screening→interview→offer/rejected）
+- **求职作战看板（2026-09-09 新增）**：系统定位从"学习记录"转向"求职进度看板"。
+  后端 `/api/job-hunt`（聚合：岗位画像+匹配度/技能缺口/里程碑/周任务/投递漏斗）、
+  `/api/job-applications`（CRUD+/stats）；前端 `/jobs` 页（JobsBoard 客户端组件）。
+  三赛道配置见 `backend/app/core/target_roles.py`。数据脚本 `backend/scripts/seed_job_hunt.py`（幂等）。
 
 ## 命名与代码规范
 - 组件 PascalCase.tsx，一文件一默认导出
