@@ -36,7 +36,9 @@ function baseUrl(): string {
     return ""; // 客户端：相对路径，由 Next.js rewrites 代理
   }
   // 服务端：server component 必须用绝对 URL
-  return process.env.BACKEND_URL || "http://localhost:8000";
+  // 用 127.0.0.1 而非 localhost —— Windows 上 Node 会把 localhost 解析到 IPv6 ::1，
+  // 而 uvicorn 绑 0.0.0.0 只覆盖 IPv4，结果 ECONNREFUSED（页面显示"后端连接失败"）。
+  return process.env.BACKEND_URL || "http://127.0.0.1:8000";
 }
 
 /** 通用请求方法：解包 ApiResponse，失败抛 ApiError。 */

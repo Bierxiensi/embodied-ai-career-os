@@ -21,13 +21,33 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 @router.get("")
 def list_tasks(
     project_id: int | None = None,
+    track_key: str | None = None,
+    include_untracked: bool = False,
+    include_test: bool = False,
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[TaskOut]]:
-    """获取任务列表。支持按项目过滤。按创建时间倒序。"""
+    """获取任务列表。支持按项目 / 赛道过滤。按创建时间倒序。
 
+    `track_key`：按赛道过滤（llm / vlm / ai-algo / embodied），
+    用于让任务列表跟随看板视角 —— 切到「具身智能」视角时只看具身任务。
+
+    `include_untracked`：`track_key` 过滤时是否一并返回未归类（track_key IS NULL）
+    的历史 / 手写任务。默认 False（视角过滤应干净）；
+    需要"全部"语义时前端不传 track_key 即可。
+
+    `include_test`：默认 False，即排除 `source="test"` 的测试残留
+    （审计发现 dev 库里大量 pytest 写入的重复任务，会淹没真实数据）。
+    """
     q = db.query(Task)
     if project_id is not None:
         q = q.filter(Task.project_id == project_id)
+    if track_key is not None:
+        if include_untracked:
+            q = q.filter((Task.track_key == track_key) | (Task.track_key.is_(None)))
+        else:
+            q = q.filter(Task.track_key == track_key)
+    if not include_test:
+        q = q.filter(Task.source != "test")
     tasks = q.order_by(Task.created_at.desc()).all()
     return ok([TaskOut.model_validate(t) for t in tasks])
 
@@ -52,6 +72,8 @@ def create_task(
         resources=payload.resources,
         project_id=payload.project_id,
         milestone_id=payload.milestone_id,
+        source=payload.source or "user",
+        track_key=payload.track_key,
     )
 
     # 自动关联技能外键

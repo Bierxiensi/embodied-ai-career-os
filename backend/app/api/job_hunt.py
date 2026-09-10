@@ -25,6 +25,8 @@ from app.core.target_roles import (
 from app.db.base import get_db
 from app.models.career import Career
 from app.models.job_application import JobApplication
+from app.models.job_match import GRADE_ORDER, JobMatch
+from app.models.job_posting import JobPosting
 from app.models.milestone import Milestone
 from app.models.project import Project
 from app.models.skill import Skill
@@ -85,6 +87,7 @@ def job_hunt_board(db: Session = Depends(get_db)):
             "priority": role.priority,
             "salary_range": role.salary_range,
             "note": role.note,
+            "frozen": role.frozen,
             "match_pct": round(have / need * 100) if need else 0,
             "skills": matches,
         })
@@ -147,6 +150,36 @@ def job_hunt_board(db: Session = Depends(get_db)):
     total_apps = len(apps)
     responded = counts["screening"] + counts["interview"] + counts["offer"]
 
+    # ---- 岗位池摘要（Batch 1：推荐岗位直接进求职看板）----
+    postings = db.query(JobPosting).all()
+    pmatches = {m.posting_id: m for m in db.query(JobMatch).all()}
+    grade_counts = {g: 0 for g in GRADE_ORDER}
+    for p in postings:
+        m = pmatches.get(p.id)
+        if m:
+            grade_counts[m.grade] = grade_counts.get(m.grade, 0) + 1
+    # 推荐岗位（A/B）按匹配分降序，取前 5 供看板"今日可投"
+    recommended = []
+    for p in postings:
+        m = pmatches.get(p.id)
+        if m and m.grade in ("A", "B"):
+            recommended.append({
+                "id": p.id,
+                "company": p.company,
+                "title": p.title,
+                "track": p.track,
+                "tier": p.tier,
+                "match_score": m.match_score,
+                "grade": m.grade,
+            })
+    recommended.sort(key=lambda r: r["match_score"], reverse=True)
+    job_pool = {
+        "total": len(postings),
+        "by_grade": grade_counts,
+        "recommended": grade_counts.get("A", 0) + grade_counts.get("B", 0),
+        "top": recommended[:5],
+    }
+
     return ok({
         "career": {
             "target_role": career.target_role if career else None,
@@ -158,6 +191,7 @@ def job_hunt_board(db: Session = Depends(get_db)):
         "days_left": days_left,
         "target_roles": roles_out,
         "skill_gaps": gaps,
+        "job_pool": job_pool,
         "job_project": {
             "id": project.id if project else None,
             "name": project.name if project else None,

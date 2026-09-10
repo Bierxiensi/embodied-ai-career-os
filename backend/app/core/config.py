@@ -11,9 +11,17 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # backend 目录（config.py 上溯两级：core → app → backend），用于推导水位文件绝对路径，
 # 避免依赖运行时 cwd 导致相对路径失真。
 _BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+# 加载 .env：项目根 .env 优先，其次 backend/.env。
+# load_dotenv 默认不覆盖已存在的环境变量 —— Docker / CI 注入的值始终优先，符合预期。
+# 注意：不加载的话本地改 .env 完全不生效（曾经的实际坑点）。
+load_dotenv(_BACKEND_ROOT.parent / ".env")
+load_dotenv(_BACKEND_ROOT / ".env")
 
 
 @dataclass
@@ -57,6 +65,14 @@ class Settings:
     reminder_inactivity_days: int = 3
     reminder_timezone: str = "Asia/Shanghai"
 
+    # ---------- 报告调度（Batch 4） ----------
+    report_enabled: bool = True               # 关闭后调度器不注册报告 job（手动 API 仍可用）
+    report_daily_time: str = "08:30"          # 日报推送时间 HH:MM
+    report_weekly_day: str = "mon"            # 周报推送星期（mon..sun）
+    report_weekly_time: str = "09:00"         # 周报推送时间 HH:MM
+    report_followup_time: str = "10:00"       # 投递跟进提醒时间 HH:MM
+    report_followup_stale_days: int = 5       # applied/screening 停滞超过 N 天 → 提醒跟进
+
     # ---------- GitHub ----------
     github_token: str = ""                    # Personal Access Token
     github_owner: str = "prideandprejudice"   # 仓库 owner（原硬编码于 client.py，现可配置）
@@ -89,6 +105,12 @@ class Settings:
             reminder_evening_time=os.getenv("REMINDER_EVENING_TIME", "21:00"),
             reminder_inactivity_days=int(os.getenv("REMINDER_INACTIVITY_DAYS", "3")),
             reminder_timezone=os.getenv("REMINDER_TIMEZONE", "Asia/Shanghai"),
+            report_enabled=os.getenv("REPORT_ENABLED", "true").lower() == "true",
+            report_daily_time=os.getenv("REPORT_DAILY_TIME", "08:30"),
+            report_weekly_day=os.getenv("REPORT_WEEKLY_DAY", "mon").lower(),
+            report_weekly_time=os.getenv("REPORT_WEEKLY_TIME", "09:00"),
+            report_followup_time=os.getenv("REPORT_FOLLOWUP_TIME", "10:00"),
+            report_followup_stale_days=int(os.getenv("REPORT_FOLLOWUP_STALE_DAYS", "5")),
             github_token=os.getenv("GITHUB_TOKEN", ""),
             github_owner=os.getenv("GITHUB_OWNER", "prideandprejudice"),
             github_repos=[r.strip() for r in os.getenv("GITHUB_REPOS", "embodied-ai-career-os").split(",")],

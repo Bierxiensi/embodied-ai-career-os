@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-/** 雷达图技能数据项（RadarChart 与 SkillOverview 的契约）。 */
+/** 雷达图技能数据项（SkillRadarCard → RadarChart 的契约）。 */
 export interface RadarSkill {
   name: string;
   current: number; // 当前等级 0-5

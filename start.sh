@@ -235,13 +235,13 @@ launch_frontend() {
     if [ -n "$node_bin" ] && [ -n "$next_bin" ]; then
       # 直接用 node 启动 next：绕开 cmd.exe 与 npm 的 PATH 依赖
       # （cmd /c npm 在部分环境拿不到注入的 PATH，会报 "npm 不是内部或外部命令"）
-      $PS_CLEAN powershell.exe -NoProfile -Command "\$env:BACKEND_URL='http://localhost:$BACKEND_PORT'; Start-Process -FilePath '$node_bin' -ArgumentList '$next_bin','dev','-p','$FRONTEND_PORT' -WorkingDirectory '$wdir' -RedirectStandardOutput '$out' -RedirectStandardError '$err' -WindowStyle Hidden" >> "$LOG_DIR/launch.log" 2>&1
+      $PS_CLEAN powershell.exe -NoProfile -Command "\$env:BACKEND_URL='http://127.0.0.1:$BACKEND_PORT'; Start-Process -FilePath '$node_bin' -ArgumentList '$next_bin','dev','-p','$FRONTEND_PORT' -WorkingDirectory '$wdir' -RedirectStandardOutput '$out' -RedirectStandardError '$err' -WindowStyle Hidden" >> "$LOG_DIR/launch.log" 2>&1
     else
       # 回退：npm run dev（依赖系统 PATH 中已有 npm）
-      $PS_CLEAN powershell.exe -NoProfile -Command "\$env:BACKEND_URL='http://localhost:$BACKEND_PORT'; Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','npm','run','dev','--','-p','$FRONTEND_PORT' -WorkingDirectory '$wdir' -RedirectStandardOutput '$out' -RedirectStandardError '$err' -WindowStyle Hidden" >> "$LOG_DIR/launch.log" 2>&1
+      $PS_CLEAN powershell.exe -NoProfile -Command "\$env:BACKEND_URL='http://127.0.0.1:$BACKEND_PORT'; Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','npm','run','dev','--','-p','$FRONTEND_PORT' -WorkingDirectory '$wdir' -RedirectStandardOutput '$out' -RedirectStandardError '$err' -WindowStyle Hidden" >> "$LOG_DIR/launch.log" 2>&1
     fi
   else
-    ( cd "$FRONTEND_DIR" && BACKEND_URL="http://localhost:$BACKEND_PORT" nohup npm run dev -- -p "$FRONTEND_PORT" > "$FRONTEND_LOG" 2>&1 & )
+    ( cd "$FRONTEND_DIR" && BACKEND_URL="http://127.0.0.1:$BACKEND_PORT" nohup npm run dev -- -p "$FRONTEND_PORT" > "$FRONTEND_LOG" 2>&1 & )
   fi
 }
 

@@ -19,11 +19,18 @@ from pathlib import Path
 
 from sqlalchemy import text
 
-from app.core.config import settings
-from app.db.base import SessionLocal, engine
+# 允许 `python migrations/run_migration.py` 直接运行：
+# 直接执行脚本时 sys.path[0] 是 migrations/ 而不是 backend/，`import app` 会失败
+# （文档里写的用法原本跑不通，只有 `python -m migrations.run_migration` 才行）。
+# 与 backend/scripts/*.py 保持同一套 sys.path 注入约定。
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from app.core.config import settings  # noqa: E402
+from app.db.base import SessionLocal, engine  # noqa: E402
 
 # ===== 配置 =====
-BACKEND_DIR = Path(__file__).resolve().parent.parent
 MIGRATIONS_DIR = BACKEND_DIR / "migrations"
 MIGRATIONS_TABLE = "_migrations_applied"
 

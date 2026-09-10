@@ -25,6 +25,12 @@ FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 export NO_PROXY="localhost,127.0.0.1,::1"
 export no_proxy="localhost,127.0.0.1,::1"
 
+# 平台判定：Windows(Git Bash) 下 kill 对原生进程会静默失败，必须走 taskkill
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) IS_WIN=1 ;;
+  *) IS_WIN=0 ;;
+esac
+
 echo "=========================================="
 echo "  Career OS 停止"
 echo "=========================================="
@@ -48,7 +54,19 @@ kill_port_if_ours() {
   local pid
   pid=$(netstat -ano 2>/dev/null | grep ":$port " | grep -i "LISTENING" | awk '{print $NF}' | head -1 || true)
   if [ -n "$pid" ]; then
-    kill "$pid" 2>/dev/null || taskkill //f //pid "$pid" >/dev/null 2>&1 || true
+    if [ "$IS_WIN" = "1" ]; then
+      # Git Bash 的 kill 对 Windows 原生进程常返回 0 却不生效，
+      # 必须用 taskkill；MSYS_NO_PATHCONV 防止 /F 被改写成路径。
+      MSYS_NO_PATHCONV=1 taskkill /F /T /PID "$pid" >/dev/null 2>&1 || true
+    else
+      kill "$pid" 2>/dev/null || true
+    fi
+    # 复检端口：仍在监听说明没杀掉，明确报错，不要假装成功
+    sleep 1
+    if netstat -ano 2>/dev/null | grep ":$port " | grep -qi "LISTENING"; then
+      echo "  ✗ 停止$label 失败 (端口 $port, PID $pid) —— 请手动结束该进程"
+      return 1
+    fi
     echo "  ✓ 已停止$label (端口 $port, PID $pid)"
   fi
 }

@@ -118,21 +118,33 @@ Robot AI Engineer
 
 ## Phase 1
 
-基础系统
+基础系统（Career / Skill / Task CRUD + Dashboard + 学习闭环）
 
 Status:
 
-Planning
+Done
+
+数据源说明：技能与职业目标的真实画像集中在
+`backend/app/core/skill_profile.py` 与 `backend/app/core/target_roles.py`，
+改这两个文件即可，无需改业务代码。
 
 
 ## Phase 2
 
 Knowledge Agent
 
+Status:
+
+Week 1 完成（Multi-Agent Runtime：core / supervisor / career / research / orchestrator）
+
 
 ## Phase 3
 
 Robot AI Integration
+
+Status:
+
+进行中（LLM Provider 骨架已就绪，默认 mock；SO101 真机 sim2real 未打通）
 
 
 ---
@@ -167,6 +179,10 @@ bash start.sh            # 自动补 .env / 建 venv / 装依赖，并启动前�
 bash scripts/smoke.sh    # 冒烟验证：健康检查 + 核心 API + 页面可访问性
 bash stop.sh             # 停止服务并释放 8000 / 3000 端口
 ```
+
+数据库：本地开发默认 **SQLite**（`backend/data/app.db`，零配置）；
+Docker Compose 场景由 `docker-compose.yml` 覆盖为 PostgreSQL。
+`start.sh` 生成的 `.env` 直接可用，不要在没跑 Docker 的机器上填 Postgres 连接串。
 
 首次执行会自动安装依赖（约 2-5 分钟）。启动后访问：
 

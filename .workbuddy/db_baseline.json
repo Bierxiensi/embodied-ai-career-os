@@ -1,0 +1,23 @@
+{
+  "activity_drafts": 0,
+  "agent_runs": 393,
+  "career_goal": 1,
+  "commit_suggestions": 0,
+  "interview_logs": 1,
+  "interview_questions": 15,
+  "job_applications": 4,
+  "job_matches": 6,
+  "job_postings": 6,
+  "learning_logs": 14,
+  "milestones": 178,
+  "paper_chunk_embeddings": 625,
+  "paper_chunks": 583,
+  "papers": 98,
+  "projects": 214,
+  "report_logs": 1,
+  "resume_facts": 9,
+  "resume_versions": 1,
+  "skill_assessments": 14,
+  "skills": 48,
+  "tasks": 292
+}

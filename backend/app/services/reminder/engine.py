@@ -16,7 +16,7 @@ from sqlalchemy import func
 
 from app.core.config import settings
 from app.db.base import SessionLocal
-from app.services.reminder.channels import CHANNELS
+from app.services.reminder.channels import build_channel
 from app.services.reminder.templates import (
     comeback_template,
     evening_template,
@@ -32,13 +32,8 @@ class ReminderEngine:
     """提醒引擎。每个推送场景一个方法，独立可测。"""
 
     def __init__(self):
-        channel_cls = CHANNELS.get(settings.reminder_channel)
-        if channel_cls is None:
-            channel_cls = CHANNELS["terminal"]
-        if settings.reminder_channel == "serverchan":
-            self._channel = channel_cls(settings.reminder_channel_key)
-        else:
-            self._channel = channel_cls()
+        # 通道构造统一走 channels.build_channel（与报告服务共用一份逻辑）
+        self._channel = build_channel()
 
     # ------------------------------------------------------------------
     # 辅助：按 skill_name 查 Skill 表取真实 level/target_level

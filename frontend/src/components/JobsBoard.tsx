@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import GlobalNav from "./GlobalNav";
+import Link from "next/link";
+
 import type {
   JobAppStatus,
   JobApplication,
@@ -30,15 +31,27 @@ const APP_STATUS_META: Record<
 
 const PRIORITY_META: Record<string, { label: string; color: string; soft: string }> = {
   主攻: { label: "主攻", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
+  卡位: { label: "卡位", color: "#8B5CF6", soft: "rgba(139,92,246,0.12)" },
   折中: { label: "折中", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
   保底: { label: "保底", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
+  暂缓: { label: "暂缓 · 不投入", color: "var(--color-ink-48)", soft: "rgba(0,0,0,0.05)" },
 };
 
 const TRACK_LABEL: Record<string, string> = {
+  llm: "LLM",
+  vlm: "VLM / 多模态",
+  "ai-algo": "AI 算法",
   agent: "Agent",
   embodied: "具身",
   "robot-software": "机器人软件",
   other: "其他",
+};
+
+const GRADE_META: Record<string, { label: string; color: string; soft: string }> = {
+  A: { label: "A · 强匹配", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
+  B: { label: "B · 正常投", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
+  C: { label: "C · 练手", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
+  D: { label: "D · 不推荐", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
 };
 
 const STATUS_ORDER: JobAppStatus[] = [
@@ -248,12 +261,7 @@ export default function JobsBoard({ board }: Props) {
   }
 
   return (
-    <div
-      className="flex min-h-screen flex-col"
-      style={{ background: "var(--color-canvas)" }}
-    >
-      <GlobalNav />
-
+    <div className="flex flex-1 flex-col">
       <div
         className="flex flex-col"
         style={{
@@ -280,7 +288,7 @@ export default function JobsBoard({ board }: Props) {
             求职作战看板
           </h1>
           <p className="text-[17px]" style={{ color: "var(--color-ink-48)" }}>
-            从学习记录切换到投递作战 · 主攻具身/VLA，折中机器人软件，保底 Agent 应用
+            从学习记录切换到投递作战 · 主攻 LLM 大模型，卡位多模态/VLM，保底 AI 算法
           </p>
         </div>
 
@@ -359,6 +367,60 @@ export default function JobsBoard({ board }: Props) {
             ))}
           </div>
         </div>
+
+        {/* Recommended Job Pool（Batch 1：岗位池推荐直接进求职看板） */}
+        {board.jobPool && board.jobPool.total > 0 ? (
+          <div style={cardStyle}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+              <h2 style={sectionTitleStyle}>推荐岗位（来自岗位池）</h2>
+              <Link
+                href="/jd"
+                className="text-xs font-semibold no-underline"
+                style={{ color: "var(--color-primary)" }}
+              >
+                去岗位池 →
+              </Link>
+            </div>
+            <div className="flex items-center" style={{ gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
+              <FunnelStat label="岗位总数" value={board.jobPool.total} color="var(--color-ink)" />
+              <FunnelStat label="可优先投 A+B" value={board.jobPool.recommended} color="var(--color-emerald)" />
+            </div>
+            <div className="flex flex-col" style={{ gap: 8 }}>
+              {board.jobPool.top.map((t) => (
+                <Link
+                  key={t.id}
+                  href="/jd"
+                  className="flex items-center no-underline"
+                  style={{
+                    gap: 12,
+                    padding: "10px 14px",
+                    border: "1px solid var(--color-hairline-soft)",
+                    borderRadius: "var(--radius-item-md)",
+                  }}
+                >
+                  <div className="flex flex-col" style={{ gap: 2, flex: 1, minWidth: 160 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>{t.company}</span>
+                    <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+                      {t.title} · {TRACK_LABEL[t.track] || t.track}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      padding: "3px 10px",
+                      borderRadius: "var(--radius-pill)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: GRADE_META[t.grade]?.color || "var(--color-ink-48)",
+                      background: GRADE_META[t.grade]?.soft || "var(--color-zinc-100)",
+                    }}
+                  >
+                    {t.grade} · {t.matchScore}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* Skill Gaps + Project Milestones */}
         <div className="flex flex-col" style={{ gap: "var(--spacing-lg)" }}>
@@ -764,6 +826,8 @@ function TargetRoleCard({ role }: { role: TargetRole }) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
+        // 冻结赛道（长期观察）：仍展示匹配度，但视觉降权，避免误当成今日重点
+        opacity: role.frozen ? 0.62 : 1,
       }}
     >
       <div className="flex items-center justify-between">

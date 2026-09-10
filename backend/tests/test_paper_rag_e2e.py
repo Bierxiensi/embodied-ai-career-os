@@ -11,7 +11,7 @@
     cd backend && .venv/bin/python tests/test_paper_rag_e2e.py
 
 隔离策略：
-    临时 SQLite 文件，通过 DATABASE_URL 注入，结束自动清理。
+    数据库隔离统一交给 tests/conftest.py（会话级临时 SQLite + 建表灌种子）。
     显式用 HashEmbedder（prefer_st=False），确保零依赖可测试。
 """
 
@@ -23,13 +23,17 @@ import time
 from pathlib import Path
 
 # ============================================================
-# 关键：在 import app.* 之前设置临时 DB
+# 数据库隔离：统一交给 tests/conftest.py
 # ============================================================
+# 历史上本文件自己把 DATABASE_URL 指向 backend/data/test_paper_rag_e2e.db，
+# 并在 **import 期**删除旧文件。这带来三个问题（2026-09-10 审计）：
+#   1. 临时库落在项目 data/ 目录里，污染工程目录
+#   2. import 期做破坏性文件操作，一旦删除失败（例如被安全删除钩子拦截）
+#      会直接中断 pytest 的**收集**阶段，整轮测试都跑不起来
+#   3. 与 conftest.py 的隔离机制重复，两套来源容易漂移
+# 现在 conftest.py 已在任何 app.* 导入前把 DATABASE_URL 指向会话级临时库，
+# 并负责建表 + 灌种子，本文件无需再自建。
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
-_TMP_DB = _BACKEND_DIR / "data" / "test_paper_rag_e2e.db"
-if _TMP_DB.exists():
-    _TMP_DB.unlink()
-os.environ["DATABASE_URL"] = f"sqlite:///{_TMP_DB.as_posix()}"
 sys.path.insert(0, str(_BACKEND_DIR))
 
 PAPER_PATH = str(
@@ -152,6 +156,20 @@ def test_vector_store():
     # 准备：先插 Paper 再插 Chunk（满足 paper_chunks.paper_id 外键约束）
     db = SessionLocal()
     try:
+        # 幂等清理：即便隔离库被复用，重复运行也不会撞 papers.id 的 UNIQUE 约束。
+        from app.models.paper_chunk_embedding import PaperChunkEmbedding
+
+        db.query(PaperChunkEmbedding).filter(
+            PaperChunkEmbedding.chunk_id == "test-chunk-001"
+        ).delete(synchronize_session=False)
+        db.query(PaperChunk).filter(
+            PaperChunk.paper_id == "test-paper-001"
+        ).delete(synchronize_session=False)
+        db.query(Paper).filter(Paper.id == "test-paper-001").delete(
+            synchronize_session=False
+        )
+        db.commit()
+
         db.add(Paper(
             id="test-paper-001",
             title="Test Paper for VectorStore",
@@ -453,7 +471,7 @@ def main():
     print("=" * 60)
     print("  Phase 3 Week 1 Day 2 · RAG 向量检索端到端测试")
     print("=" * 60)
-    print(f"  临时 DB: {_TMP_DB}")
+    print(f"  DB: {os.environ.get('DATABASE_URL', '<unset>')}")
     print(f"  测试论文: {Path(PAPER_PATH).name}")
     print(f"  Embedder: HashEmbedder (零依赖 fallback)")
 
@@ -481,19 +499,9 @@ def main():
         for x in results:
             if x.status == "FAIL":
                 print(f"  ✗ [{x.case_id}] {x.name}: {x.detail}")
-        _cleanup()
         sys.exit(1)
     else:
         print("\n✓ 全部通过")
-        _cleanup()
-
-
-def _cleanup():
-    try:
-        if _TMP_DB.exists():
-            _TMP_DB.unlink()
-    except Exception:  # noqa: BLE001
-        pass
 
 
 if __name__ == "__main__":

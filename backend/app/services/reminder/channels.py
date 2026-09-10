@@ -73,3 +73,18 @@ CHANNELS: dict[str, type[Channel]] = {
     "terminal": TerminalChannel,
     "serverchan": ServerChanChannel,
 }
+
+
+def build_channel(channel_name: str | None = None, key: str | None = None) -> Channel:
+    """按配置构造推送通道（单一入口，供提醒引擎与报告服务共用）。
+
+    ``channel_name`` 缺省或未注册时回退 terminal；仅 serverchan 需要 key。
+    """
+    from app.core.config import settings
+
+    name = channel_name if channel_name is not None else settings.reminder_channel
+    channel_cls = CHANNELS.get(name) or CHANNELS["terminal"]
+    if name == "serverchan":
+        return channel_cls(key if key is not None else settings.reminder_channel_key)
+    return channel_cls()
+

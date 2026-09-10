@@ -24,8 +24,10 @@ FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 export NO_PROXY="localhost,127.0.0.1,::1"
 export no_proxy="localhost,127.0.0.1,::1"
 
-BACKEND="http://localhost:$BACKEND_PORT"
-FRONTEND="http://localhost:$FRONTEND_PORT"
+# 用 127.0.0.1 而非 localhost：Windows 上 localhost 可能解析到 IPv6 ::1，
+# 而后端只绑 IPv4，会导致明明服务在跑却连不上
+BACKEND="http://127.0.0.1:$BACKEND_PORT"
+FRONTEND="http://127.0.0.1:$FRONTEND_PORT"
 FAIL=0
 PASS=0
 
@@ -79,6 +81,20 @@ check_api "/api/projects/1"          "GET /api/projects/1 项目详情（含里�
 check_api "/api/dashboard"           "GET /api/dashboard 仪表盘聚合"
 check_api "/api/agent/runs?limit=5"  "GET /api/agent/runs Agent 运行记录"
 check_api "/api/learning-logs"       "GET /api/learning-logs 学习日志"
+check_api "/api/job-hunt"            "GET /api/job-hunt 求职看板聚合"
+check_api "/api/job-applications/stats" "GET /api/job-applications/stats 投递漏斗"
+check_api "/api/job-postings/stats"  "GET /api/job-postings/stats 岗位池统计（Batch 1）"
+check_api "/api/job-postings"        "GET /api/job-postings 岗位池列表（含匹配，Batch 1）"
+check_api "/api/resume"              "GET /api/resume 简历版本列表（Batch 2）"
+check_api "/api/resume/facts"       "GET /api/resume/facts 事实锚点库（Batch 2）"
+check_api "/api/interviews"          "GET /api/interviews 面经列表（Batch 3）"
+check_api "/api/interviews/stats"    "GET /api/interviews/stats 弱项统计（Batch 3）"
+check_api "/api/interview-questions" "GET /api/interview-questions 面试题库（Batch 3）"
+check_api "/api/reports/daily"       "GET /api/reports/daily 日报构建（Batch 4）"
+check_api "/api/reports/weekly"      "GET /api/reports/weekly 周报构建（Batch 4）"
+check_api "/api/reports/schedule"    "GET /api/reports/schedule 调度配置（Batch 4）"
+check_api "/api/reports/followups"   "GET /api/reports/followups 待跟进投递（Batch 4）"
+check_api "/api/reports/history?limit=5" "GET /api/reports/history 报告归档（Batch 4）"
 
 # ---------- 种子数据 ----------
 echo "[后端] 种子数据"
@@ -109,6 +125,52 @@ else
 
   code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$FRONTEND/agents")
   [ "$code" = "200" ] && ok "/agents HTTP 200" || bad "/agents HTTP $code"
+
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$FRONTEND/jobs")
+  [ "$code" = "200" ] && ok "/jobs HTTP 200" || bad "/jobs HTTP $code"
+
+  # 求职看板是 SSR 取数，页面出现"后端连接失败"说明前端连不上后端
+  if curl -s --max-time 20 "$FRONTEND/jobs" | grep -q "后端连接失败"; then
+    bad "/jobs 页面降级（前端连不上后端，检查 BACKEND_URL 与端口）"
+  else
+    ok "/jobs 数据渲染正常"
+  fi
+
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$FRONTEND/jd")
+  [ "$code" = "200" ] && ok "/jd HTTP 200" || bad "/jd HTTP $code"
+
+  if curl -s --max-time 20 "$FRONTEND/jd" | grep -q "后端连接失败"; then
+    bad "/jd 页面降级（前端连不上后端，检查 BACKEND_URL 与端口）"
+  else
+    ok "/jd 数据渲染正常（Batch 1）"
+  fi
+
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$FRONTEND/resume")
+  [ "$code" = "200" ] && ok "/resume HTTP 200" || bad "/resume HTTP $code"
+
+  if curl -s --max-time 20 "$FRONTEND/resume" | grep -q "后端连接失败"; then
+    bad "/resume 页面降级（前端连不上后端，检查 BACKEND_URL 与端口）"
+  else
+    ok "/resume 数据渲染正常（Batch 2）"
+  fi
+
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$FRONTEND/interview")
+  [ "$code" = "200" ] && ok "/interview HTTP 200" || bad "/interview HTTP $code"
+
+  if curl -s --max-time 20 "$FRONTEND/interview" | grep -q "后端连接失败"; then
+    bad "/interview 页面降级（前端连不上后端，检查 BACKEND_URL 与端口）"
+  else
+    ok "/interview 数据渲染正常（Batch 3）"
+  fi
+
+  code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$FRONTEND/reports")
+  [ "$code" = "200" ] && ok "/reports HTTP 200" || bad "/reports HTTP $code"
+
+  if curl -s --max-time 20 "$FRONTEND/reports" | grep -q "后端连接失败"; then
+    bad "/reports 页面降级（前端连不上后端，检查 BACKEND_URL 与端口）"
+  else
+    ok "/reports 数据渲染正常（Batch 4）"
+  fi
 fi
 
 # ---------- 汇总 ----------

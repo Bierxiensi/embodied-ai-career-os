@@ -9,7 +9,6 @@
  * 复用 dashboard 的降级 UI 模式。
  */
 
-import GlobalNav from "@/components/GlobalNav";
 import SubNav from "@/components/SubNav";
 import AgentOverview from "@/components/AgentOverview";
 import { ApiError } from "@/lib/apiClient";
@@ -26,8 +25,7 @@ export default async function AgentsPage() {
     const skills = await getSkills().catch(() => [] as Skill[]);
 
     return (
-      <main className="min-h-full flex flex-col" style={{ background: "var(--color-canvas)" }}>
-        <GlobalNav />
+      <main className="flex flex-1 flex-col">
         <SubNav title="Agent 应用" skills={skills} />
         <div
           className="flex flex-col"
@@ -63,7 +61,7 @@ export default async function AgentsPage() {
 
     return (
       <main
-        className="flex min-h-screen items-center justify-center"
+        className="flex flex-1 items-center justify-center"
         style={{ background: "var(--color-canvas)" }}
       >
         <div

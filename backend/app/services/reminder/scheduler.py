@@ -68,10 +68,43 @@ def start_scheduler() -> None:
         id="github_sync",
     )
     # ---------------------------
+    # ---- Batch 4: 报告调度（日报 / 周报 / 投递跟进）----
+    if settings.report_enabled:
+        from app.services.report.service import (
+            remind_followups,
+            send_daily_report,
+            send_weekly_report,
+        )
+
+        daily_h, daily_m = _parse_time(settings.report_daily_time)
+        weekly_h, weekly_m = _parse_time(settings.report_weekly_time)
+        follow_h, follow_m = _parse_time(settings.report_followup_time)
+
+        _scheduler.add_job(
+            lambda: send_daily_report(),
+            "cron", hour=daily_h, minute=daily_m,
+            id="job_daily_report",
+        )
+        _scheduler.add_job(
+            lambda: send_weekly_report(),
+            "cron",
+            day_of_week=settings.report_weekly_day,
+            hour=weekly_h, minute=weekly_m,
+            id="job_weekly_report",
+        )
+        _scheduler.add_job(
+            lambda: remind_followups(),
+            "cron", hour=follow_h, minute=follow_m,
+            id="job_followup_remind",
+        )
+    else:
+        logger.info("report_enabled=false，未注册报告 job")
+    # ---------------------------
     _scheduler.start()
     logger.info(
-        "Reminder scheduler started (morning=%s, evening=%s)",
+        "Reminder scheduler started (morning=%s, evening=%s, report_daily=%s)",
         settings.reminder_morning_time, settings.reminder_evening_time,
+        settings.report_daily_time if settings.report_enabled else "off",
     )
 
 
@@ -98,3 +131,21 @@ def _parse_time(time_str: str) -> tuple[int, int]:
     """解析 'HH:MM' 字符串为 (hour, minute)。"""
     parts = time_str.strip().split(":")
     return int(parts[0]), int(parts[1])
+
+
+def jobs_info() -> list[dict]:
+    """返回已注册 job 的 id / 下次运行时间（供 /api/reports/schedule 展示）。
+
+    未启动（或已停止）时返回空列表。
+    """
+    if _scheduler is None:
+        return []
+    out: list[dict] = []
+    for job in _scheduler.get_jobs():
+        nxt = getattr(job, "next_run_time", None)
+        out.append({
+            "id": job.id,
+            "trigger": str(job.trigger),
+            "next_run": nxt.isoformat() if nxt else None,
+        })
+    return out

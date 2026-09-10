@@ -65,6 +65,25 @@ class Task(Base):
     # 任务描述（保留向后兼容，新逻辑用 objective）
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # 数据来源（user / seed / planner / test），语义见 app/models/project.py 顶部注释。
+    # Planner 生成的任务标 "planner"；种子标 "seed"；测试标 "test"。
+    source: Mapped[str] = mapped_column(
+        String(20), default="user", server_default="user", nullable=False
+    )
+
+    # 任务所属赛道（llm / vlm / ai-algo / embodied），见 migrations/0008。
+    # 与 source 正交：source 记「谁写的」，track_key 记「给哪条赛道写的」。
+    # 看板切到某个视角时，只展示 track_key == 当前赛道 的任务；
+    # NULL = 未归类（历史 / 手写任务），不参与视角过滤。
+    track_key: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+    # 任务归属「课程第几天」（1..30），见 migrations/0011 与 app/models/plan_day.py。
+    # 与 track_key 正交：plan_day_id 记「属于课程第几天」，track_key 记「属于哪条赛道」。
+    # 今日施工单据此列出"今天该做的任务"；NULL = 不对应任何课程日（历史 / 手写任务）。
+    plan_day_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("plan_days.id", ondelete="SET NULL"), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )

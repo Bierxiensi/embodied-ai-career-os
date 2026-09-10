@@ -1,0 +1,24 @@
+-- 0011_task_plan_day_id.sql
+--
+-- 给 tasks 增加 plan_day_id：任务归属「课程第几天」。
+--
+-- 背景（2026-09-10）：
+--   plan_days 建立后，任务是计划日的执行单元。没有这个外键，
+--   今日施工单只能靠 skill_name 猜"这条任务属于哪天"，不可靠。
+--
+-- 与既有字段正交（重要）：
+--   plan_day_id  回答「属于课程第几天」（1..30，可空）
+--   track_key    回答「属于哪条赛道」（llm / vlm / ai-algo / embodied）
+--   source       回答「谁写的」（user / seed / planner / test）
+--   三个维度各自成轴，互不替代。一条 Day 11 的 LoRA 任务应该是
+--   plan_day_id=11 + track_key='llm' + source='planner'。
+--
+-- 可空：历史任务与用户手写任务不一定对应某个课程日。
+--
+-- 幂等：run_migration.py 会捕获 duplicate column 并视为已应用。
+--
+-- ⚠️ 本文件里不要出现分号（除了末尾那一个）—— 同 0009 的说明。
+--    本迁移只做一件事（加列），不建索引：tasks 是个人看板级别的小表（当前 21 行），
+--    而且多语句在"ALTER 已存在 → 整事务回滚"时会一起回滚，留下静默缺失。
+
+ALTER TABLE tasks ADD COLUMN plan_day_id INTEGER REFERENCES plan_days(id) ON DELETE SET NULL;

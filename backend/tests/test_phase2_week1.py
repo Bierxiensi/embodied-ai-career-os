@@ -13,8 +13,12 @@
     cd backend && python tests/test_phase2_week1.py
 
 前置条件：
-    - 后端运行在 localhost:8000
+    - 后端运行在 127.0.0.1:8000
     - 数据库已执行 0001 迁移（agent_runs 含 status/duration_ms/trace_id）
+
+注意：本脚本通过 HTTP 打**实时后端**，因此不经 pytest 的临时库隔离
+（请求由外部后端进程处理）。已在 tests/conftest.py 的 collect_ignore 中排除，
+不要用 pytest 运行它。
 """
 
 from __future__ import annotations
@@ -25,12 +29,18 @@ import sqlite3
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 
 import requests
 
 # ===== 配置 =====
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
-DB_PATH = "/workspace/embodied-ai-career-os/backend/data/app.db"
+# 路径从 __file__ 推导，不写死绝对路径。
+# 历史问题：此处曾硬编码 Linux 容器路径 /workspace/embodied-ai-career-os/...，
+# 在 Windows / 换机后必然指向不存在的目录（详见 docs/system-audit-and-role-switch.md）。
+_BACKEND_DIR = Path(__file__).resolve().parents[1]  # tests/ → backend/
+
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+DB_PATH = os.environ.get("DB_PATH", str(_BACKEND_DIR / "data" / "app.db"))
 
 
 # ===== 测试结果收集 =====

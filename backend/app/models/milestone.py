@@ -24,6 +24,12 @@ class Milestone(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     workspace: Mapped[str | None] = mapped_column(String(200), nullable=True)
     required_modifications: Mapped[list | None] = mapped_column(JSON, nullable=True)
+
+    # 数据来源（user / seed / planner / test），语义见 app/models/project.py 顶部注释
+    source: Mapped[str] = mapped_column(
+        String(20), default="user", server_default="user", nullable=False
+    )
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False

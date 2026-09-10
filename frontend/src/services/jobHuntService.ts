@@ -14,6 +14,8 @@ import type {
   JobApplicationCreate,
   JobHuntBoard,
   JobTaskItem,
+  MatchGrade,
+  PostingTier,
 } from "@/types";
 
 /* ───────────────────────── 后端原始结构（snake_case） ───────────────────────── */
@@ -33,6 +35,7 @@ interface JobHuntDTO {
     priority: string;
     salary_range: string;
     note: string;
+    frozen?: boolean;
     match_pct: number;
     skills: Array<{
       name: string;
@@ -85,6 +88,20 @@ interface JobHuntDTO {
     response_rate: number;
     items: JobAppDTO[];
   };
+  job_pool?: {
+    total: number;
+    by_grade: Record<string, number>;
+    recommended: number;
+    top: Array<{
+      id: number;
+      company: string;
+      title: string;
+      track: string;
+      tier: number;
+      match_score: number;
+      grade: string;
+    }>;
+  };
 }
 
 interface JobAppDTO {
@@ -136,10 +153,11 @@ function toBoard(dto: JobHuntDTO): JobHuntBoard {
     targetRoles: dto.target_roles.map((r) => ({
       key: r.key,
       name: r.name,
-      priority: r.priority as "主攻" | "折中" | "保底",
+      priority: r.priority as "主攻" | "卡位" | "保底" | "暂缓",
       salaryRange: r.salary_range,
       note: r.note,
       matchPct: r.match_pct,
+      frozen: r.frozen ?? false,
       skills: r.skills.map((s) => ({
         name: s.name,
         level: s.level,
@@ -195,6 +213,22 @@ function toBoard(dto: JobHuntDTO): JobHuntBoard {
       responseRate: dto.applications.response_rate,
       items: dto.applications.items.map(toApp),
     },
+    jobPool: dto.job_pool
+      ? {
+          total: dto.job_pool.total,
+          byGrade: dto.job_pool.by_grade as Record<MatchGrade, number>,
+          recommended: dto.job_pool.recommended,
+          top: dto.job_pool.top.map((t) => ({
+            id: String(t.id),
+            company: t.company,
+            title: t.title,
+            track: t.track,
+            tier: t.tier as PostingTier,
+            matchScore: t.match_score,
+            grade: t.grade as MatchGrade,
+          })),
+        }
+      : undefined,
   };
 }
 

@@ -31,7 +31,7 @@ export default async function JobsPage() {
 
     return (
       <main
-        className="flex min-h-screen items-center justify-center"
+        className="flex flex-1 items-center justify-center"
         style={{ background: "var(--color-canvas)" }}
       >
         <div

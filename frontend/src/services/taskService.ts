@@ -21,6 +21,7 @@ interface TaskDTO {
   resources: string[];
   project_id: number | null;
   milestone_id: number | null;
+  track_key?: string | null;
 }
 
 /** 后端 → 前端转换。
@@ -43,13 +44,39 @@ function toTask(dto: TaskDTO): Task {
     resources: dto.resources ?? [],
     projectId: dto.project_id != null ? String(dto.project_id) : null,
     milestoneId: dto.milestone_id != null ? String(dto.milestone_id) : null,
+    trackKey: dto.track_key ?? null,
   };
 }
 
-/** 获取任务列表。支持按项目过滤。 */
-export async function getTasks(projectId?: string): Promise<Task[]> {
-  const query = projectId ? `?project_id=${projectId}` : "";
-  const dtos = await apiClient.get<TaskDTO[]>(`/api/tasks${query}`);
+/** 任务查询条件。 */
+export interface TaskQuery {
+  /** 按项目过滤 */
+  projectId?: string;
+  /** 按赛道过滤（看板视角）—— 传了就只返回该赛道的任务 */
+  trackKey?: string | null;
+  /** 赛道过滤时是否一并带上未归类（历史 / 手写）任务 */
+  includeUntracked?: boolean;
+}
+
+/** 获取任务列表。
+ *
+ * `trackKey` 用于让任务列表跟随看板视角：
+ *   求职冲刺视角 → track_key=llm，具身视角 → track_key=embodied。
+ * 不传则返回全量（"全部任务池"口径）。
+ */
+export async function getTasks(
+  query: TaskQuery | string = {}
+): Promise<Task[]> {
+  // 兼容旧调用签名 getTasks(projectId?: string)
+  const q: TaskQuery = typeof query === "string" ? { projectId: query } : query;
+
+  const params = new URLSearchParams();
+  if (q.projectId) params.set("project_id", q.projectId);
+  if (q.trackKey) params.set("track_key", q.trackKey);
+  if (q.includeUntracked) params.set("include_untracked", "true");
+
+  const qs = params.toString();
+  const dtos = await apiClient.get<TaskDTO[]>(`/api/tasks${qs ? `?${qs}` : ""}`);
   return dtos.map(toTask);
 }
 

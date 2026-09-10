@@ -16,6 +16,27 @@ from app.agents.career.state import SkillGapItem, SkillStatus
 # 集中维护，Week 2 可接入 LLM 动态生成
 # 每个岗位列出的技能为"达到该岗位胜任线所需"的清单
 ROLE_REQUIRED_SKILLS: dict[str, list[str]] = {
+    # ===== 2026-09-10 新增：v2.0 三梯队岗位（当前主线）=====
+    "LLM Algorithm Engineer": [
+        "Transformer", "Attention", "Pretraining", "SFT",
+        "LoRA/QLoRA", "PyTorch", "Python", "Deep Learning",
+    ],
+    "Multimodal / VLM Algorithm Engineer": [
+        "ViT", "Multimodal Alignment", "VLM",
+        "LoRA/QLoRA", "PyTorch", "Python",
+    ],
+    "Foundation Model Engineer": [
+        "Transformer", "Pretraining", "Distributed Training",
+        "FSDP/ZeRO", "PyTorch", "Python",
+    ],
+    "AI Algorithm Engineer": [
+        "Python", "Deep Learning", "PyTorch",
+        "Inference Optimization", "Linux",
+    ],
+    "Inference Engineer": [
+        "KV Cache", "Prefill/Decode", "Quantization", "vLLM", "Linux",
+    ],
+    # ===== 以下为历史岗位（保留，具身主线暂缓但数据不删）=====
     "Robot AI Engineer": [
         "ROS2",
         "Isaac",

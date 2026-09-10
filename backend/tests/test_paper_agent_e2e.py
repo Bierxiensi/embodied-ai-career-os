@@ -10,8 +10,8 @@
     cd backend && python tests/test_paper_agent_e2e.py
 
 隔离策略：
-    持久化测试使用临时 SQLite 文件，通过 DATABASE_URL 环境变量注入，
-    不污染开发态 data/app.db。脚本结束自动清理临时 DB。
+    数据库隔离统一由 tests/conftest.py 负责 —— 会话级临时 SQLite 文件 +
+    建表灌种子，脚本与 pytest 共用同一套隔离，不污染开发态 data/app.db。
 """
 
 from __future__ import annotations
@@ -22,14 +22,12 @@ import time
 from pathlib import Path
 
 # ============================================================
-# 关键：在 import app.* 之前设置临时 DB，确保 engine 绑定到隔离库
+# 数据库隔离：统一交给 tests/conftest.py
 # ============================================================
+# 历史上本文件自己把 DATABASE_URL 指向 backend/data/test_paper_e2e.db，并在
+# **import 期**删除旧文件 —— 会污染工程目录、且删除失败会中断 pytest 收集阶段。
+# 现在 conftest.py 已在任何 app.* 导入前指向会话级临时库并建表灌种子。
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
-_TMP_DB = _BACKEND_DIR / "data" / "test_paper_e2e.db"
-if _TMP_DB.exists():
-    _TMP_DB.unlink()
-# 用绝对路径转 sqlite 标准 URI，确保 engine 绑定到隔离临时库
-os.environ["DATABASE_URL"] = f"sqlite:///{_TMP_DB.as_posix()}"
 
 # 确保 backend 在 sys.path
 sys.path.insert(0, str(_BACKEND_DIR))
@@ -281,7 +279,7 @@ def main():
     print("=" * 60)
     print("  Phase 3 Week 1 Day 1 · Paper Agent 端到端测试")
     print("=" * 60)
-    print(f"  临时 DB: {_TMP_DB}")
+    print(f"  DB: {os.environ.get('DATABASE_URL', '<unset>')}")
     print(f"  测试论文: {Path(PAPER_PATH).name}")
 
     print("\n[套件 1] Parser")
@@ -306,20 +304,9 @@ def main():
         for x in results:
             if x.status == "FAIL":
                 print(f"  ✗ [{x.case_id}] {x.name}: {x.detail}")
-        _cleanup()
         sys.exit(1)
     else:
         print("\n✓ 全部通过")
-        _cleanup()
-
-
-def _cleanup():
-    """清理临时 DB 文件。"""
-    try:
-        if _TMP_DB.exists():
-            _TMP_DB.unlink()
-    except Exception:  # noqa: BLE001
-        pass
 
 
 if __name__ == "__main__":

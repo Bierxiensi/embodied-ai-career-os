@@ -11,6 +11,10 @@ export default function GlobalNav() {
     { href: "/dashboard", label: "概览" },
     { href: "/projects", label: "项目" },
     { href: "/jobs", label: "求职" },
+    { href: "/jd", label: "岗位" },
+    { href: "/resume", label: "简历" },
+    { href: "/interview", label: "面试" },
+    { href: "/reports", label: "报告" },
     { href: "/agents", label: "Agent" },
   ];
 

@@ -37,6 +37,7 @@ class PlannerState(TypedDict, total=False):
     skills: list[SkillInput]     # 当前技能状态
     energy_level: str            # 能量水平：low / normal / high（影响难度选择）
     current_focus: str           # 当前聚焦技能（可选，强制指定时跳过自动选择）
+    track_key: str               # 赛道 key（llm / vlm / ai-algo / embodied）
 
     # ===== 中间态 =====
     gaps: list[GapItem]          # 排序后的缺口列表

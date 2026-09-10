@@ -1,10 +1,40 @@
+/** 项目详情页（Server Component）。
+ *
+ * 2026-09-10 重写：与列表页同一套设计系统（PageHeader + token 配色），
+ * 顶栏由 app/layout.tsx 统一渲染。
+ *
+ * 数据：项目 + 里程碑 + 关联任务（并行拉取）。
+ * 交互：MilestoneTimeline（客户端组件）负责里程碑状态切换与任务生成。
+ */
+
+import PageHeader from "@/components/PageHeader";
 import MilestoneTimeline from "@/components/MilestoneTimeline";
+import { milestoneBadge } from "@/components/ProjectCard";
 import { projectService } from "@/services/projectService";
 import { getSkills } from "@/services/skillService";
 import { getTasks } from "@/services/taskService";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
+
+const STATUS_LABEL: Record<string, string> = {
+  active: "进行中",
+  paused: "已暂停",
+  completed: "已完成",
+};
+
+const TASK_STATUS: Record<string, { label: string; bg: string; color: string }> = {
+  done: {
+    label: "已完成",
+    bg: "var(--color-emerald-soft)",
+    color: "var(--color-emerald-deep)",
+  },
+  doing: {
+    label: "进行中",
+    bg: "var(--color-amber-soft)",
+    color: "var(--color-amber-deep)",
+  },
+  todo: { label: "待办", bg: "#F5F5F5", color: "var(--color-ink-32)" },
+};
 
 export default async function ProjectDetailPage({
   params,
@@ -12,62 +42,135 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // 技能用于「生成里程碑任务」的 Planner 输入；失败不击穿整页。
   const [project, skills, allTasks] = await Promise.all([
     projectService.get(id),
-    getSkills(),
-    getTasks(id),
+    getSkills().catch(() => []),
+    getTasks(id).catch(() => []),
   ]);
 
-  return (
-    <main className="min-h-full bg-zinc-50 dark:bg-black">
-      <div className="mx-auto max-w-3xl px-6 py-10">
-        <header className="mb-8">
-          <Link
-            href="/projects"
-            className="text-xs text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
-          >
-            ← 项目列表
-          </Link>
-          <div className="mt-2 flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                {project.name}
-              </h1>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {project.goal}
-              </p>
-            </div>
-            <span
-              className={`text-xs px-2 py-1 rounded-full ${
-                project.status === "active"
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-              }`}
-            >
-              {project.status === "active" ? "进行中" : project.status}
-            </span>
-          </div>
+  const status = milestoneBadge; // 复用同一套徽章口径（避免色值漂移）
+  const pct = project.progressPct ?? 0;
 
-          {/* 进度条 */}
-          <div className="mt-4 flex items-center gap-3">
-            <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+  return (
+    <main className="flex flex-1 flex-col">
+      <div
+        className="flex flex-col"
+        style={{
+          gap: "var(--spacing-lg)",
+          padding: "36px clamp(20px, 8vw, 120px) 48px",
+        }}
+      >
+        <PageHeader
+          eyebrow={`PROJECT · ${project.currentVersion}`}
+          title={project.name}
+          subtitle={project.goal}
+          backHref="/projects"
+          backLabel="项目列表"
+          actions={
+            <span
+              className="inline-flex items-center"
+              style={{
+                padding: "5px 12px",
+                borderRadius: "var(--radius-pill)",
+                fontSize: 12,
+                fontWeight: 600,
+                background:
+                  project.status === "active"
+                    ? "var(--color-emerald-soft)"
+                    : project.status === "paused"
+                      ? "var(--color-amber-soft)"
+                      : "#F5F5F5",
+                color:
+                  project.status === "active"
+                    ? "var(--color-emerald-deep)"
+                    : project.status === "paused"
+                      ? "var(--color-amber-deep)"
+                      : "var(--color-ink-32)",
+              }}
+            >
+              {STATUS_LABEL[project.status] ?? project.status}
+            </span>
+          }
+        >
+          {/* 进度 */}
+          <div
+            className="flex items-center"
+            style={{ gap: 12, paddingTop: 4, maxWidth: 520 }}
+          >
+            <div
+              className="flex-1 overflow-hidden"
+              style={{
+                height: 6,
+                background: "var(--color-hairline-soft)",
+                borderRadius: 3,
+              }}
+            >
               <div
-                className="h-full bg-blue-500 rounded-full transition-all"
-                style={{ width: `${project.progressPct}%` }}
+                className="h-full"
+                style={{
+                  width: `${pct}%`,
+                  background:
+                    project.status === "paused"
+                      ? "var(--color-amber)"
+                      : "var(--color-emerald)",
+                  borderRadius: 3,
+                }}
               />
             </div>
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              {project.progressPct}% ({project.milestoneCompleted}/
-              {project.milestoneTotal})
+            <span
+              className="text-xs font-medium"
+              style={{ color: "var(--color-ink-48)" }}
+            >
+              {project.milestoneCompleted}/{project.milestoneTotal} 里程碑 · {pct}%
             </span>
           </div>
-        </header>
+        </PageHeader>
+
+        {/* 项目说明 */}
+        {project.description && (
+          <Card title="说明">
+            <p className="text-sm" style={{ color: "var(--color-ink-80)" }}>
+              {project.description}
+            </p>
+            {project.githubUrl && (
+              <a
+                href={project.githubUrl}
+                className="mt-3 self-start text-xs font-medium no-underline"
+                style={{ color: "var(--color-primary)" }}
+              >
+                {project.githubUrl} ↗
+              </a>
+            )}
+          </Card>
+        )}
 
         {/* 里程碑时间线 */}
-        <section>
-          <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-4">
-            里程碑
-          </h2>
+        <Card
+          title="里程碑"
+          hint={`${project.milestoneTotal} 个 · 点击左侧标记可切换状态`}
+        >
+          <div className="flex flex-wrap" style={{ gap: 6, marginBottom: 4 }}>
+            {project.milestones.map((m) => {
+              const badge = status(m.status);
+              return (
+                <span
+                  key={m.id}
+                  className="inline-flex items-center"
+                  style={{
+                    padding: "3px 9px",
+                    borderRadius: "var(--radius-pill)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    background: badge.bg,
+                    color: badge.color,
+                  }}
+                >
+                  {m.version}
+                </span>
+              );
+            })}
+          </div>
           <MilestoneTimeline
             milestones={project.milestones}
             projectId={id}
@@ -80,40 +183,98 @@ export default async function ProjectDetailPage({
               .map((t) => t.milestoneId)
               .filter((x): x is string => x != null)}
           />
-        </section>
+        </Card>
 
         {/* 关联任务 */}
         {allTasks.length > 0 && (
-          <section className="mt-8">
-            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-3">
-              关联任务
-            </h2>
-            <div className="space-y-2">
-              {allTasks.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
-                >
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded ${
-                      t.status === "done"
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : t.status === "doing"
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                        : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
-                    }`}
+          <Card title="关联任务" hint={`${allTasks.length} 项`}>
+            <div className="flex flex-col" style={{ gap: 8 }}>
+              {allTasks.map((t) => {
+                const cfg = TASK_STATUS[t.status] ?? TASK_STATUS.todo;
+                return (
+                  <div
+                    key={t.id}
+                    className="flex items-center"
+                    style={{
+                      gap: 12,
+                      padding: "12px 14px",
+                      background: "#FAFAFB",
+                      borderRadius: "var(--radius-item-md)",
+                    }}
                   >
-                    {t.status === "done" ? "✓" : t.status === "doing" ? "●" : "○"}
-                  </span>
-                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                    {t.title}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      className="inline-flex shrink-0 items-center"
+                      style={{
+                        padding: "3px 9px",
+                        borderRadius: "var(--radius-pill)",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: cfg.bg,
+                        color: cfg.color,
+                      }}
+                    >
+                      {cfg.label}
+                    </span>
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: "var(--color-ink)" }}
+                    >
+                      {t.title}
+                    </span>
+                    {t.duration > 0 && (
+                      <span
+                        className="ml-auto shrink-0 text-xs"
+                        style={{ color: "var(--color-ink-48)" }}
+                      >
+                        {t.duration} min
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </section>
+          </Card>
         )}
       </div>
     </main>
+  );
+}
+
+/** 页内卡片容器 —— 与 Dashboard 卡片同口径（白底 + hairline + 18px 圆角）。 */
+function Card({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className="flex flex-col"
+      style={{
+        gap: 16,
+        padding: "var(--spacing-lg)",
+        background: "var(--color-card)",
+        border: "1px solid var(--color-hairline)",
+        borderRadius: "var(--radius-card-lg)",
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span
+          className="text-[17px] font-semibold"
+          style={{ color: "var(--color-ink)" }}
+        >
+          {title}
+        </span>
+        {hint && (
+          <span className="text-xs font-medium" style={{ color: "var(--color-ink-48)" }}>
+            {hint}
+          </span>
+        )}
+      </div>
+      {children}
+    </section>
   );
 }

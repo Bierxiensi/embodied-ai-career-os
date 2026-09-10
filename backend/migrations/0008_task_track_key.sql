@@ -1,0 +1,32 @@
+-- 0008_task_track_key.sql
+--
+-- 给 tasks 增加 track_key：任务所属赛道（llm / vlm / ai-algo / embodied）。
+--
+-- 背景（2026-09-10 用户反馈「任务没有跟随不同的角色看板走」）：
+--   看板已支持双视角切换（求职冲刺 / 具身智能），雷达图、匹配度、缺口数都跟随视角，
+--   但任务列表调 GET /api/tasks 拿的是全量任务，与视角无关。
+--   根因是 tasks 表根本没有「这条任务是给哪条赛道准备的」这个信息 ——
+--   而 Planner 在旧实现里吃的是全部 48 项技能，挑全局最大 gap，产出的任务
+--   自然与当前视角无关（甚至会在 LLM 冲刺视角下产出具身任务）。
+--
+-- 语义：
+--   track_key 为 NULL       → 未归类（历史数据 / 用户手写任务），不参与视角过滤
+--   track_key = 'llm'       → 只在「求职冲刺」视角（主攻赛道 llm）出现
+--   track_key = 'embodied'  → 只在「具身智能」视角出现
+--
+-- 与 source 字段（0007）正交：
+--   source 回答「谁写的」（user/seed/planner/test）
+--   track_key 回答「给哪条赛道写的」
+--
+-- 幂等：run_migration.py 会捕获 duplicate column 错误。
+-- 历史数据的回填见 scripts/backfill_task_track.py（不在本迁移里做，
+-- 因为它依赖 TARGET_ROLES 配置，属于应用层逻辑，不该硬编码进 SQL）。
+--
+-- ⚠️ 本文件里不要出现分号 —— run_migration.py 用朴素的按 "分号" 切分来拆语句，
+--    不理解 SQL 注释，注释里写一个分号就会被切出一个非法片段。
+--    同理不建索引：多语句在 "ALTER 已存在 → 整事务回滚" 时会一起回滚掉，
+--    留下静默缺失。单语句最稳。
+--
+-- tasks 是个人看板级别的小表（当前 19 行），也不需要索引。
+
+ALTER TABLE tasks ADD COLUMN track_key VARCHAR(40);

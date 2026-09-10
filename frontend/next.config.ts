@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 /**
  * Next.js 配置。
  *
- * rewrites：将 /api/* 代理到后端 FastAPI（localhost:8000），
+ * rewrites：将 /api/* 代理到后端 FastAPI（127.0.0.1:8000），
  * 避免前端硬编码后端 URL 与跨域问题（遵循 ExperienceRecall 教训：优先代理）。
  *
  * allowedDevOrigins：Next.js 16 默认阻止跨域访问 dev 资源（HMR / client chunks）。
@@ -19,7 +19,9 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.BACKEND_URL || "http://localhost:8000"}/api/:path*`,
+        // 默认 127.0.0.1：Windows 下 Node 把 localhost 解析到 ::1，
+        // 而后端绑 0.0.0.0（仅 IPv4），会导致 rewrite 代理 ECONNREFUSED
+        destination: `${process.env.BACKEND_URL || "http://127.0.0.1:8000"}/api/:path*`,
       },
     ];
   },

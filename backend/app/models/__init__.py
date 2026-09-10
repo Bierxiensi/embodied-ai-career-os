@@ -4,12 +4,21 @@ from app.models.activity_draft import ActivityDraft
 from app.models.agent_run import AgentRun
 from app.models.career import Career
 from app.models.commit_suggestion import CommitSuggestion
+from app.models.day_artifact import DayArtifact
+from app.models.interview_log import InterviewLog
+from app.models.interview_question import InterviewQuestion
 from app.models.job_application import JobApplication
+from app.models.job_match import JobMatch
+from app.models.job_posting import JobPosting
 from app.models.learning_log import LearningLog
+from app.models.report_log import ReportLog
+from app.models.resume_fact import ResumeFact
+from app.models.resume_version import ResumeVersion
 from app.models.milestone import Milestone
 from app.models.paper import Paper
 from app.models.paper_chunk import PaperChunk
 from app.models.paper_chunk_embedding import PaperChunkEmbedding
+from app.models.plan_day import PlanDay
 from app.models.project import Project
 from app.models.skill import Skill
 from app.models.skill_assessment import SkillAssessment
@@ -20,12 +29,21 @@ __all__ = [
     "AgentRun",
     "Career",
     "CommitSuggestion",
+    "DayArtifact",
+    "InterviewLog",
+    "InterviewQuestion",
     "JobApplication",
+    "JobMatch",
+    "JobPosting",
     "LearningLog",
+    "ReportLog",
+    "ResumeFact",
+    "ResumeVersion",
     "Milestone",
     "Paper",
     "PaperChunk",
     "PaperChunkEmbedding",
+    "PlanDay",
     "Project",
     "Skill",
     "SkillAssessment",

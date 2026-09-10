@@ -1,13 +1,18 @@
 import Link from "next/link";
 import GenerateTaskButton from "./GenerateTaskButton";
-import type { Skill } from "@/types";
+import type { ActiveTrack, Skill } from "@/types";
 
 type Props = {
   skills: Skill[];
+  /** 当前视角赛道：用于把「技能图谱」磁贴的计数收敛到本视角口径 */
+  activeTrack?: ActiveTrack | null;
 };
 
 /** 快捷操作卡片 — 2x2 网格的操作磁贴。所有磁贴均为真实可交互入口。 */
-export default function QuickActions({ skills }: Props) {
+export default function QuickActions({ skills, activeTrack }: Props) {
+  // 计数由真实数据得出，避免硬编码数字过期
+  const allGapCount = skills.filter((s) => s.targetLevel - s.level > 0).length;
+
   return (
     <div
       className="flex flex-col"
@@ -24,7 +29,11 @@ export default function QuickActions({ skills }: Props) {
       </span>
       <div className="flex flex-wrap" style={{ gap: "var(--spacing-sm)" }}>
         {/* Tile 1: Generate Tasks (primary, real action) */}
-        <GenerateTaskButton skills={skills} variant="tile" />
+        <GenerateTaskButton
+          skills={skills}
+          variant="tile"
+          trackKey={activeTrack?.key ?? null}
+        />
 
         {/* Tile 2: Projects (link to existing route) */}
         <Link
@@ -59,13 +68,14 @@ export default function QuickActions({ skills }: Props) {
             项目管理
           </span>
           <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
-            2 个进行中 · 1 个已暂停
+            查看项目与里程碑
           </span>
         </Link>
 
-        {/* Tile 3: Skills (link to dashboard where radar lives) */}
+        {/* Tile 3: 技能缺口 —— 口径收敛到「当前视角赛道」，
+            不再用全量 48 技能报「34 项待补」（与雷达 8 轴自相矛盾，审计问题之一） */}
         <Link
-          href="/dashboard"
+          href="/jobs"
           className="flex flex-col no-underline"
           style={{
             width: "calc(50% - 6px)",
@@ -78,10 +88,12 @@ export default function QuickActions({ skills }: Props) {
           }}
         >
           <span className="text-sm font-semibold" style={{ color: "var(--color-ink)" }}>
-            技能图谱
+            技能缺口
           </span>
           <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
-            14 项技能 · 6 项核心能力
+            {activeTrack
+              ? `本视角 ${activeTrack.skillCount} 项要求 · 缺 ${activeTrack.gapCount} 项`
+              : `全量 ${skills.length} 项 · 缺 ${allGapCount} 项`}
           </span>
         </Link>
 

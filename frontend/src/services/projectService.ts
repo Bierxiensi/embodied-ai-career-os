@@ -1,7 +1,7 @@
 /** 项目服务层。DTO snake_case → camelCase 转换。 */
 
 import { apiClient } from "@/lib/apiClient";
-import type { Milestone, Project } from "@/types";
+import type { Milestone, MilestoneStatus, Project } from "@/types";
 
 interface ProjectDTO {
   id: number;
@@ -41,6 +41,27 @@ interface MilestoneCreateDTO {
   sort_order: number;
 }
 
+/** 里程碑状态归一化 —— 兼容库里两套历史词表。
+ *
+ * 2026-09-10 实测 dev 库：SO101 项目用 `locked`，求职冲刺项目用 `todo`/`doing`。
+ * 前端只认规范值（locked / in_progress / needs_baseline / completed），
+ * 在读取边界一次性转换，组件不必各自写兼容分支。
+ * 未知值一律降级为 `locked`（保守：不当成"进行中"误导用户）。
+ */
+const MILESTONE_STATUS_MAP: Record<string, MilestoneStatus> = {
+  locked: "locked",
+  todo: "locked",           // 新词表：未开始
+  in_progress: "in_progress",
+  doing: "in_progress",     // 新词表：进行中
+  needs_baseline: "needs_baseline",
+  completed: "completed",
+  done: "completed",        // 防御：新词表若用 done
+};
+
+function toMilestoneStatus(raw: string): MilestoneStatus {
+  return MILESTONE_STATUS_MAP[raw] ?? "locked";
+}
+
 function toMilestone(dto: MilestoneDTO): Milestone {
   return {
     id: String(dto.id),
@@ -48,7 +69,7 @@ function toMilestone(dto: MilestoneDTO): Milestone {
     version: dto.version,
     title: dto.title,
     goal: dto.goal,
-    status: dto.status as Milestone["status"],
+    status: toMilestoneStatus(dto.status),
     sortOrder: dto.sort_order,
     workspace: dto.workspace ?? null,
     requiredModifications: dto.required_modifications ?? undefined,

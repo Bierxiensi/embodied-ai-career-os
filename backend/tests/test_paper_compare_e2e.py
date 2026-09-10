@@ -11,7 +11,7 @@
 执行方式：
     cd backend && .venv/bin/python tests/test_paper_compare_e2e.py
 
-隔离策略：临时 SQLite + HashEmbedder（零依赖）。
+隔离策略：数据库隔离统一交给 tests/conftest.py（会话级临时 SQLite + HashEmbedder 零依赖）。
 """
 
 from __future__ import annotations
@@ -22,13 +22,11 @@ import time
 from pathlib import Path
 
 # ============================================================
-# 关键：在 import app.* 之前设置临时 DB
+# 数据库隔离：统一交给 tests/conftest.py
 # ============================================================
+# 历史写法（backend/data/test_paper_compare_e2e.db + import 期删除）已移除：
+# 会污染工程目录，且删除失败会中断 pytest 收集阶段。
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
-_TMP_DB = _BACKEND_DIR / "data" / "test_paper_compare_e2e.db"
-if _TMP_DB.exists():
-    _TMP_DB.unlink()
-os.environ["DATABASE_URL"] = f"sqlite:///{_TMP_DB.as_posix()}"
 sys.path.insert(0, str(_BACKEND_DIR))
 
 PAPERS_DIR = _BACKEND_DIR / "app" / "research" / "knowledge" / "papers"
@@ -312,7 +310,7 @@ def main():
     print("=" * 60)
     print("  Phase 3 Week 1 Day 4 · 多论文对比端到端测试")
     print("=" * 60)
-    print(f"  临时 DB: {_TMP_DB}")
+    print(f"  DB: {os.environ.get('DATABASE_URL', '<unset>')}")
     print(f"  论文 1: {Path(PAPER_ACT).name}")
     print(f"  论文 2: {Path(PAPER_DP).name}")
 
@@ -338,19 +336,9 @@ def main():
         for x in results:
             if x.status == "FAIL":
                 print(f"  ✗ [{x.case_id}] {x.name}: {x.detail}")
-        _cleanup()
         sys.exit(1)
     else:
         print("\n✓ 全部通过")
-        _cleanup()
-
-
-def _cleanup():
-    try:
-        if _TMP_DB.exists():
-            _TMP_DB.unlink()
-    except Exception:  # noqa: BLE001
-        pass
 
 
 if __name__ == "__main__":

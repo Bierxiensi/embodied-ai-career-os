@@ -9,38 +9,55 @@
  *  - "tile"：QuickActions 内的主操作磁贴（蓝底大卡）
  *
  * 数据流：点击 → generateTask() → router.refresh() → Server Component 重渲染。
+ *
+ * 2026-09-10（用户反馈「Agent 生成今日任务不是很明确，没看明白」）：
+ *   1. 请求带上 `trackKey` —— Planner 只在**当前视角赛道**的硬性技能里挑，
+ *      冲刺视角不会再产出具身任务（反之亦然）。
+ *   2. 成功不再只渲染一句"✓ 已生成"，而是弹 `PlannerResultCard`，
+ *      把选中技能、缺口、新建/复用、验收标准全部摊开。
  */
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ApiError } from "@/lib/apiClient";
 import { generateTask } from "@/services/plannerService";
-import type { Skill } from "@/types";
+import type { PlannerResult, Skill } from "@/types";
+import PlannerResultCard from "./PlannerResultCard";
 
 type Props = {
-  /** 全部技能，用于计算缺口并传入 Planner Agent。 */
+  /** 全部技能。后端会按赛道 required_skills 收敛，前端传全量即可。 */
   skills: Skill[];
   variant?: "pill" | "tile";
   /** 可用学习时长（分钟），默认 45。 */
   availableMinutes?: number;
+  /** 目标岗位。不传则由后端按 target_roles 配置取「主攻」赛道
+   *  （不要再写死岗位名 —— 曾经硬编码 "Robot AI Engineer" 导致 Planner 一直产出具身方向任务）。 */
+  targetRole?: string;
+  /** 当前视角赛道 key（llm / vlm / ai-algo / embodied）。
+   * 不传则后端回退「主攻」赛道。 */
+  trackKey?: string | null;
 };
 
 type State =
   | { kind: "idle" }
   | { kind: "loading" }
-  | { kind: "success"; message: string }
+  | { kind: "done"; result: PlannerResult }
   | { kind: "error"; message: string };
 
 export default function GenerateTaskButton({
   skills,
   variant = "pill",
   availableMinutes = 45,
+  targetRole,
+  trackKey,
 }: Props) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "idle" });
+  const [showCard, setShowCard] = useState(false);
 
   async function handleClick() {
     setState({ kind: "loading" });
+    setShowCard(false);
     try {
       const skillInputs = skills.map((s) => ({
         name: s.name,
@@ -50,18 +67,17 @@ export default function GenerateTaskButton({
 
       const result = await generateTask({
         availableMinutes,
-        targetRole: "Robot AI Engineer",
+        // 不传 targetRole 时后端按 target_roles 配置取「主攻」赛道
+        targetRole,
+        // 视角赛道：决定 Planner 的候选技能范围
+        trackKey: trackKey ?? null,
         skills: skillInputs,
         energyLevel: "normal",
         persist: true,
       });
 
-      setState({
-        kind: "success",
-        message: result.taskId
-          ? `已生成任务：${result.title}（已入库 #${result.taskId}）`
-          : `已生成任务：${result.title}`,
-      });
+      setState({ kind: "done", result });
+      setShowCard(true);
       router.refresh();
     } catch (err) {
       const message =
@@ -74,11 +90,19 @@ export default function GenerateTaskButton({
   const label =
     state.kind === "loading"
       ? "生成中..."
-      : state.kind === "success"
+      : state.kind === "done"
         ? "再生成一个"
         : state.kind === "error"
           ? "重试"
           : "生成今日任务";
+
+  const card =
+    showCard && state.kind === "done" ? (
+      <PlannerResultCard
+        result={state.result}
+        onClose={() => setShowCard(false)}
+      />
+    ) : null;
 
   if (variant === "tile") {
     return (
@@ -114,23 +138,29 @@ export default function GenerateTaskButton({
           </div>
           <span className="text-sm font-semibold text-white">{label}</span>
           <span className="text-xs" style={{ color: "#B8D4F0" }}>
-            Planner Agent · 智能规划
+            Planner Agent · 按当前视角规划
           </span>
         </button>
-        {(state.kind === "success" || state.kind === "error") && (
-          <p
-            className="text-xs"
-            style={{
-              color:
-                state.kind === "success"
-                  ? "var(--color-emerald-deep)"
-                  : "var(--color-rose-deep)",
-            }}
-          >
-            {state.kind === "success" ? "✓ " : "✗ "}
-            {state.message}
+        {state.kind === "error" && (
+          <p className="text-xs" style={{ color: "var(--color-rose-deep)" }}>
+            ✗ {state.message}
           </p>
         )}
+        {state.kind === "done" && !showCard && (
+          <button
+            type="button"
+            onClick={() => setShowCard(true)}
+            className="self-start border-none text-xs font-medium"
+            style={{
+              color: "var(--color-primary)",
+              background: "transparent",
+              cursor: "pointer",
+            }}
+          >
+            查看生成详情 →
+          </button>
+        )}
+        {card}
       </div>
     );
   }
@@ -157,19 +187,12 @@ export default function GenerateTaskButton({
       >
         {label}
       </button>
-      {(state.kind === "success" || state.kind === "error") && (
-        <p
-          className="text-xs"
-          style={{
-            color:
-              state.kind === "success"
-                ? "var(--color-emerald-deep)"
-                : "var(--color-rose-deep)",
-          }}
-        >
-          {state.kind === "success" ? "✓ 已生成" : "✗ " + state.message}
+      {state.kind === "error" && (
+        <p className="text-xs" style={{ color: "var(--color-rose-deep)" }}>
+          ✗ {state.message}
         </p>
       )}
+      {card}
     </div>
   );
 }

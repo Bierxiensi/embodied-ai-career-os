@@ -1,9 +1,25 @@
 """目标岗位画像配置。
 
-求职看板的核心输入：把"我要找工作"拆成 3 条可执行的赛道。
-每条赛道声明硬性要求技能，系统据此计算机匹配度与缺口。
+求职看板的核心输入：把"我要找工作"拆成几条可执行的赛道。
+每条赛道声明硬性要求技能，系统据此计算匹配度与缺口。
 
 按自己的投递策略直接改这个文件即可，无需改代码逻辑。
+
+================================================================================
+2026-09-10 战略调整（增量，非重写）
+================================================================================
+依据《求职 Agent 开发与运行规范 v2.0》：主线从「具身智能」切换为
+「LLM 深度为主 + Multimodal/VLM 轻量卡位」，具身转为长期观察。
+
+处理原则：**旧内容降权保留，不删除**。
+- 新增 llm（主攻）/ vlm（卡位）/ ai-algo（保底）三条赛道
+- embodied 赛道保留，标记 frozen=True —— 仍然计算匹配度、仍然展示，
+  只是不再进入"技能缺口"的推动列表（其技能 target=level，gap 恒为 0），
+  不再占用学习时间
+- 历史投递记录的 track=embodied 数据不受影响
+
+这样具身方向的已有积累（SO101、ROS2 demo、Mujoco 控制）仍是简历里的
+工程能力旁证，但不会被系统当成"今天的待办"推给你。
 """
 
 from __future__ import annotations
@@ -15,46 +31,67 @@ from dataclasses import dataclass, field
 class TargetRole:
     """一个目标岗位画像。"""
 
-    key: str                      # 标识：agent / embodied / robot-software
+    key: str                      # 标识：llm / vlm / ai-algo / embodied
     name: str                     # 岗位名称
-    priority: str                 # 主攻 / 折中 / 保底
+    priority: str                 # 主攻 / 卡位 / 保底 / 暂缓
     salary_range: str             # 期望薪资区间
     note: str                     # 策略说明
     required_skills: list[str] = field(default_factory=list)   # 硬性要求技能
     required_level: int = 4       # 每项技能的要求等级（0-5）
+    frozen: bool = False          # 冻结：不投入新时间，看板不再推动其技能缺口
 
 
-# 三条赛道：
-# 1. embodied —— 主攻，天花板最高，但必须有真机证据
-# 2. robot-software —— 折中，ROS2 + AI 的复合岗，能承上启下
-# 3. agent —— 保底，用现有 Agent 工程能力快速拿面试、保现金流
+# 四条赛道（按优先级排列）：
+# 1. llm      —— 主攻，30 天冲刺的核心盘
+# 2. vlm      —— 卡位，差异化 + 长期方向（Multimodal Foundation Model）
+# 3. ai-algo  —— 保底，进入模型团队的入口岗
+# 4. embodied —— 暂缓（frozen），长期观察，保留已有资产但不投入时间
 TARGET_ROLES: list[TargetRole] = [
+    TargetRole(
+        key="llm",
+        name="LLM / 大模型算法工程师",
+        priority="主攻",
+        salary_range="36-45K",
+        note="30 天冲刺核心盘：Transformer→SFT→LoRA/QLoRA→KV Cache→vLLM 必须能讲透",
+        required_skills=[
+            "Transformer", "Attention", "Pretraining", "SFT",
+            "LoRA/QLoRA", "PyTorch", "Python", "Deep Learning",
+        ],
+        required_level=4,
+    ),
+    TargetRole(
+        key="vlm",
+        name="多模态 / VLM 算法工程师",
+        priority="卡位",
+        salary_range="36-45K",
+        note="差异化 + 长期方向：ViT / CLIP / 对齐 / Projector 讲清楚，配一次小型 VLM LoRA 微调",
+        required_skills=[
+            "ViT", "Multimodal Alignment", "VLM",
+            "LoRA/QLoRA", "PyTorch", "Python",
+        ],
+        required_level=4,
+    ),
+    TargetRole(
+        key="ai-algo",
+        name="AI 算法 / 推理工程师",
+        priority="保底",
+        salary_range="30-40K",
+        note="进入模型团队的入口岗：推理优化与工程交付是现有强项，可快速拿面试",
+        required_skills=[
+            "Python", "Deep Learning", "PyTorch",
+            "Inference Optimization", "Linux",
+        ],
+        required_level=4,
+    ),
     TargetRole(
         key="embodied",
         name="具身智能 / VLA 算法工程师",
-        priority="主攻",
+        priority="暂缓",
         salary_range="36-45K",
-        note="天花板最高，但必须拿出 SO101 真机闭环证据（ROS2 控制 + ACT/SmolVLA + 成功率数据）",
+        note="长期观察（v2.0 D 级：30 天内主动不深挖）。已有 SO101 / ROS2 资产转为工程能力旁证，不投入新时间",
         required_skills=["ROS2", "VLA", "Robot Learning", "PyTorch", "Isaac", "Sim2Real"],
         required_level=4,
-    ),
-    TargetRole(
-        key="robot-software",
-        name="机器人软件工程师（ROS2 + AI）",
-        priority="折中",
-        salary_range="30-38K",
-        note="ROS2 + Python/AI 复合岗，能承接现有工程能力，是具身岗的跳板",
-        required_skills=["ROS2", "MoveIt2", "Linux", "Python", "C++"],
-        required_level=4,
-    ),
-    TargetRole(
-        key="agent",
-        name="Agent 应用 / LLM 算法工程师",
-        priority="保底",
-        salary_range="30-40K",
-        note="最快拿到面试的盘：现有 Agent/RAG 工程经验即可开打，用于保底与练手谈薪",
-        required_skills=["Python", "Agent Application", "PyTorch", "Deep Learning"],
-        required_level=4,
+        frozen=True,
     ),
 ]
 
@@ -63,3 +100,15 @@ JOB_HUNT_PROJECT_NAME = "求职冲刺 · 2026 Q4"
 
 # offer 目标日期兜底值（Career.timeframe 无法解析时使用）
 DEFAULT_OFFER_DEADLINE = "2026-10-31"
+
+# 30 天冲刺窗口（v2.0 §核心时间节点）
+SPRINT_START = "2026-09-10"
+SPRINT_END = "2026-10-09"
+
+# D 级技术黑名单：v2.0 §19 明令 30 天内不投入。
+# Planner 生成学习任务时命中这里应直接拒绝并提示，防止路线发散。
+TECH_BLACKLIST: list[str] = [
+    "ROS2", "VLA", "Robot Learning", "Isaac", "Sim2Real",
+    "MoveIt2", "Mujoco Simulation", "SO101",
+    "World Model", "3D VLM", "Video LLM", "Multimodal RL",
+]

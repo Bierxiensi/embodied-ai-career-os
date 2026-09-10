@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Project } from "@/types";
+import { describeCurrentMilestone } from "./ProjectCard";
 
 type Props = {
   projects: Project[];
@@ -40,15 +41,12 @@ export default function ProjectProgressCard({ projects }: Props) {
 
       {projects.slice(0, 2).map((project) => {
         const status = STATUS_MAP[project.status] ?? STATUS_MAP.active;
-        const activeMilestone = project.milestones?.find(
-          (m) => m.status === "in_progress" || m.status === "needs_baseline"
-        );
         const pct = project.progressPct ?? 0;
 
         return (
           <Link
-            key={project.name}
-            href={`/projects/${project.name}`}
+            key={project.id}
+            href={`/projects/${project.id}`}
             className="flex flex-col no-underline"
             style={{
               gap: 10,
@@ -93,7 +91,7 @@ export default function ProjectProgressCard({ projects }: Props) {
               />
             </div>
             <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
-              {activeMilestone?.title ?? "全部完成"} · {pct}%
+              {describeCurrentMilestone(project)} · {pct}%
             </span>
           </Link>
         );

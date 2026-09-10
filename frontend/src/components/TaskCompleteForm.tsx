@@ -71,15 +71,44 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
 
   const isSubmitting = state.kind === "submitting";
 
+  /** 输入框统一样式 —— 用设计 token，替代原先的 zinc/dark: Tailwind 直出配色
+   *  （token 自带暗色值，再叠 `dark:` 会互相打架，且与卡片其余部分不一致）。 */
+  const fieldStyle: React.CSSProperties = {
+    width: "100%",
+    marginTop: 4,
+    padding: "7px 10px",
+    fontSize: 13,
+    color: "var(--color-ink)",
+    background: "var(--color-card)",
+    border: "1px solid var(--color-hairline)",
+    borderRadius: "var(--radius-item-sm)",
+    outline: "none",
+    resize: "none",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 500,
+    color: "var(--color-ink-48)",
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-2 space-y-3 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900"
+      className="flex flex-col"
+      style={{
+        gap: 12,
+        marginTop: 8,
+        padding: 14,
+        background: "var(--color-card)",
+        border: "1px solid var(--color-hairline)",
+        borderRadius: "var(--radius-item-md)",
+      }}
     >
       {/* 学习日志 */}
-      <div>
-        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          学习日志 <span className="text-red-500">*</span>
+      <div className="flex flex-col">
+        <label style={labelStyle}>
+          学习日志 <span style={{ color: "var(--color-rose)" }}>*</span>
         </label>
         <textarea
           value={content}
@@ -87,16 +116,18 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
           rows={3}
           disabled={isSubmitting}
           placeholder="记录学到了什么、解决了什么问题、反思与改进点…（含 总结/反思/学到 等关键词可加分）"
-          className="mt-1 w-full resize-none rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black placeholder:text-zinc-400 focus:border-black focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-300"
+          style={fieldStyle}
         />
-        <p className="mt-0.5 text-[10px] text-zinc-400">
+        <span
+          style={{ marginTop: 4, fontSize: 10, color: "var(--color-ink-48)" }}
+        >
           {content.length} / 2000 字（≥20 字得分）
-        </p>
+        </span>
       </div>
 
       {/* Artifact 链接 */}
-      <div>
-        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <div className="flex flex-col">
+        <label style={labelStyle}>
           Artifact 链接（GitHub / 视频 / 代码，可选）
         </label>
         <input
@@ -105,15 +136,13 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
           onChange={(e) => setArtifactUrl(e.target.value)}
           disabled={isSubmitting}
           placeholder="https://github.com/yourname/your-repo"
-          className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black placeholder:text-zinc-400 focus:border-black focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-300"
+          style={fieldStyle}
         />
       </div>
 
       {/* 实际耗时 */}
-      <div>
-        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          实际耗时（分钟）
-        </label>
+      <div className="flex flex-col">
+        <label style={labelStyle}>实际耗时（分钟）</label>
         <input
           type="number"
           min={1}
@@ -121,16 +150,27 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           disabled={isSubmitting}
-          className="mt-1 w-24 rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-black focus:border-black focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-zinc-300"
+          style={{ ...fieldStyle, width: 96 }}
         />
       </div>
 
       {/* 操作按钮 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center" style={{ gap: 8 }}>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="border-none"
+          style={{
+            padding: "7px 14px",
+            fontSize: 12,
+            fontWeight: 600,
+            background: "var(--color-primary)",
+            color: "var(--color-on-primary)",
+            borderRadius: "var(--radius-pill)",
+            border: "none",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.6 : 1,
+          }}
         >
           {isSubmitting ? "提交中…" : "提交复盘"}
         </button>
@@ -138,7 +178,16 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="rounded-md px-3 py-1.5 text-xs text-zinc-500 transition hover:text-zinc-700 disabled:opacity-50 dark:hover:text-zinc-300"
+          className="border-none"
+          style={{
+            padding: "7px 14px",
+            fontSize: 12,
+            background: "transparent",
+            color: "var(--color-ink-48)",
+            border: "none",
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.6 : 1,
+          }}
         >
           取消
         </button>
@@ -146,12 +195,14 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
 
       {/* 状态提示 */}
       {state.kind === "success" && (
-        <p className="text-xs text-emerald-600 dark:text-emerald-400">
+        <p style={{ fontSize: 12, color: "var(--color-emerald-deep)" }}>
           {state.message}
         </p>
       )}
       {state.kind === "error" && (
-        <p className="text-xs text-red-600 dark:text-red-400">{state.message}</p>
+        <p style={{ fontSize: 12, color: "var(--color-rose-deep)" }}>
+          {state.message}
+        </p>
       )}
     </form>
   );

@@ -3,7 +3,7 @@
 把 Career OS 从「学习记录系统」灌入「求职作战看板」所需的业务数据：
 
     1. 更新 Career 单例：薪资目标 40K、截止日 2026-10-31、备注三赛道策略
-    2. 补齐目标岗位所需但尚缺的技能（Sim2Real / MoveIt2 / Linux / C++ 等）
+    2. 校准技能画像：把库内等级对齐 app/core/skill_profile.py 真实自评（幂等覆盖）
     3. 创建「求职冲刺 · 2026 Q4」项目 + 5 个里程碑（V0-V4）
     4. 追加求职周任务（关联该项目）
     5. 灌入若干示例投递记录（按 company+role 去重，避免重复）
@@ -50,12 +50,13 @@ def update_career(db: SessionLocal) -> None:
         db.add(career)
         db.flush()
 
-    career.target_role = "Robot AI Engineer（具身/机器人方向）"
+    career.target_role = "LLM / 大模型算法工程师（主攻）"
     career.salary_target = 40000  # 36-42K 中值，便于看板对照
     career.timeframe = "2026-10-31"  # 截止签约日（防社保中断）
     career.notes = (
-        "主攻具身/VLA(36-45K)，折中机器人软件 ROS2+AI(30-38K)，"
-        "保底 Agent 应用(30-40K)；10月底前落定以防社保中断。"
+        "v2.0 战略：LLM 深度为主 + VLM 轻量卡位。"
+        "主攻 LLM 算法(36-45K)，卡位多模态/VLM(36-45K)，保底 AI 算法/推理(30-40K)；"
+        "具身智能长期观察，30 天内不投入。10 月底前落定以防社保中断。"
     )
     db.commit()
     print(
@@ -64,13 +65,51 @@ def update_career(db: SessionLocal) -> None:
     )
 
 
-def ensure_skills(db: SessionLocal) -> None:
-    """补齐目标岗位所需但尚缺的技能（level=0，target 取最高要求）。"""
-    existing = {s.name.lower() for s in db.query(Skill).all()}
-    required = _collect_required_skills()
+def calibrate_skills(db: SessionLocal) -> None:
+    """把库内技能等级校准到真实画像（幂等，可反复重跑）。
+
+    真实自评的唯一数据源是 app/core/skill_profile.py：
+    - 已存在的技能：对齐 level / target_level / category / evidence
+      （修正历史遗留的失真数据，如把 ROS2 从旧值纠正为真实值）
+    - 缺失的技能：按画像插入
+    - 画像未覆盖但赛道要求的技能：按 level=0 补齐
+    """
+    from app.core.skill_profile import SKILL_PROFILE
+
+    existing = {s.name.lower(): s for s in db.query(Skill).all()}
+    updated: list[str] = []
     added: list[str] = []
-    for name in sorted(required):
-        if name.lower() in existing:
+
+    for p in SKILL_PROFILE:
+        s = existing.get(p.name.lower())
+        if s is None:
+            db.add(
+                Skill(
+                    name=p.name,
+                    category=p.category,
+                    level=p.level,
+                    target_level=p.target_level,
+                    evidence=list(p.evidence),
+                )
+            )
+            added.append(p.name)
+            continue
+        if (
+            s.level != p.level
+            or s.target_level != p.target_level
+            or s.category != p.category
+            or (s.evidence or []) != p.evidence
+        ):
+            s.category = p.category
+            s.level = p.level
+            s.target_level = p.target_level
+            s.evidence = list(p.evidence)
+            updated.append(p.name)
+
+    # 兜底：赛道要求但画像未定义的技能（防止 target_roles 改了却没同步）
+    profiled = {p.name.lower() for p in SKILL_PROFILE}
+    for name in sorted(_collect_required_skills()):
+        if name.lower() in profiled or name.lower() in existing:
             continue
         req_level = max(
             (
@@ -80,21 +119,16 @@ def ensure_skills(db: SessionLocal) -> None:
             ),
             default=4,
         )
-        db.add(
-            Skill(
-                name=name,
-                category="Weak",
-                level=0,
-                target_level=req_level,
-                evidence=[],
-            )
-        )
+        db.add(Skill(name=name, category="Weak", level=0, target_level=req_level, evidence=[]))
         added.append(name)
+
+    db.commit()
+    if updated:
+        print(f"  ✓ 校准技能 {len(updated)} 项：{', '.join(updated)}")
     if added:
-        db.commit()
         print(f"  ✓ 新增技能 {len(added)} 项：{', '.join(added)}")
-    else:
-        print("  - 技能已齐备，无需新增")
+    if not updated and not added:
+        print("  - 技能画像已对齐，无需变更")
 
 
 def ensure_project_and_milestones(db: SessionLocal) -> Project:
@@ -245,7 +279,7 @@ def main() -> None:
     db = SessionLocal()
     try:
         update_career(db)
-        ensure_skills(db)
+        calibrate_skills(db)
         project = ensure_project_and_milestones(db)
         ensure_tasks(db, project)
         ensure_applications(db)

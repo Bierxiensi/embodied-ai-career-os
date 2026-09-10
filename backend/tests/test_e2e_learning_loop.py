@@ -15,8 +15,13 @@
 
 执行方式：
     cd backend && python tests/test_e2e_learning_loop.py
-    # 可选：不重置数据库（保留开发数据）
-    E2E_RESET_DB=0 python tests/test_e2e_learning_loop.py
+    # 默认**不重置**数据库，保留开发数据
+
+    # 需要干净数据库时显式开启（⚠️ 会删除 DB，先自动备份到 .workbuddy/backup/）：
+    E2E_RESET_DB=1 python tests/test_e2e_learning_loop.py
+
+注意：本脚本是**手动执行的 E2E**（需要 :8000 有后端在跑），不属于 pytest 单元测试，
+已在 tests/conftest.py 的 collect_ignore 中排除。
 """
 
 from __future__ import annotations
@@ -29,14 +34,23 @@ import subprocess
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 
 import requests
 
 # ===== 配置 =====
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
-DB_PATH = "/workspace/embodied-ai-career-os/backend/data/app.db"
-REPORT_DIR = "/workspace/embodied-ai-career-os/backend/reports"
-RESET_DB = os.environ.get("E2E_RESET_DB", "1") == "1"
+# 路径一律从 __file__ 推导，不写死绝对路径。
+# 历史问题：此处曾硬编码 Linux 容器路径 /workspace/embodied-ai-career-os/...，
+# 在 Windows / 换机后必然指向不存在的目录（详见 docs/system-audit-and-role-switch.md）。
+_BACKEND_DIR = Path(__file__).resolve().parents[1]  # tests/ → backend/
+
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+DB_PATH = os.environ.get("DB_PATH", str(_BACKEND_DIR / "data" / "app.db"))
+REPORT_DIR = os.environ.get("REPORT_DIR", str(_BACKEND_DIR / "reports"))
+
+# ⚠️ 默认改为 **不重置**（原默认 1 = 删除开发库后再重建，会把真实数据清空）。
+# 重置属破坏性操作，必须显式开启：E2E_RESET_DB=1 python tests/test_e2e_learning_loop.py
+RESET_DB = os.environ.get("E2E_RESET_DB", "0") == "1"
 
 
 # ================================================================
@@ -138,6 +152,11 @@ def wait_backend(timeout: int = 60) -> bool:
 
 
 def reset_backend_and_db() -> bool:
+    """备份并清空 DB，然后重启后端。
+
+    ⚠️ 破坏性操作（会删除 DB 文件），仅在 E2E_RESET_DB=1 时执行。
+    跨平台：Linux 用 pkill/ss，Windows 用 taskkill + PowerShell 拉端口。
+    """
     print("[准备] 检查后端健康检查...")
     try:
         requests.get(f"{BACKEND_URL}/health", timeout=5)
@@ -146,29 +165,48 @@ def reset_backend_and_db() -> bool:
         return False
 
     if not RESET_DB:
-        print("  E2E_RESET_DB=0，跳过 DB 重置")
+        print("  E2E_RESET_DB 未开启（默认 0），跳过 DB 重置")
+        print("  如需重置：E2E_RESET_DB=1 python tests/test_e2e_learning_loop.py")
         return True
 
-    # 备份
+    # 备份到项目统一备份目录，而不是散落在 DB 旁边
     if os.path.exists(DB_PATH):
+        backup_dir = _BACKEND_DIR.parent / ".workbuddy" / "backup"
+        backup_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d%H%M%S")
-        backup = f"{DB_PATH}.e2e_backup_{ts}"
+        backup = backup_dir / f"app.db.e2e_backup_{ts}"
         shutil.copy2(DB_PATH, backup)
         print(f"  DB 备份: {backup}")
         os.remove(DB_PATH)
-        print(f"  DB 已删除")
+        print("  DB 已删除")
 
-    # 重启后端
-    subprocess.run(["pkill", "-9", "-f", "uvicorn app.main:app"], capture_output=True)
+    is_win = sys.platform.startswith("win")
+
+    # 停止旧后端
+    if is_win:
+        subprocess.run(
+            ["taskkill", "/F", "/IM", "python.exe", "/FI", "WINDOWTITLE eq *uvicorn*"],
+            capture_output=True,
+        )
+    else:
+        subprocess.run(["pkill", "-9", "-f", "uvicorn app.main:app"], capture_output=True)
+
+    # 等端口释放
     for _ in range(15):
-        r = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True)
-        if ":8000" not in r.stdout:
+        if is_win:
+            r = subprocess.run(["netstat", "-ano"], capture_output=True, text=True)
+            busy = ":8000" in r.stdout and "LISTENING" in r.stdout
+        else:
+            r = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True)
+            busy = ":8000" in r.stdout
+        if not busy:
             break
         time.sleep(1)
 
+    # 拉起新后端（cwd 从 __file__ 推导，不写死容器路径）
     subprocess.Popen(
-        ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"],
-        cwd="/workspace/embodied-ai-career-os/backend",
+        [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"],
+        cwd=str(_BACKEND_DIR),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )

@@ -21,6 +21,12 @@ class TaskOut(BaseModel):
     resources: list[str] = []
     project_id: int | None = None
     milestone_id: int | None = None
+    # 数据来源：user / seed / planner / test（见 migrations/0007）。
+    # 前端可据此过滤测试残留；列表接口默认已排除 source=test。
+    source: str = "user"
+    # 任务所属赛道：llm / vlm / ai-algo / embodied（见 migrations/0008）。
+    # 看板按视角过滤任务用；NULL = 未归类（历史 / 手写任务）。
+    track_key: str | None = None
 
     @field_validator("acceptance", "resources", mode="before")
     @classmethod
@@ -28,6 +34,14 @@ class TaskOut(BaseModel):
         """数据库 JSON 字段可能为 None，统一转为空列表。"""
 
         return v or []
+
+    @field_validator("source", mode="before")
+    @classmethod
+    def _default_source(cls, v):
+        """未 flush 的 ORM 实例 source 仍是 None（列默认值在插入时才生效），
+        统一回落为 "user"，避免响应模型校验失败。"""
+
+        return v or "user"
 
 
 class TaskCreate(BaseModel):
@@ -43,6 +57,10 @@ class TaskCreate(BaseModel):
     status: str = "todo"
     project_id: int | None = None
     milestone_id: int | None = None
+    # 不传则由模型默认 "user"；测试/脚本写入时显式传 "test"
+    source: str | None = None
+    # 所属赛道：llm / vlm / ai-algo / embodied；不传 = 未归类
+    track_key: str | None = None
 
 
 class TaskStatusPatch(BaseModel):

@@ -23,17 +23,19 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from pathlib import Path
 
 import requests
 
 # ===== 配置 =====
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
-DB_PATH = os.environ.get("DB_PATH", "data/app.db")
-REPORT_DIR = "reports"
+# 路径一律从 __file__ 推导，不写死绝对路径。
+# 历史问题：此处曾硬编码 Linux 容器路径 /workspace/embodied-ai-career-os/...，
+# 在 Windows/换机后必然指向不存在的目录（详见 docs/system-audit-and-role-switch.md）。
+_BACKEND_DIR = Path(__file__).resolve().parents[1]  # tests/ → backend/
 
-# 复用项目根目录的 DB（脚本从 backend/ 目录运行）
-if not os.path.exists(DB_PATH):
-    DB_PATH = "/workspace/embodied-ai-career-os/backend/data/app.db"
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
+DB_PATH = os.environ.get("DB_PATH", str(_BACKEND_DIR / "data" / "app.db"))
+REPORT_DIR = str(_BACKEND_DIR / "reports")
 
 
 # ===== 测试结果收集 =====
