@@ -14,7 +14,9 @@ from app.schemas.project import (
     ProjectCreate,
     ProjectOut,
     ProjectPatch,
+    ProjectReadmeIn,
 )
+from app.services.packaging.service import build_project_readme
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -123,7 +125,7 @@ def get_project(
 def patch_project(
     project_id: int, payload: ProjectPatch, db: Session = Depends(get_db)
 ) -> ApiResponse[ProjectOut]:
-    """更新项目字段。标记 completed 时自动生成 README。"""
+    """更新项目字段。标记 completed 时自动生成 README 骨架。"""
     p = db.get(Project, project_id)
     if p is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -131,60 +133,65 @@ def patch_project(
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(p, field, value)
 
-    # 项目标记完成时自动生成 README
+    # 项目标记完成时自动生成 README 骨架。
+    # P4：改走 services/packaging 的同一构建器 —— 此前这里是内联的一段 markdown 拼接，
+    # 与 GET /{id}/readme 会成为两套实现（口径必然漂移）。现在只有一个事实来源。
     if payload.status == "completed":
-        from app.models.milestone import Milestone
-        from app.models.task import Task
-
-        milestones = (
-            db.query(Milestone)
-            .filter(Milestone.project_id == project_id)
-            .order_by(Milestone.sort_order)
-            .all()
-        )
-
-        # 收集关联技能
-        skills_set: set[str] = set()
-        for m in milestones:
-            tasks = db.query(Task).filter(Task.milestone_id == m.id).all()
-            for t in tasks:
-                if t.skill_name:
-                    skills_set.add(t.skill_name)
-
-        # 构建 README
-        lines = [
-            f"# {p.name}",
-            "",
-            f"> {p.goal}",
-            "",
-            "## 里程碑",
-            "",
-        ]
-        for m in milestones:
-            status_icon = "✅" if m.status == "completed" else "⬜"
-            lines.append(
-                f"- {status_icon} **{m.version}**: {m.title} — {m.goal}"
-            )
-
-        lines.extend([
-            "",
-            "## 涉及技能",
-            "",
-        ])
-        for skill in sorted(skills_set):
-            lines.append(f"- {skill}")
-
-        lines.extend([
-            "",
-            "---",
-            "*由 Embodied AI Career OS 自动生成*",
-        ])
-
-        p.readme = "\n".join(lines)
+        built = build_project_readme(project_id, db)
+        if built:
+            p.readme = built["draft"]
 
     db.commit()
     db.refresh(p)
     return ok(ProjectOut.model_validate(p), message="Project updated")
+
+
+@router.get("/{project_id}/readme")
+def get_project_readme(
+    project_id: int, db: Session = Depends(get_db)
+) -> ApiResponse[dict]:
+    """生成（预览）README 骨架，不落库。
+
+    返回 ``saved_readme``（此前保存过的）与 ``draft``（本次从证据链重新生成）两份，
+    前端可对比后决定是"一键导出"还是"沿用已保存的"。
+    """
+    built = build_project_readme(project_id, db)
+    if built is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return ok(built)
+
+
+@router.post("/{project_id}/readme")
+def save_project_readme(
+    project_id: int,
+    payload: ProjectReadmeIn,
+    db: Session = Depends(get_db),
+) -> ApiResponse[dict]:
+    """保存 README。
+
+    - 不传 ``content``：用证据链重新生成骨架并保存（一键导出）
+    - 传 ``content``：保存传入文本（润色后回存）
+    """
+    p = db.get(Project, project_id)
+    if p is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if payload.content is not None:
+        content = payload.content
+    else:
+        built = build_project_readme(project_id, db)
+        content = built["draft"] if built else ""
+
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="README 内容为空")
+
+    p.readme = content
+    db.commit()
+    db.refresh(p)
+    return ok(
+        {"project_id": p.id, "saved_readme": p.readme, "chars": len(p.readme)},
+        "README 已保存",
+    )
 
 
 @router.delete("/{project_id}")

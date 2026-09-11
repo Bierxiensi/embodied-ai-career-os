@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -59,6 +59,18 @@ class InterviewQuestion(Base):
 
     # 来源：面经 / 自编 / 论文 / 项目
     source: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # P2：题目归属的课程日序号（1..30），用于「四件套 questions 由题库条数自动判定」
+    # 不绑定具体 plan_day_id，只绑 seq（与日历解耦，和 day_progress 同一哲学）
+    source_day_seq: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # P2：题目关联的技能名（evidence-gated 用，如 "LoRA/QLoRA"）
+    skill_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # P2：是否通过面试验收验证（答得出来才算有效证据）
+    is_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0", nullable=False
+    )
 
     # 被抽中/练习次数（抽题时 +1）
     hit_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

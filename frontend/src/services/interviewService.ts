@@ -6,6 +6,8 @@
 
 import { apiClient } from "@/lib/apiClient";
 import type {
+  CoverageCategory,
+  CoverageSkill,
   Difficulty,
   InterviewLog,
   InterviewLogCreate,
@@ -13,6 +15,7 @@ import type {
   InterviewQuestionCreate,
   InterviewStats,
   QuestionCategory,
+  QuestionCoverage,
   TaskDraft,
 } from "@/types";
 
@@ -42,6 +45,9 @@ interface InterviewQuestionDTO {
   difficulty: string;
   answer_outline: string | null;
   source: string | null;
+  source_day_seq: number | null;
+  skill_name: string | null;
+  is_verified: boolean;
   hit_count: number;
   created_at: string;
   updated_at: string;
@@ -102,6 +108,9 @@ function toQuestion(dto: InterviewQuestionDTO): InterviewQuestion {
     difficulty: dto.difficulty as Difficulty,
     answerOutline: dto.answer_outline,
     source: dto.source,
+    sourceDaySeq: dto.source_day_seq ?? null,
+    skillName: dto.skill_name ?? null,
+    isVerified: dto.is_verified ?? false,
     hitCount: dto.hit_count,
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
@@ -183,12 +192,87 @@ export async function listQuestions(params?: {
   return dtos.map(toQuestion);
 }
 
-/** 新增题目。 */
+/** 新增题目。
+ *
+ * 注意：这里必须显式转 snake_case。apiClient 不做 key 转换，
+ * 旧实现直接 post camelCase 的 `answerOutline` → 后端字段 `answer_outline` 被
+ * Pydantic 当作未知字段忽略，**答题要点被静默丢弃**（P3 修复）。
+ */
 export async function createQuestion(
   payload: InterviewQuestionCreate
 ): Promise<InterviewQuestion> {
-  const dto = await apiClient.post<InterviewQuestionDTO>("/api/interview-questions", payload);
+  const dto = await apiClient.post<InterviewQuestionDTO>("/api/interview-questions", {
+    category: payload.category,
+    question: payload.question,
+    difficulty: payload.difficulty ?? "intermediate",
+    answer_outline: payload.answerOutline ?? null,
+    source: payload.source ?? null,
+    source_day_seq: payload.sourceDaySeq ?? null,
+    skill_name: payload.skillName ?? null,
+    is_verified: payload.isVerified ?? false,
+  });
   return toQuestion(dto);
+}
+
+/* ───────────────────────── 覆盖率（P3） ───────────────────────── */
+
+interface QuestionCoverageDTO {
+  total: number;
+  target_total: number;
+  core_target: number;
+  core_done: number;
+  per_skill_target: number;
+  categories: Array<{
+    key: string;
+    done: number;
+    target: number;
+    gap: number;
+    core: boolean;
+  }>;
+  skills: Array<{
+    name: string;
+    total: number;
+    gap: number;
+    missing: string[];
+    counts: Record<string, number>;
+  }>;
+  cells_total: number;
+  cells_filled: number;
+}
+
+/** 题库覆盖率矩阵（红格 = 缺）。默认取「主攻」赛道的技能行。 */
+export async function getQuestionCoverage(
+  trackKey?: string
+): Promise<QuestionCoverage> {
+  const qs = trackKey ? `?track_key=${encodeURIComponent(trackKey)}` : "";
+  const dto = await apiClient.get<QuestionCoverageDTO>(
+    `/api/interview-questions/coverage${qs}`
+  );
+  const categories: CoverageCategory[] = dto.categories.map((c) => ({
+    key: c.key as QuestionCategory,
+    done: c.done,
+    target: c.target,
+    gap: c.gap,
+    core: c.core,
+  }));
+  const skills: CoverageSkill[] = dto.skills.map((s) => ({
+    name: s.name,
+    total: s.total,
+    gap: s.gap,
+    missing: s.missing ?? [],
+    counts: s.counts ?? {},
+  }));
+  return {
+    total: dto.total,
+    targetTotal: dto.target_total,
+    coreTarget: dto.core_target,
+    coreDone: dto.core_done,
+    perSkillTarget: dto.per_skill_target,
+    categories,
+    skills,
+    cellsTotal: dto.cells_total,
+    cellsFilled: dto.cells_filled,
+  };
 }
 
 /** 删除题目。 */

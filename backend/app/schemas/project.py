@@ -27,6 +27,16 @@ class ProjectPatch(BaseModel):
     sort_order: int | None = None
 
 
+class ProjectReadmeIn(BaseModel):
+    """保存 README。
+
+    ``content`` 省略时，服务端用证据链**重新生成**骨架再保存（"一键导出"）；
+    给定 ``content`` 时保存用户润色后的文本（"润色后回存"）。
+    """
+
+    content: str | None = None
+
+
 class ProjectOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

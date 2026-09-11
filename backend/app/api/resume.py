@@ -11,6 +11,7 @@
 - GET    /api/resume/facts            事实锚点库
 - POST   /api/resume/facts            新增事实锚点
 - DELETE /api/resume/facts/{id}       删除事实锚点
+- GET    /api/resume/skill-lines      简历技能行（每行附证据，只收录有真实证据的技能）
 
 防虚构逻辑全部走 agents/resume/engine（纯规则、可解释、不依赖 LLM）。
 """
@@ -38,6 +39,7 @@ from app.schemas.resume import (
     ResumeVersionOut,
     ResumeVersionPatch,
 )
+from app.services.packaging.service import collect_skill_lines
 
 router = APIRouter(prefix="/resume", tags=["resume"])
 
@@ -225,3 +227,17 @@ def delete_fact(fact_id: int, db: Session = Depends(get_db)):
     db.delete(f)
     db.commit()
     return ok(None, "已删除事实锚点")
+
+
+# ───────────────────────────── 技能行（附证据） ─────────────────────────────
+
+@router.get("/skill-lines")
+def skill_lines(pending_min_level: int = 3, db: Session = Depends(get_db)):
+    """简历技能行 —— 每行附可点开的证据。
+
+    P4 / plan_30d Day 25 验收：「简历技能行每一项都能点开对应证据（代码 / 实验 / 论文）」。
+
+    - ``ready``：已有真实证据（``evidence_gate >= 1``）的技能，可直接写进简历
+    - ``pending``：自评 ``level >= pending_min_level`` 却尚无证据 —— 写进简历即虚构风险
+    """
+    return ok(collect_skill_lines(db, pending_min_level=pending_min_level))

@@ -22,14 +22,18 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 def list_tasks(
     project_id: int | None = None,
     track_key: str | None = None,
+    plan_day_id: int | None = None,
     include_untracked: bool = False,
     include_test: bool = False,
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[TaskOut]]:
-    """获取任务列表。支持按项目 / 赛道过滤。按创建时间倒序。
+    """获取任务列表。支持按项目 / 赛道 / 课程日过滤。按创建时间倒序。
 
     `track_key`：按赛道过滤（llm / vlm / ai-algo / embodied），
     用于让任务列表跟随看板视角 —— 切到「具身智能」视角时只看具身任务。
+
+    `plan_day_id`：按课程日过滤（见 migrations/0011）。
+    与 `track_key` 正交：track_key 说「属于哪条赛道」，plan_day_id 说「属于课程第几天」。
 
     `include_untracked`：`track_key` 过滤时是否一并返回未归类（track_key IS NULL）
     的历史 / 手写任务。默认 False（视角过滤应干净）；
@@ -41,6 +45,8 @@ def list_tasks(
     q = db.query(Task)
     if project_id is not None:
         q = q.filter(Task.project_id == project_id)
+    if plan_day_id is not None:
+        q = q.filter(Task.plan_day_id == plan_day_id)
     if track_key is not None:
         if include_untracked:
             q = q.filter((Task.track_key == track_key) | (Task.track_key.is_(None)))
@@ -74,6 +80,7 @@ def create_task(
         milestone_id=payload.milestone_id,
         source=payload.source or "user",
         track_key=payload.track_key,
+        plan_day_id=payload.plan_day_id,
     )
 
     # 自动关联技能外键

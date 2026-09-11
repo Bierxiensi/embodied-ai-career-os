@@ -28,6 +28,7 @@ from app.api.learning_logs import router as learning_logs_router
 from app.api.dashboard import router as dashboard_router
 from app.api.milestones import router as milestones_router
 from app.api.paper import router as paper_router
+from app.api.experiments import router as experiments_router
 from app.api.plan import router as plan_router
 from app.api.planner import router as planner_router
 from app.api.projects import router as projects_router
@@ -100,6 +101,9 @@ app.include_router(job_postings_router, prefix=api_prefix)
 app.include_router(resume_router, prefix=api_prefix)
 app.include_router(interviews_router, prefix=api_prefix)
 app.include_router(reports_router, prefix=api_prefix)
+# 30 天施工执行台：课程脊梁 + 今日施工单 + 四件套（见 docs/platform-direction-30day.md）
+app.include_router(experiments_router, prefix=api_prefix)
+app.include_router(plan_router, prefix=api_prefix)
 
 
 @app.get("/health")

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -117,8 +118,73 @@ class TodayView(BaseModel):
     # 四件套状态
     artifacts: list[ArtifactOut] = []
     artifact_status: dict[str, int] = {}   # kind -> 已交条数
+    questions_from_bank: int = 0  # P2：题库中归属当天的题目条数（questions 轴自动判定用）
     missing_kinds: list[str] = []
     all_done: bool = False
 
     # 总账（跨全部 30 天累计）
     ledger: list[LedgerItem] = []
+
+
+class DayProgressOut(BaseModel):
+    """某一天的执行进度记录。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    plan_day_id: int
+    calendar_date: str | None = None
+    status: str = "pending"
+    actual_minutes: int | None = None
+    deviation_note: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProgressUpdate(BaseModel):
+    """手动记录一天的执行决策（压缩 / 顺延 / 放弃 / 完成）。
+
+    滑期机制的硬性落点：落后时用户必须显式选一个 status，
+    并（建议）写 deviation_note 说明取舍 —— 平台绝不自动顺延。
+    """
+
+    plan_day_id: int
+    status: Literal["pending", "done", "compressed", "deferred", "skipped"]
+    deviation_note: str | None = None
+    actual_minutes: int | None = None
+
+
+class PlanDayStatusItem(BaseModel):
+    """总览页中某一天的状态投影。"""
+
+    seq: int
+    plan_day_id: int
+    phase: int
+    phase_name: str
+    title: str
+    theme: str
+    track_key: str
+    est_minutes: int
+    status: str = "pending"  # pending/done/compressed/deferred/skipped（推导值）
+    full_artifacts: bool = False  # 四件套是否齐全（推导 done 的依据之一）
+    is_missed: bool = False  # seq <= 当前天 且未通过 → 已错过，需要决策
+    deviation_note: str | None = None
+
+
+class PlanOverview(BaseModel):
+    """30 天课程总览：课程进度 vs 日历进度。
+
+    回答「我落后了几天、哪些天需要决策」—— 这是 P1 滑期机制的核心视图。
+    """
+
+    day_index: int  # 日历推导的「今天算课程第几天」
+    total_days: int
+    sprint_start: str
+    sprint_end: str
+    calendar_days_elapsed: int
+    is_before_start: bool
+    is_after_end: bool
+
+    behind: int  # 已错过的天数（>0 即落后）
+    completed_days: int  # 已通过（done/compressed）且 seq <= day_index 的天数
+    days: list[PlanDayStatusItem] = []

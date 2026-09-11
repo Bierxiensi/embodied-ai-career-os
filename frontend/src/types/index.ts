@@ -48,6 +48,10 @@ export interface Task {
   /** 所属赛道（llm / vlm / ai-algo / embodied）。
    * 看板按视角过滤任务用；null/undefined = 未归类（历史 / 手写任务）。 */
   trackKey?: string | null;
+  /** 归属课程第几天（plan_days.id）。与 trackKey 正交：
+   * trackKey 说「属于哪条赛道」，planDayId 说「属于课程第几天」。
+   * null/undefined = 不对应任何课程日（历史 / 手写任务）。 */
+  planDayId?: string | null;
 }
 
 /** Planner Agent 输入技能项（snake_case，匹配后端契约）。 */
@@ -592,6 +596,12 @@ export interface InterviewQuestion {
   difficulty: Difficulty;
   answerOutline: string | null;
   source: string | null;
+  /** P2：归属课程日序号（1..30），用于「四件套 questions 自动判定」 */
+  sourceDaySeq: number | null;
+  /** P2：关联技能名（题库覆盖率矩阵的行 + evidence-gated） */
+  skillName: string | null;
+  /** P2：是否通过面试验收验证 */
+  isVerified: boolean;
   hitCount: number;
   createdAt: string;
   updatedAt: string;
@@ -660,6 +670,44 @@ export interface InterviewQuestionCreate {
   difficulty?: Difficulty;
   answerOutline?: string | null;
   source?: string | null;
+  /** P2/P3：可选归属课程日与关联技能（快速录题时顺手带） */
+  sourceDaySeq?: number | null;
+  skillName?: string | null;
+  isVerified?: boolean;
+}
+
+// ===== 题库覆盖率（Question · P3）=====
+
+/** 一个分类的进度（done vs target）。 */
+export interface CoverageCategory {
+  key: QuestionCategory;
+  done: number;
+  target: number;
+  gap: number;
+  core: boolean;
+}
+
+/** 覆盖率矩阵中的一行（技能 × 四分类）。 */
+export interface CoverageSkill {
+  name: string;
+  total: number;
+  gap: number;
+  /** 红格：该技能在这些分类里一题为 0 */
+  missing: string[];
+  counts: Record<string, number>;
+}
+
+/** 题库覆盖率总览（GET /api/interview-questions/coverage）。 */
+export interface QuestionCoverage {
+  total: number;
+  targetTotal: number;
+  coreTarget: number;
+  coreDone: number;
+  perSkillTarget: number;
+  categories: CoverageCategory[];
+  skills: CoverageSkill[];
+  cellsTotal: number;
+  cellsFilled: number;
 }
 
 // ===== 日报 / 周报（Report · Batch 4）=====
@@ -744,4 +792,258 @@ export interface SendResult {
   skipped: boolean;
   reason: string | null;
   title: string | null;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   30 天施工执行台（见 docs/platform-direction-30day.md）
+   对应 backend /api/plan 系列端点。
+   ══════════════════════════════════════════════════════════════ */
+
+/** 课程日（Day 1..30）。seq 是不可变的课程序号，与日历日期无关。 */
+export interface PlanDay {
+  id: string;
+  seq: number;
+  phase: number; // 阶段（周）1..4
+  phaseName: string; // 阶段名，如「第一周 · 打穿 Transformer」
+  title: string; // 当天主题
+  theme: string; // 技术域
+  objectives: string[]; // 学习目标
+  acceptance: string[]; // 验收标准
+  interviewTopics: string[]; // 当天必须能回答的面试题主题
+  resources: string[]; // 指定资源（严格来自 5 类资源锁）
+  estMinutes: number; // 预计投入分钟数
+  trackKey: string; // 归属赛道 llm / vlm
+}
+
+/** 每日四件套的产出类型（计划 §十）。 */
+export type ArtifactKind = "code" | "note" | "questions" | "commit";
+
+/** 四件套的展示口径（顺序与后端 ARTIFACT_KINDS 一致）。 */
+export const ARTIFACT_META: {
+  kind: ArtifactKind;
+  label: string;
+  hint: string;
+}[] = [
+  { kind: "code", label: "代码", hint: "一段可运行的代码" },
+  { kind: "note", label: "笔记", hint: "一页技术笔记" },
+  { kind: "questions", label: "面试题", hint: "至少 5 道" },
+  { kind: "commit", label: "commit", hint: "一次 git 提交" },
+];
+
+/** 一条每日产出。 */
+export interface DayArtifact {
+  id: string;
+  planDayId: string;
+  kind: ArtifactKind;
+  title?: string;
+  url?: string;
+  autoVerified: boolean; // P0 恒 false；P2 起 commit / questions 可自动核验
+  note?: string;
+  createdAt: string;
+}
+
+/** 「总账」一行：某项产出的累计进度（30 天口径）。 */
+export interface LedgerItem {
+  key: string; // code / note / commit / questions / days
+  label: string;
+  done: number;
+  target: number;
+}
+
+/** 今日施工单视图（GET /api/plan/today）。
+ * 回答三个问题：今天第几天、今天干什么、今天做完没有。 */
+export interface TodayView {
+  day: PlanDay;
+
+  /** 今天算课程第几天（P0 由日历推导，clamp 到 1..30） */
+  dayIndex: number;
+  totalDays: number;
+
+  /** 日历口径，用于偏差提示（P1 起支持落后量决策） */
+  calendarDaysElapsed: number;
+  sprintStart: string;
+  isBeforeStart: boolean;
+  isAfterEnd: boolean;
+
+  /** 今日任务（tasks.plan_day_id == 当天） */
+  tasks: Task[];
+  completedTasks: number;
+
+  /** 四件套状态 */
+  artifacts: DayArtifact[];
+  artifactStatus: Record<string, number>;
+  /** P2：题库中归属当天的题目条数（questions 轴自动判定用） */
+  questionsFromBank: number;
+  missingKinds: ArtifactKind[];
+  allDone: boolean;
+
+  /** 总账（跨全部 30 天累计） */
+  ledger: LedgerItem[];
+}
+
+/** 一天课程的进度状态（GET /api/plan/overview 的 days[] 元素）。 */
+export type DayProgressStatus =
+  | "pending"
+  | "done"
+  | "compressed"
+  | "deferred"
+  | "skipped";
+
+/** 一天课程的进度投影（P1 滑期总览用）。 */
+export interface PlanDayStatus {
+  seq: number;
+  planDayId: string;
+  phase: number;
+  phaseName: string;
+  title: string;
+  theme: string;
+  trackKey: string;
+  estMinutes: number;
+  status: DayProgressStatus;
+  fullArtifacts: boolean; // 四件套是否齐全（推导 done 的依据之一）
+  isMissed: boolean; // seq <= 当前天 且未通过 → 已错过，需要决策
+  deviationNote?: string | null;
+}
+
+/** 30 天总览（课程进度 vs 日历进度）。 */
+export interface PlanOverview {
+  dayIndex: number; // 日历推导的「今天算课程第几天」
+  totalDays: number;
+  sprintStart: string;
+  sprintEnd: string;
+  calendarDaysElapsed: number;
+  isBeforeStart: boolean;
+  isAfterEnd: boolean;
+  behind: number; // 已错过的天数（>0 即落后）
+  completedDays: number; // 已通过（done/compressed）且 seq <= dayIndex 的天数
+  days: PlanDayStatus[];
+}
+
+/* ══════════════════════════════════════════════════════════════
+   证据闭环 P2（experiments / evidence-gated / commit 同步）
+   ══════════════════════════════════════════════════════════════ */
+
+/** 实验类型（决策 4：实验是一等公民）。 */
+export type ExperimentKind = "finetune" | "benchmark" | "ablation";
+
+/** 实验变体（对比表的一行）。字段开放，渲染器按 key 出列。 */
+export interface ExperimentVariant {
+  name: string;
+  [key: string]: unknown;
+}
+
+/** 实验指标（{name, value, unit}）。 */
+export interface ExperimentMetric {
+  name: string;
+  value: unknown;
+  unit?: string;
+}
+
+/** 一条实验记录（对应后端 experiments 表）。 */
+export interface Experiment {
+  id: string;
+  planDayId: string | null;
+  daySeq: number;
+  name: string;
+  kind: ExperimentKind;
+  skillName: string | null;
+  variants: ExperimentVariant[];
+  metrics: ExperimentMetric[];
+  conclusion: string | null;
+  artifactIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 新增实验入参。 */
+export interface ExperimentCreate {
+  planDayId?: string | null;
+  daySeq: number;
+  name: string;
+  kind: ExperimentKind;
+  skillName?: string | null;
+  variants?: ExperimentVariant[];
+  metrics?: ExperimentMetric[];
+  conclusion?: string | null;
+  artifactIds?: string[];
+}
+
+/** commit 同步结果。 */
+export interface CommitSyncResult {
+  synced: number;
+  skipped?: boolean;
+  reason?: string;
+  error?: string;
+  source?: string;
+  repo?: string;
+}
+
+/** 一条 typed evidence（「技能升级因为这份代码」的文案来源）。 */
+export interface SkillEvidenceItem {
+  level: number; // 1..4
+  kind: string; // note / question / code / experiment / research
+  label: string; // 能解释 / 能实现修改 / 能做实验 / 能研究
+  ref: string; // 具体证据描述
+}
+
+/** 单个技能的 evidence-gated 推导。 */
+export interface SkillEvidence {
+  id: string;
+  name: string;
+  level: number;
+  targetLevel: number;
+  evidenceGate: number; // 0..4，从真实证据推导的最高可信等级
+  evidence: SkillEvidenceItem[];
+}
+
+/* ───────────────────── P4 求职包装（README / 简历技能行） ───────────────────── */
+
+/** README 骨架生成的输入统计（让用户看清"哪些部分已自动填好"）。 */
+export interface ReadmeCounts {
+  milestones: number;
+  skills: number;
+  skillsWithEvidence: number;
+  experiments: number;
+  chars: number;
+}
+
+/** 项目 README：savedReadme = 已保存的，draft = 本次从证据链重新生成的。 */
+export interface ProjectReadme {
+  projectId: string;
+  name: string;
+  savedReadme: string | null;
+  draft: string;
+  counts: ReadmeCounts;
+}
+
+/** 一条可写进简历的技能行（已附证据）。 */
+export interface SkillLine {
+  skill: string;
+  level: number;
+  category: string | null;
+  gateLevel: number;
+  line: string;
+  refs: SkillEvidenceItem[];
+}
+
+/** 自评较强但尚无证据的技能 —— 写进简历即构成虚构风险。 */
+export interface SkillLinePending {
+  skill: string;
+  level: number;
+  category: string | null;
+  gateLevel: number;
+  missing: string;
+}
+
+/** 简历技能行总览。 */
+export interface SkillLineReport {
+  ready: SkillLine[];
+  pending: SkillLinePending[];
+  summary: {
+    total: number;
+    ready: number;
+    pending: number;
+    pendingMinLevel: number;
+  };
+  note: string;
 }

@@ -834,5 +834,40 @@ def get_day(seq: int) -> PlanDaySeed | None:
     return None
 
 
+# 技能名 → 课程日序号的回填映射。
+#
+# 用途：把库里已有的任务（它们的 skill_name 来自旧的具身/求职口径）
+# 绑定到对应的课程日，让"今日施工单"立刻有内容，而不是从零开始。
+#
+# 口径说明：
+# - 只用于 scripts/seed_plan_30d.py 的**一次性回填**，不覆盖任何手工指定。
+# - **只收录课程特有的技能名**。通用框架/语言技能（Python / Deep Learning /
+#   PyTorch）一律不映射 —— 它们不蕴含"属于课程第几天"。
+#   反例（2026-09-11 实测踩坑）：把 Python 映射到 Day 2（Attention 手写实现）后，
+#   「Career OS Day2 数据库层」「Python asyncio 异步编程实践」两条无关任务
+#   被挂到了 Attention 那天，默认落地页显示错误内容。
+#   宁可少绑，不可错绑 —— 错绑比不绑更有害，因为它伪造了"今天该做这个"的因果。
+# - 具身相关技能（ROS2 / Isaac / VLA / Robot Learning / Sim2Real）**故意不给映射** ——
+#   它们属于冻结赛道，不在 30 天课程内，绑到任何一天都是错的。
+# - "Job Hunt" 同理：它是求职动作，不是课程内容。
+SKILL_TO_DAY_SEQ: dict[str, int] = {
+    "Transformer": 1,
+    "Attention": 2,
+    "RoPE": 3,
+    "Pretraining": 8,
+    "SFT": 10,
+    "LoRA/QLoRA": 11,
+    "Inference Optimization": 13,
+    "vLLM": 14,
+    "ViT": 15,
+    "CLIP": 16,
+    "Multimodal Alignment": 17,
+    "VLM": 17,
+}
+
+
 assert len(PLAN_30D) == 30, f"课程脊梁必须是 30 天，当前 {len(PLAN_30D)}"
 assert [d.seq for d in PLAN_30D] == list(range(1, 31)), "seq 必须连续 1..30"
+assert all(s in {d.seq for d in PLAN_30D} for s in SKILL_TO_DAY_SEQ.values()), (
+    "SKILL_TO_DAY_SEQ 里出现了不存在的课程日序号"
+)

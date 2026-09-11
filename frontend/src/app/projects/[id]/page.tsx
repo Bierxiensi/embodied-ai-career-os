@@ -3,13 +3,16 @@
  * 2026-09-10 重写：与列表页同一套设计系统（PageHeader + token 配色），
  * 顶栏由 app/layout.tsx 统一渲染。
  *
- * 数据：项目 + 里程碑 + 关联任务（并行拉取）。
- * 交互：MilestoneTimeline（客户端组件）负责里程碑状态切换与任务生成。
+ * 数据：项目 + 里程碑 + 关联任务 + README 骨架（并行拉取，README 失败不击穿整页）。
+ * 交互：MilestoneTimeline（客户端）负责里程碑状态切换与任务生成；
+ *       ReadmeDraftCard（客户端）负责 README 预览 / 重新生成 / 保存 / 下载。
  */
 
 import PageHeader from "@/components/PageHeader";
 import MilestoneTimeline from "@/components/MilestoneTimeline";
+import ReadmeDraftCard from "@/components/ReadmeDraftCard";
 import { milestoneBadge } from "@/components/ProjectCard";
+import { getProjectReadme } from "@/services/packagingService";
 import { projectService } from "@/services/projectService";
 import { getSkills } from "@/services/skillService";
 import { getTasks } from "@/services/taskService";
@@ -42,11 +45,13 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // 技能用于「生成里程碑任务」的 Planner 输入；失败不击穿整页。
-  const [project, skills, allTasks] = await Promise.all([
+  // 技能用于「生成里程碑任务」的 Planner 输入；README 骨架靠证据链推导。
+  // 两者都失败不击穿整页。
+  const [project, skills, allTasks, readme] = await Promise.all([
     projectService.get(id),
     getSkills().catch(() => []),
     getTasks(id).catch(() => []),
+    getProjectReadme(id).catch(() => null),
   ]);
 
   const status = milestoneBadge; // 复用同一套徽章口径（避免色值漂移）
@@ -184,6 +189,9 @@ export default async function ProjectDetailPage({
               .filter((x): x is string => x != null)}
           />
         </Card>
+
+        {/* README 骨架（从证据链生成）—— 项目的"成品出口" */}
+        {readme && <ReadmeDraftCard projectId={id} initial={readme} />}
 
         {/* 关联任务 */}
         {allTasks.length > 0 && (

@@ -1,171 +1,133 @@
 # 项目长期记忆 · Embodied AI Career OS
 
-## 项目基础
-- **⚠️ 战略主线已于 2026-09-10 转向**：从「具身智能主攻」改为 **LLM 主攻 + VLM 卡位 + AI 算法保底**
-  （依据《求职 Agent 开发与运行规范 v2.0》：具身/VLA/ROS2/Isaac/SO101 全部列为 D 级
-  "一个月主动不深挖"）。设计文档见 `docs/agent-design/JOB_SEARCH_AGENT_DESIGN.md`。
-  **不要再推荐具身方向的学习任务**；`skill_profile.py` 中 D 级技能 target=level（gap 恒 0）。
-  优先级锁：求职 > LLM 核心能力 > 项目 > 博士准备 > 具身。
-- **类型**：面向算法工程师的"求职作战 Agent 系统"（前身为具身智能职业 OS）
-- **技术栈**：Next.js 16（App Router）+ React 19 + TypeScript + Tailwind v4（CSS-first @theme）
-- **设计取向**：零第三方 UI 库（全部手写组件）、零图表库（雷达图等纯 SVG）、Geist 字体
-- **数据流**：Server Component 拉取 + `router.refresh()` 增量更新
-- **后端**：FastAPI 风格（路径 /api/career/... /api/tasks/...），snake_case 存储，
-  前端用 adapter 转换为 camelCase
-- **数据形态**：Career / Skill / Task（STATUS_CONFIG: todo/doing/done）/ Project / Milestone /
-  AgentRunRecord / CommitSuggestion / **JobApplication**（求职投递：applied→screening→interview→offer/rejected）
-- **求职作战看板（2026-09-09 新增）**：系统定位从"学习记录"转向"求职进度看板"。
-  后端 `/api/job-hunt`（聚合：岗位画像+匹配度/技能缺口/里程碑/周任务/投递漏斗）、
-  `/api/job-applications`（CRUD+/stats）；前端 `/jobs` 页（JobsBoard 客户端组件）。
-  三赛道配置见 `backend/app/core/target_roles.py`。数据脚本 `backend/scripts/seed_job_hunt.py`（幂等）。
-- **真实技能画像单一数据源（2026-09-10 新增）**：`backend/app/core/skill_profile.py`
-  —— 改技能等级/证据只改这个文件，改完跑 `python backend/scripts/seed_job_hunt.py` 校准进库
-  （`calibrate_skills()` 幂等覆盖已有数据）。`app/db/base.py` 建表种子只是引用它，不要在那里改副本。
-  `docs/MY_CONTEXT.md` 只写背景与策略，不写等级。
+> 第三版（2026-09-10 二次精简）。**本文件只留结论与硬规则**；实施细节见
+> `.workbuddy/memory/YYYY-MM-DD.md` 与 `docs/platform-direction-30day.md`。
 
-## 命名与代码规范
-- 组件 PascalCase.tsx，一文件一默认导出
-- `type Props = {...}` 内联
-- 常量 UPPER_SNAKE_CASE（如 `STATUS_CONFIG`、`AGENT_COLORS`）
-- 服务层 camelCase；后端 snake_case→camelCase
-- 颜色：emerald=成功/当前、sky=规划/Planner、violet=Reviewer、amber=待办/Career、rose=Research/失败
-- 卡片样式：白底 + hairline 边框 + 18px 圆角 + 24px padding，无阴影（与 Apple 风格一致）
-- 状态徽章：pill 形（radius 999），浅色底 + 深色字
+## 一、战略与定位
 
-## 设计资产
-- **Ardot 画布 fileId 716776328381413**（2026-08-20 设计的完整 dashboard）
-  - 27 个设计变量已通过 `apply_variables` 写入
-  - 桌面端 1440 + 移动端 390 双版本
-  - 验证截图存 `.workbuddy/screenshots/`（desktop-full / mobile-full / radar-card /
-    quick-actions / row2-tasks-projects / agent-activity）
+- **战略 v2.0**：LLM 主攻 + VLM 卡位 + AI 算法保底；具身/VLA/ROS2/Isaac/SO101 **全 D 级冻结**
+  （`target_roles.py` 标 frozen；`skill_profile.py` target=level → gap 恒 0）。
+  **不要再推荐具身方向学习任务。** 优先级：求职 > LLM 核心能力 > 项目 > 博士准备 > 具身。
+- **平台 = 30 天施工执行台**。唯一判据：顶栏有没有一个入口回答「我今天该干什么」。
+  IA = `今日 / 施工 / 项目 / 题库 / 求职▾ / 复盘 / Agent`；`/today` 是默认落地页，
+  `/dashboard` 降为二级「概览」（**不删**）。
+- **路线图**：P0 ✅ / P1 ✅ / P2 ✅ / P3 ✅ / P4 求职包装 ✅ —— **P0–P4 全部完成**。
+  硬约束：**单周平台工时 ≤ 2 个晚上**，超预算先砍 P4 再砍 P3，P0/P1 不可砍。
+- **求职 Agent 四条线**：`/jd` `/resume` `/interview` `/reports`。引擎一律是**独立纯规则模块**
+  （`agents/*/engine.py`、`services/*/engine.py`），**不套 BaseAgent / LangGraph** ——
+  需可单测、可解释、不烧 token。新增业务 Agent 沿用。LLM 只做措辞增量，产出仍过规则校验。
+- **P2 证据闭环**（doc §十三）：`experiments` 表 + `core/evidence.py` 四档 gate
+  （L1 note/题 → L2 code+commit → L3 实验 → L4 对比实验+报告）写回 `skills.evidence_gate`；
+  `TECH_BLACKLIST` 在 Planner 硬拒绝；前端 `/experiments` `/evidence`。
+- **P3 题库生长**（doc §十四）：`coverage_matrix()`（目标 150 = LLM50/Multi30/Proj40/Code30，
+  核心必达 80）；`GET /api/interview-questions/coverage`，**红格 = (技能,分类) 0 题**；前端 `/questions`。
+- **P4 求职包装**（doc §十五）：`services/packaging/engine.py` 纯函数
+  `build_readme_skeleton`（13 节论文体骨架：数据能填的自动填、只有人能写的留**带提示占位**）
+  + `build_skill_lines`（**只收 `evidence_gate >= 1`**；自评 ≥3 无证据进 `pending` = 虚构风险）；
+  接口 `GET/POST /api/projects/{id}/readme`、`GET /api/resume/skill-lines`。
+  **`patch_project` 内联 README 拼接已删，统一走该构建器**；前端 `ReadmeDraftCard` / `SkillLinesCard`。
+- **文档**：`docs/platform-direction-30day.md`（§十三 P2 / §十四 P3 / §十五 P4）、
+  `docs/system-audit-and-role-switch.md`、`docs/app-mode-and-radar-analysis.md`（模式门控：
+  **只改展示不改数据**）、`docs/agent-design/JOB_SEARCH_AGENT_DESIGN.md`（§0.1.3 记录有意偏离）。
 
-## 求职 Agent（Batch 0–4 全链路，2026-09-10 完成）
-- 定位：系统从"学习记录"转为"求职作战看板"；v2.0 战略 = LLM 深度主攻 + VLM 轻卡位 +
-  AI 算法保底，具身冻结（D 级，`target=level` 使 gap 恒为 0）。
-- 四条线 + 页面：岗位池/JD 匹配（`/jd`）→ 简历防虚构（`/resume`）→ 面试弱项回写（`/interview`）
-  → 日报周报（`/reports`）。设计文档：`docs/agent-design/JOB_SEARCH_AGENT_DESIGN.md`。
-- **实现约定（重要）**：Match / Resume / Interview / Report 四个引擎一律落地为
-  `agents/<name>/engine.py` 或 `services/report/engine.py` 的**独立纯规则模块，
-  不套 BaseAgent / LangGraph**——核心是确定性聚合与推导，需可单测/可解释/不烧 token。
-  设计文档把 Agent 列为 BaseAgent 子类属过度设计，已在设计文档 §0.1.3 记录该"有意偏离"。
-  **新增业务 Agent 沿用此模式**；LLM 只做措辞/生成类增量，且产出仍要过规则校验。
-- 报告调度：APScheduler 注册 `job_daily_report`(08:30) / `job_weekly_report`(周一 09:00) /
-  `job_followup_remind`(10:00)。幂等靠 `ReportLog(kind, period_key)` 唯一约束；
-  开关与时间见 `config.py` 的 `REPORT_*` 项。推送通道统一走 `channels.build_channel()`。
+## 二、技术栈与规范
 
-## 展示层约定（2026-09-10 阶段 1 定型）
-- **雷达图必须"岗位对齐"，不要回到全量技能轴**：旧实现按全 48 技能（排除 2）出 **46 轴**、
-  34 项有 gap，形状无语义。现方案：`dashboardService.pickPrimaryTrack()` 选 `TARGET_ROLES`
-  中 priority=主攻 的赛道，取其 `required_skills` 出 **8 轴**（`RadarAxis{name,current,required,gap}`）。
-  改雷达只改 `SkillRadarCard` + `RadarChart`，**不要再新增第二套实现**
-  （历史死组件 `SkillOverview` 就是双实现，已删）。目标态是 R2 域聚合 6 轴（需给技能补 `domain`）。
-- **就绪度口径必须与看板同源**：Dashboard 的 readiness = 主攻赛道 `matchPct`，
-  **不是** 全技能加权和；`KpiCards` 用 `readinessLabel` 传标签。两处口径不一致会被立刻发现。
-- **Planner 目标岗位不要硬编码**：`backend/app/api/planner.py` 的默认值来自
-  `TARGET_ROLES` 的「主攻」赛道（`_DEFAULT_TARGET_ROLE`）；前端 `plannerService` 只在
-  显式传参时才发 `target_role`。历史上写死 `"Robot AI Engineer"` 导致 Planner 一直产出具身任务。
-- 分析文档：`docs/app-mode-and-radar-analysis.md`（模式门控方案 + 阶段 1/2/3 计划，
-  阶段 1 已 ✅ 完成）。**模式门控原则：模式只改展示、不改数据，不做两套前端。**
+- Next.js 16 App Router + React 19 + TS + Tailwind v4（CSS-first `@theme`）；FastAPI + SQLAlchemy + SQLite。
+  **零第三方 UI 库、零图表库**（纯 SVG 雷达）、Geist 字体。Server Component 拉取 + `router.refresh()`。
+- 组件 PascalCase.tsx 一文件一默认导出；`type Props` 内联；常量 UPPER_SNAKE_CASE；
+  后端 snake_case → 前端 adapter 转 camelCase。卡片：白底 + hairline + 18px 圆角 + 24px padding，无阴影；
+  徽章 pill。颜色：emerald=成功/当前、sky=Planner、violet=Reviewer、amber=待办、rose=失败。
+  **一律引 `var(--color-*)` token，不硬编码 hex。**
+- **`GlobalNav` 只出现在 `app/layout.tsx`**；子页外层 `flex flex-1 flex-col`，**不要 `min-h-screen`**；
+  页头统一 `components/PageHeader.tsx`。
+- **雷达图必须岗位对齐**：取主攻赛道 `required_skills` 出 8 轴，**不要回全量技能轴**（46 轴版已删，
+  别再造第二套实现）；Dashboard `readiness` = 主攻 `matchPct`，**不是**全技能加权和，须与看板同源。
+  `SkillRadarCard` 支持任意 `axes[]`，换赛道无需改它。
+- Planner 默认目标岗位来自 `TARGET_ROLES`，**不要硬编码**（曾写死 "Robot AI Engineer" 一直产具身任务）。
 
-## 环境约定
-- **本地开发用 SQLite**（`backend/data/app.db`），Docker Compose 用 PG（compose 内覆盖 DATABASE_URL）。
-  不要在没跑 Docker 的机器上填 Postgres 连接串。
-- `.env` 由 `backend/app/core/config.py` 顶部 `load_dotenv` 加载（根 `.env` 优先，其次 `backend/.env`，
-  不覆盖已存在环境变量 → Docker 注入始终优先）。**早期版本没有 load_dotenv，改 .env 完全不生效**，已修。
-- 一键启动：`bash start.sh` / `bash scripts/smoke.sh`(40 项) / `bash stop.sh`；
-  后端测试 `cd backend && pytest -q`（157 项，**约 24 分钟**，含慢速集成；
-  验证时优先跑定点文件如 `pytest tests/test_report_engine.py -q` + smoke）。
-  跑 pytest 需用 `C:\Users\zxy_2\anaconda3\python.exe`（managed python 无 pytest 模块）。
+## 三、数据模型：三个正交轴
 
-## 关键经验（避坑）
-- **Windows 前后端联调一律用 `127.0.0.1`，不要用 `localhost`**：Node 会把 localhost 解析到
-  IPv6 `::1`，而 uvicorn 绑 `0.0.0.0`（仅 IPv4）→ Server Component 与 next rewrites 全部
-  ECONNREFUSED，页面显示"后端连接失败"。已修 4 处（apiClient.ts / next.config.ts /
-  start.sh / smoke.sh），新增代码勿再写 localhost。
-- **`.env` 必须靠 `load_dotenv` 才生效**（已在 config.py 加载；早期版本没加载，改了没反应）。
-- **Ardot SVG 解析器对退化几何敏感**：纯水平/垂直直线段会因包围盒为 0×N 或 N×0 报
-  "degenerate geometry" 错误。**修复：给所有轴线加 1px 偏移**（如 `M180 180L181 40`）。
-- 设计变量已就位，下次实现代码时直接引用 `var(--color-canvas)` 等 token，不要再硬编码 hex。
-- **`stop.sh` 的 Windows 杀进程（2026-09-10 修复）**：Git Bash 的 `kill <winPID>` 对原生进程
-  **静默返回 0 却不生效**，`kill ... || taskkill ...` 的兜底因此永不触发（表现为打印"✓ 已停止"
-  但 netstat 显示 PID 照旧）。现改为 Windows 走 `MSYS_NO_PATHCONV=1 taskkill /F /T /PID`，
-  且 kill 后复检端口，失败即报错。同理：Git Bash 里不要用 `taskkill //F`（斜杠会被改写）。
-- **启动后端的可靠方式**：`start.sh` 的 Windows detach（PowerShell `Start-Process -WindowStyle
-  Hidden`）在"用后台任务直接运行 start.sh"时会随任务回收而退出。要在会话内验证，直接后台跑
-  `backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000`。
-- **🔴 测试不得写开发库（2026-09-10 已修复，仍为硬约束）**：`backend/tests/` 曾长期
-  **没有 `conftest.py`**，多数测试 `TestClient(app)` 直连开发库 `data/app.db`，
-  一度把 dev 库灌成 **214 个项目（真实仅 2 个）、178 里程碑、393 agent_runs、292 任务**。
-  **现已落实 `tests/conftest.py`**：模块级把 `DATABASE_URL` 指向
-  `tempfile.mkdtemp("career-os-tests-")` 下的临时库，session guard 内**直接调 `init_db()`**
-  （不能依赖 TestClient 的 lifespan —— 模块级 `client = TestClient(app)` 不进 `with` 时 lifespan 不触发）。
-  **新增测试一律不自建临时库、不在 import 期做 `unlink()`**（删除失败会中断 pytest 收集阶段）；
-  依赖实时后端 :8000 的脚本放 `collect_ignore`。
-  验收门 = 跑完全量 `pytest` 后 `md5sum -c` 开发库指纹不变。
-- **Pydantic v2 `from_attributes` + 未 flush 的 ORM 实例**：SQLAlchemy 列 `default` 只在 INSERT
-  时生效，内存对象属性是 `None`，`ProjectOut.model_validate(orm)` 会报 `source: string_type`。
-  **修法**：给字段加 `@field_validator(<field>, mode="before")` 回落默认值（见 `schemas/project.py` /
-  `schemas/task.py` 的 `_default_source`）。给 ORM 加列 + 加进 Out schema 时必检这一条。
-- **数据库现状基线（2026-09-10 清理后）**：`projects` 2 / `milestones` 12 / `tasks` 18 /
-  `agent_runs` 6–9。真实业务表 = `job_applications`(4) / `resume_facts`(9) /
-  `interview_logs`(1) / `career_goal` / `projects#1 SO101 Embodied AI System`。
-  清理脏数据时以上为白名单，**一律不动**。
-- **双角色切换已落地（2026-09-10）**：视角 = URL `?role=` + cookie `view_role`
-  （`lib/viewRole.ts` 定义 `VIEW_ROLE_COOKIE` / `viewRoleHref` / `normalizeViewRole`），
-  由 Server Component 读 —— **不用 localStorage**（读不到且会闪烁/水合不一致）。
-  `/dashboard` → LLM 主攻 8 轴 75%；`/dashboard?role=embodied` → 具身 6 轴 38%。
-  切换**只改"看什么"，不改数据**，绝不 fork 两套前端。
-- **⚠️ 同一文件禁止并行 Edit**：docstring 与 print 两处并行编辑会竞争写盘，
-  后提交者按旧快照整体覆盖 → 先提交的那处被**静默回滚**（本次 3 个文件命中，工具仍报 success）。
-  同文件多处修改必须**串行**。
-- **赛道数据已够用，切换视角是纯前端活**：`/api/job-hunt → target_roles` 返回 4 条赛道
-  （llm 75% / vlm 58% / ai-algo 75% / embodied 38%，字段 snake_case `match_pct`）。
-  做"双角色切换"只需改 `dashboardService.pickPrimaryTrack()` 按 `?role=` 选赛道，
-  `SkillRadarCard` 无需改动（已支持任意 `axes[]`）。
+| 字段 | 回答 | 取值 |
+|---|---|---|
+| `tasks.source`（0007） | 谁写的 | user / seed / planner / test |
+| `tasks.track_key`（0008） | 属于哪条赛道 | llm / vlm / ai-algo / embodied / NULL |
+| `tasks.plan_day_id`（0011） | 属于课程第几天 | plan_days.id / NULL |
 
-## 2026-09-10 下午 增补：视角-任务打通 / 布局收敛 / Planner 可解释
+互不替代。`GET /api/tasks?track_key=&plan_day_id=&include_untracked=&include_test=`；
+赛道判定口径在 `target_roles.py`，**声明顺序优先**。
 
-- **`GlobalNav` 只允许出现在 `app/layout.tsx`（架构约束）**：此前 7 个页面各自渲染，
-  `/projects` 漏了 → 全站唯一没有顶栏的页面，且自带 `zinc-50/dark:bg-black` 调色板。
-  **新增页面一律不渲染 GlobalNav，外层用 `flex flex-1 flex-col`，不要 `min-h-screen`**；
-  页头统一用 `components/PageHeader.tsx`。
-- **任务-赛道模型**：`tasks.track_key`（迁移 0008）与 `source` 正交 —— `source` 说"谁写的"
-  （user/seed/planner/test），`track_key` 说"属于哪条赛道"。
-  `GET /api/tasks?track_key=X[&include_untracked=true][&include_test=true]`。
-  `include_untracked=true` → `track_key == X OR track_key IS NULL`（兼容历史无标签任务）。
-  赛道判定口径统一在 `app/core/target_roles.py`，**声明顺序优先**（PyTorch/Python/DL 归 llm）。
-  回填工具：`backend/scripts/backfill_task_track.py`（默认 dry-run，`--apply` 自动备份）。
-- **Planner 必须按赛道取技能**：`_scope_skills_to_track()` 把候选限制在赛道 `required_skills`，
-  避免"在 LLM 视角生成具身任务"。冻结赛道（`embodied`）有
-  `FROZEN_TRACK_MAX_MINUTES = 45` 低强度上限。响应体携带全部决策字段
-  （`track_key/track_name/track_frozen/skill_level/skill_target/gap/reused/reason`）
-  供前端 `PlannerResultCard` 渲染"为什么是这条"。
-- **Planner 幂等作用域**：`_persist_task` 在 `project_id is None` 时**必须**加
-  `Task.project_id.is_(None)`，否则全局请求会错误复用某个里程碑绑定的任务。
-- **迁移 SQL 硬规则（`run_migration.py`）**：按 `;` 裸切分、不识别注释、多语句同事务全量回滚。
-  → 注释里**禁止出现分号**；一条迁移只做一件事（加索引请单独一条）。
-- **测试写法**：涉及幂等的用例一律用**增量断言**（记录调用前后 count），
-  不要断言绝对行数 —— 共享临时库下会受其他用例污染（表现为单跑过、全量挂）。
-  `list_projects` 现已返回完整 `milestones[]`（卡片要显示"当前里程碑"），不再是纯 stats。
+**30 天执行台**：`app/core/plan_30d.py` 是课程**唯一事实来源**（`PlanDaySeed` × 30 +
+`RESOURCE_LOCK` + `SKILL_TO_DAY_SEQ`）；改计划 = 改该文件 + 重跑 `scripts/seed_plan_30d.py`
+（`--dry-run` / `--rebind`），**不做 CRUD 界面**。表 `plan_days` / `day_artifacts` + `/api/plan`。
+**`PlanDay.seq` 是不可变课程序号，绝不与日历日期绑定**：`/today` 同返 `day.seq`（课程序号）
+与 `day_index`（日历推导）；滑期只提示、不自动顺延。
+**每日四件套** `kind ∈ {code, note, questions, commit}`。总账：代码/笔记/commit 各 30、
+面试题取真实条数（150）、齐全日 30。
 
-## 2026-09-10 晚 增补：平台定位转向「施工执行台」
+## 四、环境
 
-- **平台定位定调（文档 `docs/platform-direction-30day.md`）**：从"状态看板/展示台"转向
-  "30 天施工执行台"。判据一句话：**顶栏 8 个入口里有没有一个回答"我今天该干什么"**。
-  改造后 IA = `今日 / 施工 / 项目 / 题库 / 求职▾ / 复盘 / Agent`；
-  `/dashboard` 降为二级"我的水平"页（不删），**`/today` 成为默认落地页**。
-- **硬约束（写进项目宪法级别）**：单周平台工时 ≤ 2 个晚上。学习平台的失败模式是
-  "时间花在建设平台上而不是学习上"。超预算时优先砍 P4（求职包装）再砍 P3（题库）。
-- **两个正交轴的新成员**：`tasks.plan_day_id`（属于课程第几天）与既有 `tasks.track_key`
-  （属于哪条赛道）正交。**Day 序号绝不与日历日期绑定** —— `PlanDay.seq` 是不可变脊梁，
-  `DayProgress.calendar_date` 可移动；滑期只提示不自动顺延（否则 30 天变 45 天）。
-- **每日四件套契约**：`artifacts.kind ∈ {code, note, questions, commit}`；
-  其中 `questions`（当天题库新增 ≥5，可数）与 `commit`（GitHub 按日期归集，全自动）
-  可自动核验 —— 这是"完成"有约束力的前提，纯手工勾选会失效。
-- **技能晋级改为 evidence-gated**：L1 需 note、L2 需 code+commit、L3 需 Experiment、
-  L4 需对比实验+复现报告。技能等级不再是自评，而是从证据推导。
-- **题目口径**：累计目标 150（每天 5×30），核心必达 80（50 LLM + 30 VLM）。
-- **约束机制要硬**：`TECH_BLACKLIST`（已定义 12 项）必须接 Planner 硬拒绝；
-  新增 `RESOURCE_LOCK` 锁 5 类资源，防"课程收藏"式发散。
-- **不做清单**（防平台自身发散）：新 Agent、D 级技术功能、资源收藏库、移动端/多用户、
-  监控大屏、PlanDay 的 CRUD 界面（用「计划文件 + 幂等种子脚本」，同 `target_roles.py` 模式）。
+- **本地 SQLite** `backend/data/app.db`；Docker Compose 内覆盖 DATABASE_URL 用 PG。
+  `.env` 由 `config.py` 顶部 `load_dotenv` 加载（根 `.env` 优先，**不覆盖已存在环境变量**）。
+- 会话内启动：后台跑 `backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000`
+  与 `cd frontend && npx next dev -p 3000`；`start.sh` 的 Windows detach 会随任务回收退出。
+- pytest 用 `backend/.venv/Scripts/python.exe`（managed python 无 pytest）。全量 ≈15s / **198 项**，
+  验时优先定点文件；**pytest 后必须核对开发库指纹不变**。
+- **Git Bash 残缺**（`cd/ls/wc/tail/dirname` 缺失；PowerShell stdout 抓不到）→ 文件操作走
+  Read/Write/Edit/Glob/Grep；需要度量/跑命令时用 managed python 绝对路径。
+  **跑 pytest 要 chdir**（cwd 不是 backend 时相对 `sqlite:///./data/app.db` 会打不开）：
+  `python -c "import os,sys;os.chdir(r'D:\...\backend');sys.path.insert(0,'.');import pytest;sys.exit(pytest.main(['tests','-q']))"`
+  用 `backend/.venv/Scripts/python.exe`。**netstat 输出要 `decode('gbk')`**（中文 Windows 非 UTF-8）。
+
+## 五、避坑清单
+
+**Windows / 进程**
+- 联调**一律 `127.0.0.1`，不要 `localhost`**（Node → IPv6 ::1，uvicorn 只绑 IPv4 → ECONNREFUSED）。
+- 杀进程用 `MSYS_NO_PATHCONV=1 taskkill /F /T /PID`；Git Bash `kill <winPID>` **静默返回 0 却不生效**，
+  `taskkill //F` 斜杠会被改写。
+- **改 ORM/schema 后必须重启后端**（无 `--reload`），否则前端字段渲染为 null。
+- `next build` 可能被 safe-delete shim 拦（`.next/trace`）；不是代码错误，临时
+  `CODEBUDDY_SAFE_DELETE_ENABLED=0`（仅影响 `.next` 缓存）。
+
+**测试**
+- 🔴 **测试不得写开发库**：`tests/conftest.py` 模块级把 `DATABASE_URL` 指向临时库，session guard 内
+  直接调 `init_db()`（不能依赖 TestClient lifespan）。**新增测试不自建临时库、不在 import 期
+  `unlink()`**；依赖实时 :8000 的脚本放 `collect_ignore`。
+- 幂等用例用**增量断言**（前后 count 对比），不断言绝对行数（共享临时库会被污染 → 单跑过、全量挂）。
+
+**DB / 迁移 / 契约**
+- **迁移 SQL 注释禁止出现分号**（`run_migration.py` 裸切 `;`）；多语句同事务，一句失败整批回滚 →
+  **一条迁移只做一件事**。
+- `Pydantic v2 from_attributes` + 未 flush 的 ORM 实例：列 `default` 只在 INSERT 生效，内存属性为
+  `None` → 校验失败。**修法**：`@field_validator(<f>, mode="before")` 回落默认值。
+- **Out 模型的必填字段要覆盖所有构造分支**（`GeneratedTaskOut.duration` 无默认，黑名单拒绝分支不传
+  → 真请求 500）；非主路径也要给默认值。前端 DTO 漏字段会被 `tsc` 拦。
+  **新端点要么测试覆盖、要么类型覆盖。**
+- **service 层不要透传 payload**：`apiClient` 不做 key 转换，camelCase 的 `answerOutline` 直传后端
+  （字段 `answer_outline`）会被 Pydantic 当未知字段**静默丢弃**。
+  **create / patch 一律显式列 snake_case 字段。**
+- **summary 必须与它描述的列表同源生成**：`build_skill_lines` 首版把 `pending` 截断到 12，
+  却报 `summary.pending = 16` → 前端"16 项却只有 12 个"。**截断/分页高发此错**；
+  加断言 `summary.x == len(list)` 钉死。单测没抓到、**实时冒烟的自洽断言抓到了**。
+- 开发库基线（白名单，清理脏数据时**一律不动**）：`projects` 2 / `milestones` 12 /
+  `job_applications` 4 / `resume_facts` 9 / `interview_logs` 1 / `skills` 48 / `plan_days` 30。
+
+**数据回填**
+- **通用技能不可映射到具体课程日**（首版 `Python→Day2` 等导致「数据库层」挂到「Attention」那天）。
+  **只保留课程特有技能**（Transformer/Attention/RoPE/SFT/LoRA/QLoRA/vLLM/ViT/CLIP/VLM/Pretraining/
+  Inference Optimization）。**宁可少绑，不可错绑** —— 平台价值建立在因果可信上。
+- 规则收紧后**必须 `--rebind`**（默认只填 `plan_day_id IS NULL`，旧错绑不会自动消失）。
+
+**工具行为**
+- ⚠️ **同一文件禁止并行 Edit**：写盘竞争 → 后提交者按旧快照整体覆盖，先提交的被**静默回滚**
+  （工具仍报 success）。同文件多处修改必须**串行**；怀疑没落盘就 Grep 复读。
+- **替换 docstring 片段时不要带 `"""`**：old/new_string 里出现收尾 `"""` 会提前闭合 docstring，
+  余下 Args/Returns 变成裸代码 → `SyntaxError: invalid character '。'`。
+  改完立刻 `py_compile.compile(f, doraise=True)` 验一遍再跑测试。
+- Ardot SVG 对退化几何敏感：纯水平/垂直段报 "degenerate geometry"，**轴线加 1px 偏移**（`M180 180L181 40`）。
+
+## 六、真实数据源
+
+- 技能等级/证据单一源：`app/core/skill_profile.py`（改完跑 `scripts/seed_job_hunt.py` 校准）；
+  `app/db/base.py` 只引用它，**不改副本**；`docs/MY_CONTEXT.md` 只写背景策略，不写等级。
+- 赛道配置：`app/core/target_roles.py`（含 `SPRINT_START/END`、`TECH_BLACKLIST`）。
+- 简历防虚构锚点：`resume_facts`（9）+ `/api/resume` 诊断。**EI 会议严禁虚标 SCI**。

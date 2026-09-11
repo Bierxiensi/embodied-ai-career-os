@@ -9,7 +9,7 @@ import { apiClient } from "@/lib/apiClient";
 import type { Task, TaskStatus } from "@/types";
 
 /** 后端 Task 响应原始结构（snake_case）。 */
-interface TaskDTO {
+export interface TaskDTO {
   id: number;
   title: string;
   objective: string | null;
@@ -22,6 +22,7 @@ interface TaskDTO {
   project_id: number | null;
   milestone_id: number | null;
   track_key?: string | null;
+  plan_day_id?: number | null;
 }
 
 /** 后端 → 前端转换。
@@ -30,8 +31,11 @@ interface TaskDTO {
  * - null objective/difficulty → undefined（对齐 Task 可选字段）
  * - null duration → 0
  * - status 字符串 → TaskStatus 联合类型
+ *
+ * 导出供其他 service 复用（如 planService 的今日任务），
+ * 避免多处各写一份字段映射 —— 后端加字段时只改这里。
  */
-function toTask(dto: TaskDTO): Task {
+export function toTask(dto: TaskDTO): Task {
   return {
     id: String(dto.id),
     title: dto.title,
@@ -45,6 +49,7 @@ function toTask(dto: TaskDTO): Task {
     projectId: dto.project_id != null ? String(dto.project_id) : null,
     milestoneId: dto.milestone_id != null ? String(dto.milestone_id) : null,
     trackKey: dto.track_key ?? null,
+    planDayId: dto.plan_day_id != null ? String(dto.plan_day_id) : null,
   };
 }
 

@@ -7,6 +7,7 @@ import type {
   ResumeDiagnosis,
   ResumeFact,
   ResumeVersion,
+  SkillLineReport,
 } from "@/types";
 import {
   createFact,
@@ -18,6 +19,7 @@ import {
   listVersions,
 } from "@/services/resumeService";
 import { listPostings } from "@/services/jdService";
+import SkillLinesCard from "@/components/SkillLinesCard";
 
 /* ───────────────────────── 元数据 ───────────────────────── */
 
@@ -128,12 +130,19 @@ const primaryBtn: React.CSSProperties = {
 type Props = {
   initialVersions: ResumeVersion[];
   initialFacts: ResumeFact[];
+  /** P4：技能行（附证据）。后端不可用时为 null，则不渲染该卡片。 */
+  initialSkillLines?: SkillLineReport | null;
 };
 
-export default function ResumeBoard({ initialVersions, initialFacts }: Props) {
+export default function ResumeBoard({
+  initialVersions,
+  initialFacts,
+  initialSkillLines = null,
+}: Props) {
   const [versions, setVersions] = useState<ResumeVersion[]>(initialVersions);
   const [facts, setFacts] = useState<ResumeFact[]>(initialFacts);
   const [postings, setPostings] = useState<JobPosting[]>([]);
+  const [skillLines] = useState<SkillLineReport | null>(initialSkillLines);
 
   const [md, setMd] = useState("");
   const [selectedPostingId, setSelectedPostingId] = useState<string>("");
@@ -294,6 +303,9 @@ export default function ResumeBoard({ initialVersions, initialFacts }: Props) {
             </>
           ) : null}
         </div>
+
+        {/* 技能行（附证据）—— P4：简历的可写内容直接来自证据链 */}
+        {skillLines && <SkillLinesCard report={skillLines} />}
 
         {/* 版本列表 + 新建 */}
         <div style={cardStyle}>

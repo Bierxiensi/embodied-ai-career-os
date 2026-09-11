@@ -7,10 +7,18 @@ import { usePathname } from "next/navigation";
 export default function GlobalNav() {
   const pathname = usePathname();
 
+  // P4：`/jobs`（求职漏斗）提为主位 —— 位于「今日」之后。
+  // 依据 docs/platform-direction-30day.md 路线图第 14 项「10 月起提为主位」：
+  // 求职是当前最高优先级，投递漏斗不该排在「施工 / 实验 / 证据」这些学习页之后。
   const links = [
-    { href: "/dashboard", label: "概览" },
-    { href: "/projects", label: "项目" },
+    { href: "/today", label: "今日" },
     { href: "/jobs", label: "求职" },
+    { href: "/plan", label: "施工" },
+    { href: "/projects", label: "项目" },
+    { href: "/questions", label: "题库" },
+    { href: "/experiments", label: "实验" },
+    { href: "/evidence", label: "证据" },
+    { href: "/dashboard", label: "概览" },
     { href: "/jd", label: "岗位" },
     { href: "/resume", label: "简历" },
     { href: "/interview", label: "面试" },
@@ -18,8 +26,12 @@ export default function GlobalNav() {
     { href: "/agents", label: "Agent" },
   ];
 
+  // 「今日」与「概览」是精确匹配（/today、/dashboard），
+  // 其余按前缀匹配（如 /projects/1 也应高亮「项目」）。
   const isActive = (href: string) =>
-    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+    href === "/dashboard" || href === "/today"
+      ? pathname === href
+      : pathname.startsWith(href);
 
   return (
     <nav

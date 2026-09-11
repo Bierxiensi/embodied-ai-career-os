@@ -29,7 +29,7 @@ from sqlalchemy.orm import Session
 
 from app.agents.planner.graph import build_planner_graph
 from app.core.response import ApiResponse, ok
-from app.core.target_roles import TARGET_ROLES, TargetRole
+from app.core.target_roles import TECH_BLACKLIST, TARGET_ROLES, TargetRole
 from app.db.base import get_db
 from app.models.agent_run import AgentRun
 from app.models.skill import Skill
@@ -92,7 +92,8 @@ class GeneratedTaskOut(BaseModel):
     title: str
     skill: str
     objective: str | None = None
-    duration: int
+    # 默认 0：黑名单硬拒绝分支不产生任务时长，缺省避免该分支 500（P2 测试实测）。
+    duration: int = 0
     difficulty: str | None = None
     acceptance: list[str] = []
     resources: list[str] = []
@@ -110,6 +111,8 @@ class GeneratedTaskOut(BaseModel):
     reused: bool = False
     # 一句话解释为什么选这个技能（直接渲染到前端结果卡）
     reason: str = ""
+    # P2：被 D 级技术黑名单拦截的技能名（硬拒绝，不生成发散任务）
+    blocked: list[str] = []
 
 
 def _resolve_track(track_key: str | None) -> TargetRole | None:
@@ -249,6 +252,27 @@ def generate_task(
     track_key = track.key if track else None
     scoped_skills = _scope_skills_to_track(db, req, track)
 
+    # P2：D 级技术黑名单硬拒绝（v2.0 §19 / docs 决策 6）。
+    # 命中黑名单的技能直接剔除出候选，绝不生成对应任务；
+    # 若候选全部被拦截，明确返回拒绝文案（不静默跳过、不降级成别的任务）。
+    blocked = [s.name for s in scoped_skills if s.name in TECH_BLACKLIST]
+    if blocked:
+        scoped_skills = [s for s in scoped_skills if s.name not in TECH_BLACKLIST]
+    if not scoped_skills:
+        return ok(
+            GeneratedTaskOut(
+                title="",
+                skill="",
+                reason=(
+                    "⛔ 命中 D 级技术（"
+                    + "、".join(blocked)
+                    + "），30 天窗口内不投入。如确认要学，需二次确认。"
+                ),
+                blocked=blocked,
+            ),
+            message="已拦截 D 级技术任务",
+        )
+
     # 冻结赛道走"低强度巩固"：单任务不超过 FROZEN_TRACK_MAX_MINUTES，
     # 避免长期赛道在冲刺期吃掉整块时间。
     available_minutes = req.available_minutes
@@ -362,6 +386,7 @@ def generate_task(
             gap=gap_val,
             reused=reused,
             reason=reason,
+            blocked=blocked,
         ),
         message=f"Planner generated task for {selected_skill}",
     )

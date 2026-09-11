@@ -64,6 +64,10 @@ class InterviewQuestionCreate(BaseModel):
     difficulty: str = "intermediate"
     answer_outline: str | None = None
     source: str | None = None
+    # P2：归属课程日 / 关联技能 / 是否验证（用于四件套 questions 自动判定）
+    source_day_seq: int | None = None
+    skill_name: str | None = None
+    is_verified: bool = False
 
     def model_post_init(self, __context) -> None:  # noqa: ANN001
         if self.category not in QUESTION_CATEGORIES:
@@ -83,6 +87,9 @@ class InterviewQuestionOut(BaseModel):
     difficulty: str
     answer_outline: str | None = None
     source: str | None = None
+    source_day_seq: int | None = None
+    skill_name: str | None = None
+    is_verified: bool = False
     hit_count: int
     created_at: datetime
     updated_at: datetime
@@ -118,3 +125,40 @@ class SimulateIn(BaseModel):
     category: str | None = None
     difficulty: str | None = None
     limit: int = 5
+
+
+# ───────────────────────── 题库覆盖率（P3） ─────────────────────────
+
+class CoverageCategoryOut(BaseModel):
+    """一个分类的进度（done vs target）。"""
+
+    key: str
+    done: int
+    target: int
+    gap: int
+    core: bool = False
+
+
+class CoverageSkillOut(BaseModel):
+    """技能行：四分类计数 + 缺口。"""
+
+    name: str
+    total: int
+    gap: int
+    # 红格：该技能在哪些分类里一题都没有
+    missing: list[str] = []
+    counts: dict[str, int] = {}
+
+
+class QuestionCoverageOut(BaseModel):
+    """题库覆盖率总览（GET /api/interview-questions/coverage）。"""
+
+    total: int
+    target_total: int
+    core_target: int
+    core_done: int
+    per_skill_target: int
+    categories: list[CoverageCategoryOut] = []
+    skills: list[CoverageSkillOut] = []
+    cells_total: int
+    cells_filled: int

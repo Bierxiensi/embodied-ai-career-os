@@ -5,6 +5,8 @@ from app.models.agent_run import AgentRun
 from app.models.career import Career
 from app.models.commit_suggestion import CommitSuggestion
 from app.models.day_artifact import DayArtifact
+from app.models.day_progress import DayProgress
+from app.models.experiment import Experiment
 from app.models.interview_log import InterviewLog
 from app.models.interview_question import InterviewQuestion
 from app.models.job_application import JobApplication
@@ -30,6 +32,8 @@ __all__ = [
     "Career",
     "CommitSuggestion",
     "DayArtifact",
+    "DayProgress",
+    "Experiment",
     "InterviewLog",
     "InterviewQuestion",
     "JobApplication",

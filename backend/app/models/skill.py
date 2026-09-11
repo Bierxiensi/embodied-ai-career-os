@@ -37,6 +37,12 @@ class Skill(Base):
     # 能力证明清单（JSON 数组）：项目/GitHub/作品链接
     evidence: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
+    # P2：evidence-gated 推导出的最高可信等级（0-4）。
+    # 由实验 / 产出 / 题库等真实证据推导，不靠自评。NULL 表示尚未计算。
+    # 口径见 app/core/evidence.py：L1 note/题 → L2 code+commit →
+    # L3 Experiment → L4 对比实验 + 复现报告。
+    evidence_gate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )

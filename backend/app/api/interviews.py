@@ -19,8 +19,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.agents.interview.engine import pick_questions, weak_to_tasks, weakness_stats
+from app.agents.interview.engine import (
+    coverage_matrix,
+    pick_questions,
+    weak_to_tasks,
+    weakness_stats,
+)
 from app.core.response import ok
+from app.core.target_roles import TARGET_ROLES
 from app.db.base import get_db
 from app.models.interview_log import InterviewLog
 from app.models.interview_question import InterviewQuestion
@@ -30,6 +36,7 @@ from app.schemas.interview import (
     InterviewLogOut,
     InterviewQuestionCreate,
     InterviewQuestionOut,
+    QuestionCoverageOut,
     SimulateIn,
     TaskDraftOut,
     ToTasksIn,
@@ -171,15 +178,50 @@ def list_questions(
     return ok([InterviewQuestionOut.model_validate(r).model_dump() for r in rows])
 
 
+@router.get("/interview-questions/coverage")
+def question_coverage(
+    track_key: str | None = None, db: Session = Depends(get_db)
+):
+    """题库覆盖率矩阵（P3 · 决策 5）：回答「缺口在哪」。
+
+    矩阵行 = 目标赛道的硬性要求技能（`track_key` 指定，缺省取「主攻」赛道）
+    ∪ 题库里已出现过的 `skill_name`；列为四个分类，**红格 = 该 (技能, 分类) 一题为 0**。
+
+    分类目标见 engine.QUESTION_CATEGORY_TARGETS（累计 150，核心必达 80）。
+    纯规则聚合，不依赖 LLM；技能顺序沿用赛道 required_skills 的声明顺序。
+    """
+    track = None
+    if track_key:
+        track = next((r for r in TARGET_ROLES if r.key == track_key), None)
+    if track is None:
+        track = next(
+            (r for r in TARGET_ROLES if r.priority == "主攻"),
+            TARGET_ROLES[0] if TARGET_ROLES else None,
+        )
+    skills = list(track.required_skills) if track else []
+
+    rows = db.query(InterviewQuestion).all()
+    questions = [{"category": r.category, "skill_name": r.skill_name} for r in rows]
+    data = coverage_matrix(questions, skills)
+    return ok(QuestionCoverageOut(**data).model_dump())
+
+
 @router.post("/interview-questions")
 def create_question(payload: InterviewQuestionCreate, db: Session = Depends(get_db)):
-    """新增一道题目。"""
+    """新增一道题目。
+
+    P2：可携带 source_day_seq / skill_name / is_verified，
+    用于「四件套 questions 由题库当日条数自动判定」与 evidence-gated 晋级。
+    """
     q = InterviewQuestion(
         category=payload.category,
         question=payload.question,
         difficulty=payload.difficulty,
         answer_outline=payload.answer_outline,
         source=payload.source,
+        source_day_seq=payload.source_day_seq,
+        skill_name=payload.skill_name,
+        is_verified=payload.is_verified,
         hit_count=0,
     )
     db.add(q)

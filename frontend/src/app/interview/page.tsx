@@ -1,27 +1,26 @@
 /** 面试线页面（Server Component）。
 
- * 数据流：page.tsx (server) → listLogs()/listQuestions()/getStats() → /api/interviews
+ * 数据流：page.tsx (server) → listLogs()/getStats() → /api/interviews
  *   ↓
- *   InterviewBoard 客户端组件渲染（弱项排行 / 模拟抽题 / 面经记录 / 题库）
+ *   InterviewBoard 客户端组件渲染（弱项排行 / 面经记录 / 回写任务）
+ *
+ * 2026-09-11（P3）：题库与抽题已独立到 /questions，本页只负责「面经 → 弱项 → 任务」。
  */
 
 import InterviewBoard from "@/components/InterviewBoard";
 import { ApiError } from "@/lib/apiClient";
-import { getStats, listLogs, listQuestions } from "@/services/interviewService";
+import { getStats, listLogs } from "@/services/interviewService";
 
 export const dynamic = "force-dynamic"; // 实时数据，每次请求重新获取
 
 export default async function InterviewPage() {
   try {
-    const [logs, questions, stats] = await Promise.all([
-      listLogs(),
-      listQuestions(),
-      getStats(),
-    ]);
+    // 题库 / 抽题已独立到 /questions（P3）—— 本页只负责「面经 → 弱项 → 任务」。
+    const [logs, stats] = await Promise.all([listLogs(), getStats()]);
 
     return (
-      <main className="min-h-full" style={{ background: "var(--color-canvas)" }}>
-        <InterviewBoard initialLogs={logs} initialQuestions={questions} initialStats={stats} />
+      <main className="flex flex-1 flex-col" style={{ background: "var(--color-canvas)" }}>
+        <InterviewBoard initialLogs={logs} initialStats={stats} />
       </main>
     );
   } catch (err) {

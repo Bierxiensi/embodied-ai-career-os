@@ -16,6 +16,7 @@ class SkillOut(BaseModel):
     level: int = Field(ge=0, le=5)
     target_level: int = Field(ge=0, le=5)
     evidence: list[str] = []
+    evidence_gate: int | None = None  # P2：从真实证据推导的最高可信等级（0-4）
 
     @field_validator("evidence", mode="before")
     @classmethod

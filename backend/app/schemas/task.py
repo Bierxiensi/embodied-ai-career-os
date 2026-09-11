@@ -27,6 +27,9 @@ class TaskOut(BaseModel):
     # 任务所属赛道：llm / vlm / ai-algo / embodied（见 migrations/0008）。
     # 看板按视角过滤任务用；NULL = 未归类（历史 / 手写任务）。
     track_key: str | None = None
+    # 归属课程第几天（plan_days.id，见 migrations/0011）。
+    # 与 track_key 正交：track_key 说「属于哪条赛道」，plan_day_id 说「属于课程第几天」。
+    plan_day_id: int | None = None
 
     @field_validator("acceptance", "resources", mode="before")
     @classmethod
@@ -61,6 +64,8 @@ class TaskCreate(BaseModel):
     source: str | None = None
     # 所属赛道：llm / vlm / ai-algo / embodied；不传 = 未归类
     track_key: str | None = None
+    # 归属课程第几天（plan_days.id）；不传 = 不对应任何课程日
+    plan_day_id: int | None = None
 
 
 class TaskStatusPatch(BaseModel):
