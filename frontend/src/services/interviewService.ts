@@ -14,8 +14,17 @@ import type {
   InterviewQuestion,
   InterviewQuestionCreate,
   InterviewStats,
+  PracticeResult,
+  PracticeSkillStats,
+  PracticeStats,
+  PracticeTypeStats,
   QuestionCategory,
   QuestionCoverage,
+  QuestionType,
+  QuizQuestion,
+  QuizResult,
+  QuizStart,
+  QuizTypeStats,
   TaskDraft,
 } from "@/types";
 
@@ -49,6 +58,8 @@ interface InterviewQuestionDTO {
   skill_name: string | null;
   is_verified: boolean;
   hit_count: number;
+  question_type: string;
+  options: { choices: string[]; correct: string } | null;
   created_at: string;
   updated_at: string;
 }
@@ -112,6 +123,8 @@ function toQuestion(dto: InterviewQuestionDTO): InterviewQuestion {
     skillName: dto.skill_name ?? null,
     isVerified: dto.is_verified ?? false,
     hitCount: dto.hit_count,
+    questionType: (dto.question_type || "open") as QuestionType,
+    options: dto.options ?? null,
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
   };
@@ -177,14 +190,16 @@ export async function toTasks(
   };
 }
 
-/** 题库（可按分类 / 难度过滤）。 */
+/** 题库（可按分类 / 难度 / 来源过滤）。 */
 export async function listQuestions(params?: {
   category?: string;
   difficulty?: string;
+  source?: string;
 }): Promise<InterviewQuestion[]> {
   const qs = new URLSearchParams();
   if (params?.category) qs.set("category", params.category);
   if (params?.difficulty) qs.set("difficulty", params.difficulty);
+  if (params?.source) qs.set("source", params.source);
   const query = qs.toString();
   const dtos = await apiClient.get<InterviewQuestionDTO[]>(
     `/api/interview-questions${query ? `?${query}` : ""}`
@@ -280,16 +295,293 @@ export async function deleteQuestion(id: string): Promise<void> {
   await apiClient.delete<void>(`/api/interview-questions/${id}`);
 }
 
+/** 更新题目（标记已练习 / 已验证 / 改分类等）。 */
+export async function updateQuestion(
+  id: string,
+  patch: {
+    category?: string;
+    difficulty?: string;
+    answerOutline?: string | null;
+    source?: string | null;
+    sourceDaySeq?: number | null;
+    skillName?: string | null;
+    isVerified?: boolean;
+    hitCount?: number;
+  }
+): Promise<InterviewQuestion> {
+  const dto = await apiClient.patch<InterviewQuestionDTO>(
+    `/api/interview-questions/${id}`,
+    {
+      ...(patch.category !== undefined && { category: patch.category }),
+      ...(patch.difficulty !== undefined && { difficulty: patch.difficulty }),
+      ...(patch.answerOutline !== undefined && { answer_outline: patch.answerOutline }),
+      ...(patch.source !== undefined && { source: patch.source }),
+      ...(patch.sourceDaySeq !== undefined && { source_day_seq: patch.sourceDaySeq }),
+      ...(patch.skillName !== undefined && { skill_name: patch.skillName }),
+      ...(patch.isVerified !== undefined && { is_verified: patch.isVerified }),
+      ...(patch.hitCount !== undefined && { hit_count: patch.hitCount }),
+    }
+  );
+  return toQuestion(dto);
+}
+
 /** 模拟面试抽题（命中次数 +1）。 */
 export async function simulate(payload?: {
   category?: string | null;
   difficulty?: string | null;
+  skillName?: string | null;
   limit?: number;
 }): Promise<{ picked: InterviewQuestion[]; count: number }> {
   const dto = await apiClient.post<SimulateResultDTO>("/api/interview/simulate", {
     category: payload?.category || null,
     difficulty: payload?.difficulty || null,
+    skill_name: payload?.skillName || null,
     limit: payload?.limit ?? 5,
   });
   return { picked: dto.picked.map(toQuestion), count: dto.count };
+}
+
+/* ───────────────────────── 题目来源（P2） ───────────────────────── */
+
+interface QuestionSourcesDTO {
+  sources: string[];
+}
+
+/** 获取题库中已有来源列表（去重）。 */
+export async function getQuestionSources(): Promise<string[]> {
+  const data = await apiClient.get<QuestionSourcesDTO>("/api/interview-questions/sources");
+  return data.sources;
+}
+
+/* ───────────────────────── JD×题库推荐 ───────────────────────── */
+
+interface RecommendationGap {
+  skill: string;
+  level: string;
+  required: number;
+  gap: number;
+  questions: InterviewQuestionDTO[];
+}
+
+interface RecommendationsDTO {
+  posting_id: number;
+  title: string;
+  company: string;
+  match_score: number;
+  gaps: RecommendationGap[];
+  summary: { total_gaps: number; covered_gaps: number; total_questions: number };
+}
+
+/** 获取 JD 缺口推荐题单。 */
+export async function getRecommendations(postingId: number): Promise<{
+  postingId: number;
+  title: string;
+  company: string;
+  matchScore: number;
+  gaps: {
+    skill: string;
+    level: string;
+    required: number;
+    gap: number;
+    questions: InterviewQuestion[];
+  }[];
+  summary: { totalGaps: number; coveredGaps: number; totalQuestions: number };
+}> {
+  const dto = await apiClient.get<RecommendationsDTO>(
+    `/api/job-postings/${postingId}/recommendations`
+  );
+  return {
+    postingId: dto.posting_id,
+    title: dto.title,
+    company: dto.company,
+    matchScore: dto.match_score,
+    gaps: dto.gaps.map((g) => ({
+      skill: g.skill,
+      level: g.level,
+      required: g.required,
+      gap: g.gap,
+      questions: g.questions.map(toQuestion),
+    })),
+    summary: {
+      totalGaps: dto.summary.total_gaps,
+      coveredGaps: dto.summary.covered_gaps,
+      totalQuestions: dto.summary.total_questions,
+    },
+  };
+}
+
+/* ───────────────────────── 练习与测验 ───────────────────────── */
+
+interface PracticeResultDTO {
+  correct: boolean;
+  score: number;
+  max_score: number;
+  feedback: string;
+  correct_answer: string;
+  outline_covered: string[];
+  outline_missed: string[];
+  record_id: number;
+}
+
+interface QuizQuestionDTO {
+  id: number;
+  question: string;
+  question_type: string;
+  options: string[] | null;
+  skill_name: string | null;
+  difficulty: string;
+}
+
+interface QuizStartDTO {
+  session_id: string;
+  questions: QuizQuestionDTO[];
+  count: number;
+}
+
+interface QuizRecordDTO {
+  question_id: number;
+  question_type: string;
+  question: string;
+  user_answer: string;
+  correct_answer: string | null;
+  correct: boolean;
+  score: number;
+  feedback: string | null;
+}
+
+interface QuizResultDTO {
+  session_id: string;
+  total_score: number;
+  count: number;
+  correct_count: number;
+  by_type: Record<string, { count: number; correct: number; avg_score: number }>;
+  weak_skills: string[];
+  records: QuizRecordDTO[];
+}
+
+interface PracticeStatsDTO {
+  total_practiced: number;
+  total_correct: number;
+  accuracy: number;
+  by_type: Record<string, { practiced: number; correct: number; accuracy: number }>;
+  by_skill: Array<{ skill: string; practiced: number; correct: number; accuracy: number }>;
+  weak_skills: string[];
+  weak_types: string[];
+  recent_sessions: Array<{ session_id: string; date: string; score: number; count: number }>;
+}
+
+/** 单题答题。 */
+export async function postPractice(payload: {
+  questionId: number;
+  questionType: string;
+  userAnswer: string;
+  generatedOptions?: string[] | null;
+  skillName?: string | null;
+  mode?: string;
+  sessionId?: string | null;
+}): Promise<PracticeResult> {
+  const dto = await apiClient.post<PracticeResultDTO>("/api/interview/practice", {
+    question_id: payload.questionId,
+    question_type: payload.questionType,
+    user_answer: payload.userAnswer,
+    generated_options: payload.generatedOptions ?? null,
+    skill_name: payload.skillName ?? null,
+    mode: payload.mode ?? "single",
+    session_id: payload.sessionId ?? null,
+  });
+  return {
+    correct: dto.correct,
+    score: dto.score,
+    maxScore: dto.max_score,
+    feedback: dto.feedback,
+    correctAnswer: dto.correct_answer,
+    outlineCovered: dto.outline_covered ?? [],
+    outlineMissed: dto.outline_missed ?? [],
+    recordId: dto.record_id,
+  };
+}
+
+/** 开始小测验。 */
+export async function startQuiz(payload: {
+  skillName?: string | null;
+  category?: string | null;
+  count?: number;
+}): Promise<QuizStart> {
+  const dto = await apiClient.post<QuizStartDTO>("/api/interview/quiz/start", {
+    skill_name: payload.skillName ?? null,
+    category: payload.category ?? null,
+    count: payload.count ?? 10,
+  });
+  return {
+    sessionId: dto.session_id,
+    questions: dto.questions.map((q) => ({
+      id: q.id,
+      question: q.question,
+      questionType: q.question_type as QuestionType,
+      options: q.options,
+      skillName: q.skill_name,
+      difficulty: q.difficulty,
+    })),
+    count: dto.count,
+  };
+}
+
+/** 获取测验结果。 */
+export async function getQuizResult(sessionId: string): Promise<QuizResult> {
+  const dto = await apiClient.get<QuizResultDTO>(
+    `/api/interview/quiz/${sessionId}/result`
+  );
+  return {
+    sessionId: dto.session_id,
+    totalScore: dto.total_score,
+    count: dto.count,
+    correctCount: dto.correct_count,
+    byType: Object.fromEntries(
+      Object.entries(dto.by_type).map(([k, v]) => [
+        k,
+        { count: v.count, correct: v.correct, avgScore: v.avg_score },
+      ])
+    ),
+    weakSkills: dto.weak_skills,
+    records: dto.records.map((r) => ({
+      questionId: r.question_id,
+      questionType: r.question_type as QuestionType,
+      question: r.question,
+      userAnswer: r.user_answer,
+      correctAnswer: r.correct_answer,
+      correct: r.correct,
+      score: r.score,
+      feedback: r.feedback,
+    })),
+  };
+}
+
+/** 获取练习统计。 */
+export async function getPracticeStats(): Promise<PracticeStats> {
+  const dto = await apiClient.get<PracticeStatsDTO>("/api/interview/practice/stats");
+  return {
+    totalPracticed: dto.total_practiced,
+    totalCorrect: dto.total_correct,
+    accuracy: dto.accuracy,
+    byType: Object.fromEntries(
+      Object.entries(dto.by_type).map(([k, v]) => [
+        k,
+        { practiced: v.practiced, correct: v.correct, accuracy: v.accuracy },
+      ])
+    ),
+    bySkill: dto.by_skill.map((s) => ({
+      skill: s.skill,
+      practiced: s.practiced,
+      correct: s.correct,
+      accuracy: s.accuracy,
+    })),
+    weakSkills: dto.weak_skills,
+    weakTypes: dto.weak_types,
+    recentSessions: dto.recent_sessions.map((s) => ({
+      sessionId: s.session_id,
+      date: s.date,
+      score: s.score,
+      count: s.count,
+    })),
+  };
 }

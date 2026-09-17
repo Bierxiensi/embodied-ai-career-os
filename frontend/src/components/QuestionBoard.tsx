@@ -5,6 +5,7 @@ import type {
   CoverageSkill,
   Difficulty,
   InterviewQuestion,
+  PracticeResult,
   QuestionCategory,
   QuestionCoverage,
 } from "@/types";
@@ -14,7 +15,9 @@ import {
   getQuestionCoverage,
   listQuestions,
   simulate,
+  updateQuestion,
 } from "@/services/interviewService";
+import QuestionCard from "./QuestionCard";
 
 /* ───────────────────────── 元数据 ───────────────────────── */
 
@@ -32,6 +35,15 @@ const DIFFICULTY_META: Record<Difficulty, { label: string; color: string; soft: 
 };
 
 const CATEGORIES: QuestionCategory[] = ["LLM", "Multimodal", "Project", "Coding"];
+
+const SOURCE_OPTIONS = [
+  { value: "", label: "全部来源" },
+  { value: "seed", label: "种子" },
+  { value: "面经", label: "面经" },
+  { value: "自编", label: "自编" },
+  { value: "论文", label: "论文" },
+  { value: "项目", label: "项目" },
+];
 
 /* ───────────────────────── 复用样式 ───────────────────────── */
 
@@ -235,6 +247,50 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
   );
 }
 
+/* ───────────────────────── 练习弹窗 ───────────────────────── */
+
+function PracticeModal({
+  question,
+  onClose,
+  onResult,
+}: {
+  question: InterviewQuestion;
+  onClose: () => void;
+  onResult: (r: PracticeResult) => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.4)",
+        backdropFilter: "blur(4px)",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "var(--color-card)",
+          borderRadius: 16,
+          padding: 28,
+          maxWidth: 560,
+          width: "90%",
+          maxHeight: "80vh",
+          overflowY: "auto",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <QuestionCard question={question} onResult={onResult} onClose={onClose} />
+      </div>
+    </div>
+  );
+}
+
 /* ───────────────────────── 主组件 ───────────────────────── */
 
 type Props = {
@@ -247,7 +303,11 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
   const [coverage, setCoverage] = useState<QuestionCoverage>(initialCoverage);
   const [busy, setBusy] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("");
+  const [filterSource, setFilterSource] = useState<string>("");
   const [expandQ, setExpandQ] = useState<string | null>(null);
+
+  // 练习弹窗
+  const [practiceQuestion, setPracticeQuestion] = useState<InterviewQuestion | null>(null);
 
   // 快速录题
   const [quickText, setQuickText] = useState("");
@@ -265,9 +325,12 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
 
   const skillOptions = coverage.skills.map((s) => s.name);
 
-  async function refresh(cat = filterCat) {
+  async function refresh(cat = filterCat, source = filterSource) {
     const [qs, cov] = await Promise.all([
-      listQuestions(cat ? { category: cat } : undefined),
+      listQuestions({
+        category: cat || undefined,
+        source: source || undefined,
+      }),
       getQuestionCoverage(),
     ]);
     setQuestions(qs);
@@ -276,7 +339,19 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
 
   async function applyFilter(cat: string) {
     setFilterCat(cat);
-    const qs = await listQuestions(cat ? { category: cat } : undefined);
+    const qs = await listQuestions({
+      category: cat || undefined,
+      source: filterSource || undefined,
+    });
+    setQuestions(qs);
+  }
+
+  async function applySourceFilter(source: string) {
+    setFilterSource(source);
+    const qs = await listQuestions({
+      category: filterCat || undefined,
+      source: source || undefined,
+    });
     setQuestions(qs);
   }
 
@@ -319,6 +394,25 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
     }
   }
 
+  /** 切换验证状态。 */
+  async function handleVerify(id: string, current: boolean) {
+    try {
+      await updateQuestion(id, { isVerified: !current });
+      await refresh();
+    } catch (e) {
+      alert("操作失败：" + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+
+  /** 练习回调：关闭弹窗 + 刷新列表。 */
+  function handlePracticeResult(_result: PracticeResult) {
+    // 延迟关闭让用户看到结果
+    setTimeout(() => {
+      setPracticeQuestion(null);
+      refresh();
+    }, 2000);
+  }
+
   async function handleSimulate() {
     try {
       const res = await simulate({
@@ -336,6 +430,15 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
 
   return (
     <div className="flex flex-col" style={{ gap: 20 }}>
+      {/* 练习弹窗 */}
+      {practiceQuestion && (
+        <PracticeModal
+          question={practiceQuestion}
+          onClose={() => setPracticeQuestion(null)}
+          onResult={handlePracticeResult}
+        />
+      )}
+
       {/* 快速录题 */}
       <div style={cardStyle}>
         <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
@@ -458,12 +561,19 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
       <div style={cardStyle}>
         <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
           <h2 style={sectionTitleStyle}>题库（{questions.length}）</h2>
-          <select value={filterCat} onChange={(e) => applyFilter(e.target.value)} style={inputStyle}>
-            <option value="">全部分类</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{CATEGORY_META[c].label}</option>
-            ))}
-          </select>
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <select value={filterCat} onChange={(e) => applyFilter(e.target.value)} style={inputStyle}>
+              <option value="">全部分类</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{CATEGORY_META[c].label}</option>
+              ))}
+            </select>
+            <select value={filterSource} onChange={(e) => applySourceFilter(e.target.value)} style={inputStyle}>
+              {SOURCE_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex flex-col" style={{ gap: 8, marginTop: 14 }}>
@@ -489,10 +599,35 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
                     {q.skillName && (
                       <span style={{ fontSize: 11, color: "var(--color-ink-48)" }}>{q.skillName}</span>
                     )}
+                    {q.source && (
+                      <span style={{ fontSize: 11, color: "var(--color-ink-48)", background: "var(--color-zinc-100)", padding: "2px 6px", borderRadius: "var(--radius-pill)" }}>{q.source}</span>
+                    )}
                     {q.sourceDaySeq != null && (
                       <span style={{ fontSize: 11, color: "var(--color-ink-48)" }}>Day {q.sourceDaySeq}</span>
                     )}
-                    <span style={{ fontSize: 11, color: "var(--color-ink-48)" }}>练过 {q.hitCount}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setPracticeQuestion(q); }}
+                      title="答题练习"
+                      style={{
+                        ...iconBtn,
+                        fontSize: 12,
+                        color: "var(--color-primary)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      🎯 练习
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleVerify(q.id, q.isVerified); }}
+                      title={q.isVerified ? "已验证（点击取消）" : "标记已验证"}
+                      style={{
+                        ...iconBtn,
+                        fontSize: 12,
+                        color: q.isVerified ? "var(--color-primary)" : "var(--color-ink-48)",
+                      }}
+                    >
+                      {q.isVerified ? "✓ 已验证" : "○ 验证"}
+                    </button>
                     <button onClick={(e) => { e.stopPropagation(); handleDelete(q.id); }} title="删除" style={iconBtn}>×</button>
                   </div>
                   {expanded && q.answerOutline ? (

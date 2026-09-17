@@ -17,8 +17,10 @@ from sqlalchemy import text
 
 from app.api.agent import router as agent_router
 from app.api.career import router as career_router
+from app.api.career_mode import router as career_mode_router
 from app.api.github import router as github_router
 from app.api.interviews import router as interviews_router
+from app.api.practice import router as practice_router
 from app.api.job_applications import router as job_applications_router
 from app.api.job_hunt import router as job_hunt_router
 from app.api.job_postings import router as job_postings_router
@@ -83,6 +85,7 @@ app.add_middleware(
 # 注册业务路由（统一 /api 前缀，便于前端代理）
 api_prefix = "/api"
 app.include_router(career_router, prefix=api_prefix)
+app.include_router(career_mode_router, prefix=api_prefix)
 app.include_router(skills_router, prefix=api_prefix)
 app.include_router(tasks_router, prefix=api_prefix)
 app.include_router(tools_router, prefix=api_prefix)
@@ -100,6 +103,7 @@ app.include_router(job_hunt_router, prefix=api_prefix)
 app.include_router(job_postings_router, prefix=api_prefix)
 app.include_router(resume_router, prefix=api_prefix)
 app.include_router(interviews_router, prefix=api_prefix)
+app.include_router(practice_router, prefix=api_prefix)
 app.include_router(reports_router, prefix=api_prefix)
 # 30 天施工执行台：课程脊梁 + 今日施工单 + 四件套（见 docs/platform-direction-30day.md）
 app.include_router(experiments_router, prefix=api_prefix)

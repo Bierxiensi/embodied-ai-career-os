@@ -6,9 +6,10 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models.interview_question import (
     DIFFICULTIES,
@@ -68,12 +69,30 @@ class InterviewQuestionCreate(BaseModel):
     source_day_seq: int | None = None
     skill_name: str | None = None
     is_verified: bool = False
+    question_type: str = "open"
+    options: dict | None = None  # {"choices": [...], "correct": "B"}
 
     def model_post_init(self, __context) -> None:  # noqa: ANN001
         if self.category not in QUESTION_CATEGORIES:
             raise ValueError(f"category 必须为 {QUESTION_CATEGORIES} 之一，收到：{self.category}")
         if self.difficulty not in DIFFICULTIES:
             raise ValueError(f"difficulty 必须为 {DIFFICULTIES} 之一，收到：{self.difficulty}")
+
+
+class InterviewQuestionPatch(BaseModel):
+    """部分更新题目（标记已练习 / 已验证等）。"""
+
+    category: str | None = None
+    question: str | None = None
+    difficulty: str | None = None
+    answer_outline: str | None = None
+    source: str | None = None
+    source_day_seq: int | None = None
+    skill_name: str | None = None
+    is_verified: bool | None = None
+    hit_count: int | None = None
+    question_type: str | None = None
+    options: dict | None = None
 
 
 class InterviewQuestionOut(BaseModel):
@@ -91,8 +110,20 @@ class InterviewQuestionOut(BaseModel):
     skill_name: str | None = None
     is_verified: bool = False
     hit_count: int
+    question_type: str = "open"
+    options: str | None = None  # JSON string from DB
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def _parse_options_json(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                return v
+        return v
 
 
 # ───────────────────────────── 统计 / 生成 ─────────────────────────────
@@ -124,6 +155,7 @@ class SimulateIn(BaseModel):
 
     category: str | None = None
     difficulty: str | None = None
+    skill_name: str | None = None
     limit: int = 5
 
 

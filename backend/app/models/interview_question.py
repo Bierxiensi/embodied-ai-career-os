@@ -51,6 +51,14 @@ class InterviewQuestion(Base):
 
     question: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # 题型：open / choice / fill / judge（默认 open = 开放问答）
+    question_type: Mapped[str] = mapped_column(
+        String(20), default="open", server_default="open", nullable=False
+    )
+    # 手动配置的选项（JSON），仅 choice 类型有值
+    # 格式：{"choices": ["A. ...", "B. ...", "C. ...", "D. ..."], "correct": "B"}
+    options: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # 难度：beginner / intermediate / advanced
     difficulty: Mapped[str] = mapped_column(String(20), default=DIFFICULTY_INTERMEDIATE, nullable=False)
 

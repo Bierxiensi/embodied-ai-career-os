@@ -45,14 +45,27 @@ export interface Task {
   resources?: string[]; // 推荐资源
   projectId?: string | null; // V2: 关联项目
   milestoneId?: string | null; // V2: 关联里程碑
-  /** 所属赛道（llm / vlm / ai-algo / embodied）。
-   * 看板按视角过滤任务用；null/undefined = 未归类（历史 / 手写任务）。 */
+  /** 所属赛道（llm / vlm / ai-algo / embodied）—— 任务自身的数据。
+   * null/undefined = 未归类（历史 / 手写任务）。
+   * 注意：它**不是**"当前看哪个视角"的开关，不得由 ViewRole 推导出请求参数。 */
   trackKey?: string | null;
   /** 归属课程第几天（plan_days.id）。与 trackKey 正交：
    * trackKey 说「属于哪条赛道」，planDayId 说「属于课程第几天」。
    * null/undefined = 不对应任何课程日（历史 / 手写任务）。 */
   planDayId?: string | null;
 }
+
+/** 任务列表的范围口径（对应后端 GET /api/tasks 的 `scope` 参数）。
+ *
+ * - `all`：原始全量。冻结赛道的任务也在里面。CRUD / 审计口径，
+ *   **不是**平台默认统计口径。
+ * - `current_mode`：平台**默认视图口径**，由当前 CareerMode 决定
+ *   （求职冲刺模式排除冻结赛道、保留未归类）。与 /jobs、/today 同源。
+ *
+ * 纪律：这个值只能随 **CareerMode** 变化，**绝不允许**由 ViewRole 推导 ——
+ * 否则展示视角就变成了任务策略开关（Milestone B 契约）。
+ */
+export type TaskScopeMode = "all" | "current_mode";
 
 /** Planner Agent 输入技能项（snake_case，匹配后端契约）。 */
 export interface PlannerSkillInput {
@@ -287,6 +300,48 @@ export interface JobTaskItem {
   status: string;
   duration: number | null;
   objective: string | null;
+  /** 所属赛道（llm / vlm / ai-algo / embodied）；null = 未归类 */
+  trackKey?: string | null;
+  /** 后端给出的归类（active / frozen / unclassified）。
+   * 前端**只展示**，绝不自己拿 trackKey 重算 —— 规则只有后端一份。 */
+  scope?: TaskTrackScope;
+}
+
+/* ─────────────────── 任务赛道口径（Task Scope · Milestone B）─────────────────── */
+
+/** 一条任务相对当前阶段的归类。
+ *
+ * - `active`：已归类且未被冻结 → 进入默认视图
+ * - `frozen`：冻结赛道 → 不进默认视图，但被计数、可查看
+ * - `unclassified`：无赛道的历史 / 手写任务 → 进入默认视图并标记
+ */
+export type TaskTrackScope = "active" | "frozen" | "unclassified";
+
+/** 本次响应用的赛道口径 + 透明度计数（后端 services/action_planning/task_scope.py）。 */
+export interface TaskScopeSummary {
+  modeKey: string;
+  modeName: string;
+  /** 是否实际限缩了任务范围（= 本阶段存在冻结赛道） */
+  isTrackScoped: boolean;
+  activeTrackKeys: string[];
+  frozenTrackKeys: string[];
+  /** 口径说明（人话），直接展示即可 */
+  scopeReason: string;
+  /** 纳入口径的任务数 */
+  included: number;
+  /** 被排除的冻结赛道任务数 */
+  frozenExcluded: number;
+  /** 其中「未归类」的任务数 */
+  unclassified: number;
+}
+
+/** 被口径排除的任务的最小识别信息（PRD F5.3：隐藏不等于删除，可查看）。 */
+export interface ScopedTaskRef {
+  id: string;
+  title: string;
+  trackKey: string | null;
+  status: string;
+  scope: TaskTrackScope;
 }
 
 /** 一条投递记录。 */
@@ -336,14 +391,20 @@ export interface ActiveTrack {
   gapCount: number;
 }
 
-/** 视角角色 —— 同一份能力数据的两种观察方式。
+/** 视角角色 —— 同一份能力数据的两种**观察方式**（纯展示层）。
  *
  * - `jobhunt`：求职冲刺（默认）。对齐「主攻」赛道，服务于当前 offer 目标。
  * - `embodied`：具身智能。对齐冻结的长期赛道，用于随时盘点与巩固基础。
  *
- * 纪律：**视角只改「看什么」，不改数据** —— 不删记录、不解除 TECH_BLACKLIST。
+ * 纪律（Milestone B 收尾，2026-09-16 收紧）：
+ * **ViewRole 是展示视角，不是策略开关。** 它只允许影响"看什么"——
+ * 标题文案、雷达轴、就绪度标签、项目视觉强调。
+ * 它**不得**影响：任务请求参数、任务数据范围、任务统计、推荐。
+ * 任务的业务策略（生效/冻结赛道）唯一来源是 CareerMode
+ * （见 `services/action_planning/task_scope.py`），前端不得用 ViewRole 推导过滤。
  */
 export type ViewRole = "jobhunt" | "embodied";
+
 
 /** 视角切换器的选项（由后端返回的赛道配置派生，前端不硬编码赛道 key）。 */
 export interface ViewRoleOption {
@@ -378,7 +439,15 @@ export interface JobHuntBoard {
     done: number;
     doing: number;
     todo: number;
+    /** 被口径排除的冻结赛道任务数（具身），见 backend/app/api/job_hunt.py。 */
+    frozenExcluded: number;
+    /** 未归类（无赛道）任务数：始终计入默认视图，此处仅提示 */
+    unclassified: number;
     items: JobTaskItem[];
+    /** 被排除任务本身（可查看，不是删除） */
+    frozenItems: ScopedTaskRef[];
+    /** 口径自描述：解释"总数为什么变化"，前端不重算 */
+    scope: TaskScopeSummary;
   };
   applications: {
     total: number;
@@ -588,6 +657,9 @@ export type QuestionCategory = "LLM" | "Multimodal" | "Project" | "Coding";
 /** 难度。 */
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 
+/** 题型。 */
+export type QuestionType = "open" | "choice" | "fill" | "judge";
+
 /** 一道面试题（题库）。 */
 export interface InterviewQuestion {
   id: string;
@@ -603,6 +675,10 @@ export interface InterviewQuestion {
   /** P2：是否通过面试验收验证 */
   isVerified: boolean;
   hitCount: number;
+  /** 题型：open / choice / fill / judge */
+  questionType: QuestionType;
+  /** 手动配置的选项（仅 choice 类型） */
+  options: { choices: string[]; correct: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -708,6 +784,102 @@ export interface QuestionCoverage {
   skills: CoverageSkill[];
   cellsTotal: number;
   cellsFilled: number;
+}
+
+// ===== 练习与测验（Practice）=====
+
+/** 单题答题结果。 */
+export interface PracticeResult {
+  correct: boolean;
+  score: number;
+  maxScore: number;
+  feedback: string;
+  correctAnswer: string;
+  outlineCovered: string[];
+  outlineMissed: string[];
+  recordId: number;
+}
+
+/** 测验中的单题（不含参考答案）。 */
+export interface QuizQuestion {
+  id: number;
+  question: string;
+  questionType: QuestionType;
+  options: string[] | null;
+  skillName: string | null;
+  difficulty: string;
+}
+
+/** 测验开始响应。 */
+export interface QuizStart {
+  sessionId: string;
+  questions: QuizQuestion[];
+  count: number;
+}
+
+/** 测验中的一条答题记录。 */
+export interface QuizRecord {
+  questionId: number;
+  questionType: QuestionType;
+  question: string;
+  userAnswer: string;
+  correctAnswer: string | null;
+  correct: boolean;
+  score: number;
+  feedback: string | null;
+}
+
+/** 某题型的测验统计。 */
+export interface QuizTypeStats {
+  count: number;
+  correct: number;
+  avgScore: number;
+}
+
+/** 测验结果。 */
+export interface QuizResult {
+  sessionId: string;
+  totalScore: number;
+  count: number;
+  correctCount: number;
+  byType: Record<string, QuizTypeStats>;
+  weakSkills: string[];
+  records: QuizRecord[];
+}
+
+/** 某题型的练习统计。 */
+export interface PracticeTypeStats {
+  practiced: number;
+  correct: number;
+  accuracy: number;
+}
+
+/** 某技能的练习统计。 */
+export interface PracticeSkillStats {
+  skill: string;
+  practiced: number;
+  correct: number;
+  accuracy: number;
+}
+
+/** 测验摘要。 */
+export interface PracticeSessionSummary {
+  sessionId: string;
+  date: string;
+  score: number;
+  count: number;
+}
+
+/** 练习总统计。 */
+export interface PracticeStats {
+  totalPracticed: number;
+  totalCorrect: number;
+  accuracy: number;
+  byType: Record<string, PracticeTypeStats>;
+  bySkill: PracticeSkillStats[];
+  weakSkills: string[];
+  weakTypes: string[];
+  recentSessions: PracticeSessionSummary[];
 }
 
 // ===== 日报 / 周报（Report · Batch 4）=====
@@ -865,9 +1037,15 @@ export interface TodayView {
   isBeforeStart: boolean;
   isAfterEnd: boolean;
 
-  /** 今日任务（tasks.plan_day_id == 当天） */
+  /** 今日任务（tasks.plan_day_id == 当天，且经当前阶段的赛道口径） */
   tasks: Task[];
   completedTasks: number;
+
+  /** 任务赛道口径（Milestone B）：与 /api/job-hunt 同源。
+   * 可选 —— 老响应没有该字段时页面照常渲染（向后兼容）。 */
+  taskScope?: TaskScopeSummary | null;
+  /** 被口径排除、因而**不在** tasks 里的任务（可查看） */
+  excludedTasks?: ScopedTaskRef[];
 
   /** 四件套状态 */
   artifacts: DayArtifact[];
@@ -1046,4 +1224,59 @@ export interface SkillLineReport {
     pendingMinLevel: number;
   };
   note: string;
+}
+
+/* ───────────────────────── 职业阶段模式（Career Mode） ───────────────────────── */
+
+/** 阶段模式 key。
+ *
+ * 唯一来源是后端 app/services/career_mode/presets.py；这里保留 string 兜底，
+ * 后端新增模式时前端不会因联合类型不匹配而编译失败。
+ */
+export type CareerModeKey = "job_hunt" | "long_term_transition";
+
+/** 一个职业阶段 —— 当前阶段的北极星目标与期限。
+ *
+ * 与 ViewRole 的区别（两者不是同一件事，不要混用）：
+ * - `ViewRole`（lib/viewRole.ts）：Dashboard 的**观察视角**，存 cookie，
+ *   只影响"看哪张图"，不落库。
+ * - `CareerMode`：产品**阶段**，存后端数据库，影响全局导航与默认推荐口径。
+ *   切换它不会删除、修改或隐藏任何既有业务数据。
+ */
+export interface CareerMode {
+  id: string;
+  key: CareerModeKey | string;
+  name: string;
+  objective: string;
+  /** ISO 日期；null = 该阶段无硬截止（长期模式按季度 / 里程碑推进） */
+  deadline: string | null;
+  /** 距 deadline 的天数，由后端推导；无 deadline 时为 null。
+   *  刻意不在前端重算 —— 否则两边取整不一致会被当成 bug 反复排查。 */
+  daysLeft: number | null;
+  /** 该阶段推动的赛道 key；Milestone A 只展示、不执行过滤 */
+  activeTrackKeys: string[];
+  /** 该阶段冻结的赛道 key：只看不推，历史资产保留 */
+  frozenTrackKeys: string[];
+  isCurrent: boolean;
+}
+
+/** GET /api/career-mode 的返回：当前模式 + 可切换的全部模式。 */
+export interface CareerModeOverview {
+  current: CareerMode;
+  available: CareerMode[];
+}
+
+/** 一次模式切换的历史记录。fromMode 为 null 表示系统首次激活默认模式。 */
+export interface CareerModeTransition {
+  id: string;
+  fromMode: string | null;
+  toMode: string;
+  transitionedAt: string;
+  note: string | null;
+}
+
+/** 切换成功的返回：切换后的模式 + 本次切换记录。 */
+export interface CareerModeSwitchResult {
+  current: CareerMode;
+  transition: CareerModeTransition;
 }
