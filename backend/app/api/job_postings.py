@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.agents.match.engine import JDParser, MatchEngine
 from app.core.response import ok
 from app.db.base import get_db
+from app.models.interview_question import InterviewQuestion
 from app.models.job_match import GRADE_ORDER, JobMatch, grade_of
 from app.models.job_posting import POSTING_STATUS_ORDER, JobPosting
 from app.models.skill import Skill
@@ -205,4 +206,91 @@ def posting_stats(db: Session = Depends(get_db)):
         "by_grade": grade_counts,
         "recommended": recommended,  # A+B 合计（可优先投）
         "unmatched": sum(1 for p in rows if p.id not in matches),
+    })
+
+
+@router.get("/{posting_id}/recommendations")
+def posting_recommendations(posting_id: int, db: Session = Depends(get_db)):
+    """JD 驱动学习推荐：根据岗位缺口推荐面试题。
+
+    返回：
+    - gaps: 该 JD 要求但用户水平不足的技能列表
+    - recommendations: 每个缺口技能对应的已有题目 + 缺题情况
+    - summary: 总缺口数、已有题覆盖数、需补题数
+    """
+    posting = db.query(JobPosting).filter(JobPosting.id == posting_id).first()
+    if not posting:
+        raise HTTPException(404, "岗位不存在")
+
+    skill_levels = {s.name.strip().lower(): s.level for s in db.query(Skill).all()}
+    required = posting.required_skills or []
+
+    result = MatchEngine.compute(
+        required_skills=required,
+        track=posting.track,
+        education=posting.education,
+        min_years=posting.min_years,
+        paper_required=posting.paper_required,
+        skill_levels=skill_levels,
+    )
+
+    # 查题库
+    all_questions = db.query(InterviewQuestion).all()
+    q_by_skill: dict[str, list[dict]] = {}
+    for q in all_questions:
+        if q.skill_name:
+            q_by_skill.setdefault(q.skill_name, []).append({
+                "id": q.id,
+                "category": q.category,
+                "difficulty": q.difficulty,
+                "question": q.question,
+                "hit_count": q.hit_count,
+                "is_verified": q.is_verified,
+            })
+
+    recommendations = []
+    total_covered = 0
+    total_missing = 0
+    for gap in result.gaps:
+        skill = gap["skill"]
+        existing = q_by_skill.get(skill, [])
+        # 按分类统计已有题数
+        by_category = {}
+        for q in existing:
+            by_category[q["category"]] = by_category.get(q["category"], 0) + 1
+
+        has_questions = len(existing) > 0
+        if has_questions:
+            total_covered += 1
+        else:
+            total_missing += 1
+
+        recommendations.append({
+            "skill": skill,
+            "current_level": gap["level"],
+            "required_level": gap["required"],
+            "gap": gap["gap"],
+            "question_count": len(existing),
+            "questions": existing[:5],  # 最多返回5题预览
+            "by_category": by_category,
+            "status": "有题可练" if has_questions else "缺题，需补充",
+        })
+
+    return ok({
+        "posting": {
+            "id": posting.id,
+            "company": posting.company,
+            "title": posting.title,
+            "track": posting.track,
+        },
+        "match": {
+            "score": result.match_score,
+            "grade": result.grade,
+        },
+        "gaps": recommendations,
+        "summary": {
+            "total_gaps": len(recommendations),
+            "covered": total_covered,
+            "missing_questions": total_missing,
+        },
     })

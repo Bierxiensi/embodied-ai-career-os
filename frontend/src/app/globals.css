@@ -32,6 +32,20 @@
   --color-ink-32: #52525B;
   --color-ink-28: #71717A;
 
+  /* Component-level tokens (补全) */
+  --color-item-bg: #FAFAFB;
+  --color-rose-soft: #FEF2F2;
+  --color-violet-soft: rgba(139, 92, 246, 0.12);
+  --color-sky-soft: rgba(14, 165, 233, 0.12);
+  --color-violet: #8B5CF6;
+
+  /* Type scale */
+  --font-size-hero: 34px;
+  --font-size-title: 17px;
+  --font-size-body: 15px;
+  --font-size-caption: 13px;
+  --font-size-micro: 11px;
+
   /* Radius */
   --radius-card-lg: 18px;
   --radius-item-md: 11px;
@@ -73,6 +87,10 @@
     --color-primary-soft: #0A2A4A;
     --color-emerald-soft: #0A3A2A;
     --color-amber-soft: #3A2A0A;
+    --color-item-bg: #2A2A2C;
+    --color-rose-soft: #3A1A1A;
+    --color-violet-soft: rgba(139, 92, 246, 0.18);
+    --color-sky-soft: rgba(14, 165, 233, 0.18);
   }
 }
 

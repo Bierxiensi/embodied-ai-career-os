@@ -1,6 +1,6 @@
 """30 天施工计划的课程脊梁（唯一事实来源）。
 
-来源：《30-Day LLM → VLM 求职施工计划 v2.0》§四 ~ §八。
+来源：《30-Day Post-Training 主轴求职施工计划 v3.0》§四 ~ §八。
 本文件是 **计划内容的唯一出处** —— 改计划 = 改这个文件 + 重跑
 `scripts/seed_plan_30d.py`，不做 CRUD 管理界面（见 docs/platform-direction-30day.md §八）。
 
@@ -14,7 +14,8 @@
    日期由 DayProgress 记录（P1），落后只提示、不自动顺延 ——
    否则滑一天后面全错位，30 天会变成 45 天。
 2. track_key 复用 tasks 的赛道口径（llm / vlm / ai-algo / embodied），
-   周 1-2 是 LLM 主攻，周 3 切换 VLM 卡位，周 4 回到包装与投递。
+   v3.0：周 1 LLM 基础，周 2 Post-Training 主干（SFT/LoRA/DPO），
+   周 3 VLM（Post-Training 的多模态分支），周 4 资产包装与投递。
 3. 每天固定产出「四件套」：代码 / 笔记 / 面试题 ≥5 / git commit。
    本文件只声明当天的面试题主题，题目本身由用户在完成任务时录入。
 
@@ -47,24 +48,27 @@ class PlanDaySeed:
 
 PHASES: Final[dict[int, str]] = {
     1: "第一周 · 打穿 Transformer",
-    2: "第二周 · Training / Fine-tuning / Inference",
-    3: "第三周 · 只学 VLM 结构",
+    2: "第二周 · Post-Training（SFT / LoRA / DPO）",
+    3: "第三周 · VLM（多模态分支）",
     4: "第四周 · 变成求职资产",
 }
 
-# 计划 §二指定的 5 类资源（唯一允许的来源，替代"课程收藏"）
+# 计划 §二指定的资源锁（唯一允许的来源，替代"课程收藏"）。v3.0 扩为 8 类：补后训练偏好优化与工业级 VLM 参考
 RESOURCE_LOCK: Final[tuple[str, ...]] = (
     "Hugging Face LLM Course",
     "Attention Is All You Need (arXiv 1706.03762)",
     "LoRA (arXiv 2106.09685) + Hugging Face PEFT",
     "vLLM Documentation",
     "Hugging Face Multimodal / LLaVA",
+    "DPO (arXiv 2305.18290) + RLHF (arXiv 2203.02155)",
+    "GRPO / RLVR (DeepSeekMath arXiv 2402.03300)",
+    "Qwen2.5-VL Technical Report (arXiv 2502.13923)",
 )
 
 # 计划 §十二的 D 级技术黑名单（30 天内不投入）
 # 与 app/core/target_roles.py 的 TECH_BLACKLIST 同源，此处保留轻量副本用于种子校验。
 D_LEVEL_FORBIDDEN: Final[tuple[str, ...]] = (
-    "MoE", "RLHF", "CUDA Kernel", "Megatron", "FlashAttention",
+    "MoE", "CUDA Kernel", "Megatron", "FlashAttention",
     "VLA", "World Model", "Isaac", "ROS2", "Robot Learning", "Agent Framework",
 )
 
@@ -614,51 +618,60 @@ PLAN_30D: list[PlanDaySeed] = [
         seq=22,
         phase=4,
         phase_name=PHASES[4],
-        title="建立统一实验",
-        theme="实验",
+        title="Mini Post-Training Lab",
+        theme="Post-Training",
         objectives=(
-            "Experiment A（LLM）：Base → SFT → LoRA → QLoRA 四组对比",
-            "Experiment B（VLM）：Base VLM → LoRA → Small Dataset 前后对比",
+            "搭建贯穿式后训练实验台，串联 7 个子模块：",
+            "01_sft（SFT 数据构造 + loss mask）/ 02_lora（LoRA 微调）/ 03_dpo（DPO 偏好优化）/",
+            "04_evaluation（基线 vs 微调评测）/ 05_badcase（错误样本回流）/ 06_vlm_sft（VLM 分支 SFT）/ 07_inference（部署推理）",
+            "核心叙事：从 SFT → DPO → VLM SFT → Evaluation → Inference 的完整大模型训练闭环",
         ),
         acceptance=(
-            "Experiment A 表填完：方法 / Trainable Params / GPU Memory / Time / Result",
-            "Experiment B 记录 before / after",
-            "★ 项目叙事升级为「研究 PEFT 对 LLM/VLM 训练成本与效果的影响」",
+            "07_inference 跑通，能端到端用一张图 + 问题得到 VLM 答案",
+            "03_dpo 真实训一轮（小模型 + 构造偏好对），记录 loss 曲线",
+            "04_evaluation / 05_badcase 形成 before/after 对比表",
+            "★ 项目叙事定为「Mini Post-Training Lab：大模型后训练闭环」（面试第一作品集）",
         ),
         interview_topics=(
-            "LoRA 相比全参微调省了多少显存？",
-            "QLoRA 和 LoRA 的区别？",
-            "PEFT 会损失多少效果？",
-            "怎么设计一个公平的微调对比实验？",
+            "SFT 的 loss 只算 response 部分，为什么？",
+            "DPO 相比 RLHF 省了什么（无 reward model / 无 PPO）？",
+            "怎么构造 preference pair？badcase 如何回流？",
+            "你的后训练实验设计公平性如何保证？",
         ),
         resources=(
             "LoRA (arXiv 2106.09685) + Hugging Face PEFT",
+            "DPO (arXiv 2305.18290) + RLHF (arXiv 2203.02155)",
             "Hugging Face Multimodal / LLaVA",
         ),
-        est_minutes=390,
+        est_minutes=420,
         track_key="llm",
     ),
     PlanDaySeed(
         seq=23,
         phase=4,
         phase_name=PHASES[4],
-        title="Inference Benchmark",
-        theme="实验",
+        title="DPO / 偏好优化 + GRPO：学完即资产",
+        theme="Post-Training",
         objectives=(
-            "形成 Transformers vs vLLM 的正式对比",
-            "对比 TTFT / Throughput / Latency / Memory 四维指标",
+            "搞懂 DPO / RLHF 的损失形式与差异：DPO 用偏好对直接优化、免 reward model 与 PPO",
+            "理解 GRPO / RLVR：rollout → reward → advantage → 策略更新，why 适合小模型推理训练",
+            "把上述内容整理成面试可讲叙事，连回 Mini Post-Training Lab 的 03_dpo",
         ),
         acceptance=(
-            "产出对比表与结论",
-            "说明 vLLM 的加速来自哪里（能定位到具体机制）",
+            "产出 docs/10_preference_optimization.md（含 DPO/RLHF/GRPO 公式对比）",
+            "能闭卷讲清：DPO vs RLHF 省了什么 / GRPO 为什么稳定",
+            "在 Lab 的 03_dpo 基础上补一段 GRPO 笔记或最小实现",
         ),
         interview_topics=(
-            "vLLM 的加速来源拆解？",
-            "什么场景下 vLLM 优势最大？",
-            "batch size 对吞吐和延迟的影响？",
-            "线上部署怎么选推理框架？",
+            "DPO 和 RLHF 的核心区别？",
+            "为什么 DPO 不需要显式 reward model？",
+            "GRPO 的 reward / advantage 怎么算？",
+            "偏好数据从哪来（人工 / 模型 / badcase 回流）？",
         ),
-        resources=("vLLM Documentation",),
+        resources=(
+            "DPO (arXiv 2305.18290) + RLHF (arXiv 2203.02155)",
+            "GRPO / RLVR (DeepSeekMath arXiv 2402.03300)",
+        ),
         est_minutes=360,
         track_key="llm",
     ),
@@ -863,6 +876,7 @@ SKILL_TO_DAY_SEQ: dict[str, int] = {
     "CLIP": 16,
     "Multimodal Alignment": 17,
     "VLM": 17,
+    "DPO": 23,
 }
 
 

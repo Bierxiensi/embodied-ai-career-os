@@ -50,13 +50,13 @@ def update_career(db: SessionLocal) -> None:
         db.add(career)
         db.flush()
 
-    career.target_role = "LLM / 大模型算法工程师（主攻）"
+    career.target_role = "大模型后训练 / Post-Training 算法工程师（主攻）"
     career.salary_target = 40000  # 36-42K 中值，便于看板对照
     career.timeframe = "2026-10-31"  # 截止签约日（防社保中断）
     career.notes = (
-        "v2.0 战略：LLM 深度为主 + VLM 轻量卡位。"
-        "主攻 LLM 算法(36-45K)，卡位多模态/VLM(36-45K)，保底 AI 算法/推理(30-40K)；"
-        "具身智能长期观察，30 天内不投入。10 月底前落定以防社保中断。"
+        "v3.0 战略：Post-Training 主轴（SFT→DPO→RL）+ VLM 模型方向 + AI Infra 增强。"
+        "主攻大模型后训练/Post-Training(36-45K)，卡位多模态/VLM(36-45K)，保底 AI 算法/推理(30-40K)；"
+        "具身智能(VLA/Robot Learning)为 on-job 长期目标，30 天内不投入。10 月底前落定以防社保中断。"
     )
     db.commit()
     print(
@@ -139,8 +139,8 @@ def ensure_project_and_milestones(db: SessionLocal) -> Project:
     if not project:
         project = Project(
             name=JOB_HUNT_PROJECT_NAME,
-            goal="2026 Q4 求职冲刺：10月底前落定 36-42K 具身/机器人方向 offer",
-            description="主攻具身VLA / 折中机器人软件 / 保底Agent应用 三赛道并进",
+            goal="2026 Q4 求职冲刺：10月底前落定 36-42K 后训练/多模态方向 offer",
+            description="主攻 Post-Training 后训练 / 卡位多模态 VLM / 保底 AI 算法推理 三赛道并进",
             status="active",
             current_version="V0",
             sort_order=1,

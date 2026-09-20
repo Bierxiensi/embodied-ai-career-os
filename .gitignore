@@ -43,7 +43,13 @@ data/
 so101/xml
 # 启动脚本产生的日志与端口记录
 .workbuddy/logs/
+# 临时工作区：验证脚本、命令输出、库副本等。**不纳入版本库** ——
+# 这里曾放进 9.17MB 的临时依赖与开发库副本，被 `git add -A` 一并收进仓库。
+# 注意：memory/ 是有意纳入版本库的（见下方），所以只忽略 tmp/ 而非整个 .workbuddy/。
+.workbuddy/tmp/
 
 # ===== SSH 密钥（持久化在 /workspace/.ssh，禁止提交）=====
 /.ssh/
 .ssh/
+
+PPTist

@@ -98,6 +98,27 @@ def init_db() -> None:
     # 首次启动插入种子数据（表为空时）
     _seed_if_empty()
 
+    # 职业阶段模式：定义以 app/services/career_mode/presets.py 为单一来源，
+    # 每次启动对齐一次。与上面"仅空表播种"不同 —— 模式定义会随配置演进，
+    # 需要对已存在的行做校正；is_current 不受影响，用户切换后的选择保持不变。
+    _sync_career_modes()
+
+
+def _sync_career_modes() -> None:
+    """把职业阶段模式的预置定义物化到库（幂等）。
+
+    仅做"连接管理 + 委托"，判定逻辑全在 services/career_mode/service.py，
+    以免基础设施层成为业务规则的第二个实现点。
+    """
+
+    from app.services.career_mode.service import sync_career_modes
+
+    db = SessionLocal()
+    try:
+        sync_career_modes(db)
+    finally:
+        db.close()
+
 
 def _seed_if_empty() -> None:
     """表为空时插入种子数据。基于 docs/MY_CONTEXT.md 真实自评。"""

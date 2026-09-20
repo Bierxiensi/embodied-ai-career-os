@@ -12,6 +12,7 @@ import PageHeader from "@/components/PageHeader";
 import MilestoneTimeline from "@/components/MilestoneTimeline";
 import ReadmeDraftCard from "@/components/ReadmeDraftCard";
 import { milestoneBadge } from "@/components/ProjectCard";
+import ErrorCard from "@/ui/error-card";
 import { getProjectReadme } from "@/services/packagingService";
 import { projectService } from "@/services/projectService";
 import { getSkills } from "@/services/skillService";
@@ -36,7 +37,7 @@ const TASK_STATUS: Record<string, { label: string; bg: string; color: string }> 
     bg: "var(--color-amber-soft)",
     color: "var(--color-amber-deep)",
   },
-  todo: { label: "待办", bg: "#F5F5F5", color: "var(--color-ink-32)" },
+  todo: { label: "待办", bg: "var(--color-zinc-100)", color: "var(--color-ink-32)" },
 };
 
 export default async function ProjectDetailPage({
@@ -45,17 +46,17 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // 技能用于「生成里程碑任务」的 Planner 输入；README 骨架靠证据链推导。
-  // 两者都失败不击穿整页。
-  const [project, skills, allTasks, readme] = await Promise.all([
-    projectService.get(id),
-    getSkills().catch(() => []),
-    getTasks(id).catch(() => []),
-    getProjectReadme(id).catch(() => null),
-  ]);
 
-  const status = milestoneBadge; // 复用同一套徽章口径（避免色值漂移）
-  const pct = project.progressPct ?? 0;
+  try {
+    const [project, skills, allTasks, readme] = await Promise.all([
+      projectService.get(id),
+      getSkills().catch(() => []),
+      getTasks(id).catch(() => []),
+      getProjectReadme(id).catch(() => null),
+    ]);
+
+    const status = milestoneBadge;
+    const pct = project.progressPct ?? 0;
 
   return (
     <main className="flex flex-1 flex-col">
@@ -85,7 +86,7 @@ export default async function ProjectDetailPage({
                     ? "var(--color-emerald-soft)"
                     : project.status === "paused"
                       ? "var(--color-amber-soft)"
-                      : "#F5F5F5",
+                      : "var(--color-zinc-100)",
                 color:
                   project.status === "active"
                     ? "var(--color-emerald-deep)"
@@ -206,7 +207,7 @@ export default async function ProjectDetailPage({
                     style={{
                       gap: 12,
                       padding: "12px 14px",
-                      background: "#FAFAFB",
+                      background: "var(--color-item-bg)",
                       borderRadius: "var(--radius-item-md)",
                     }}
                   >
@@ -246,6 +247,9 @@ export default async function ProjectDetailPage({
       </div>
     </main>
   );
+  } catch (err) {
+    return <ErrorCard pageName="项目详情" error={err} />;
+  }
 }
 
 /** 页内卡片容器 —— 与 Dashboard 卡片同口径（白底 + hairline + 18px 圆角）。 */

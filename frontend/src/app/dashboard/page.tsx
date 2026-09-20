@@ -1,59 +1,37 @@
 /** Dashboard 页面（Server Component）。
  *
- * 数据流：
- *   page.tsx (server) → getDashboardData(role) → services → /api/* → FastAPI
- *   ↓
- *   Dashboard 组件渲染（匹配 Ardot 设计稿）
- *   ↓
- *   SubNav 点击生成任务 → POST /api/planner/generate → router.refresh() → 重新渲染
- *
- * 视角（role）解析优先级：
- *   1. URL `?role=`（可分享/收藏，最高优先级）
- *   2. cookie `view_role`（记住上次选择，从其他页返回时沿用）
- *   3. 默认 `jobhunt`
- * 三者都在服务端解析，因此首屏就是正确视角，无客户端闪烁 / hydration mismatch。
- *
- * 错误处理：后端不可用时展示降级提示，避免整页白屏。
+ * 数据流：page.tsx → getDashboardData() → services → /api/* → FastAPI
+ * 每次请求重新获取数据（任务列表实时更新）。
  */
 
-import { cookies } from "next/headers";
 import Dashboard from "@/components/Dashboard";
 import { ApiError } from "@/lib/apiClient";
-import { VIEW_ROLE_COOKIE, normalizeViewRole } from "@/lib/viewRole";
 import { getDashboardData } from "@/services/dashboardService";
 
-export const dynamic = "force-dynamic"; // 每次请求都重新获取数据（任务列表实时更新）
+export const dynamic = "force-dynamic";
 
-type PageProps = {
-  searchParams: Promise<{ role?: string }>;
-};
-
-export default async function DashboardPage({ searchParams }: PageProps) {
-  const [sp, cookieStore] = await Promise.all([searchParams, cookies()]);
-  const role = normalizeViewRole(sp.role ?? cookieStore.get(VIEW_ROLE_COOKIE)?.value);
-
+export default async function DashboardPage() {
   try {
-    const data = await getDashboardData(role);
+    const data = await getDashboardData();
 
     return (
       <main className="min-h-full" style={{ background: "var(--color-canvas)" }}>
         <Dashboard
-          career={data.career}
           skills={data.skills}
-          viewRole={data.viewRole}
-          roleOptions={data.roleOptions}
           activeTrack={data.activeTrack}
           radarAxes={data.radarAxes}
-          tasks={data.tasks}
-          tasksTotal={data.tasksTotal}
+          defaultScopeTasks={data.defaultScopeTasks}
+          frozenExcludedTasks={data.frozenExcludedTasks}
+          unclassifiedTasks={data.unclassifiedTasks}
+          taskScopeReason={data.taskScopeReason}
           agentRuns={data.agentRuns}
           projects={data.projects}
           daysLeft={data.daysLeft}
+          applicationCounts={data.applicationCounts}
         />
       </main>
     );
   } catch (err) {
-    // 后端服务不可用时的降级 UI
     const message =
       err instanceof ApiError
         ? err.message

@@ -243,3 +243,4 @@ npm run dev
 
 脚本约定：`start.sh` 具备环境自愈能力（`.env` / `.venv` / `node_modules`
 缺失时自动补齐），换机或新克隆仓库直接执行 `bash start.sh` 即可。
+

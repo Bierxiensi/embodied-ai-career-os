@@ -24,7 +24,7 @@ evidence 必须是可对外陈述的事实（项目名 / 论文 / 可量化结�
   → gap 恒为 0，看板不会再把它们排进"今天该学什么"，但历史积累仍在，
     简历叙事里可作为工程能力旁证
 
-最后校准：2026-09-10
+最后校准：2026-09-18（v3.0：主轴由 LLM+VLM 调整为 Post-Training，新增 GRPO，DPO/RLHF 升为主攻赛道要求）
 """
 
 from __future__ import annotations
@@ -118,6 +118,10 @@ SKILL_PROFILE: list[SkillProfile] = [
     SkillProfile(
         name="RLHF", category="Weak", level=1, target_level=3, evidence=["仅概念层"],
     ),
+    SkillProfile(
+        name="GRPO", category="Weak", level=1, target_level=3,
+        evidence=["仅概念层，未实现 rollout / reward / advantage 闭环"],
+    ),
 
     # ══════════════════════════════════════════════════════════════════════
     # C 级 —— 一个月理解即可（VLM / 多模态）
@@ -202,6 +206,14 @@ SKILL_PROFILE: list[SkillProfile] = [
     SkillProfile(
         name="Explainability", category="Strong", level=4, target_level=4,
         evidence=["SHAP 可解释性分析", "互信息过滤冗余与滞后特征"],
+    ),
+    SkillProfile(
+        name="Time Series Forecasting", category="Strong", level=4, target_level=4,
+        evidence=[
+            "学位论文 RL-RA-QR 洪水概率预报（强化学习 + 分位数回归，多步滚动预报）",
+            "STM-SHAP 时序可解释性（一作 IEEE ISCTIS 2026，EI）",
+            "多流域对比 q99 分位数预报；时空信息融合与误差归因",
+        ],
     ),
 
     # ---------- 历史主线（工程能力背书，非当前方向）----------

@@ -16,7 +16,9 @@ import type {
   JobTaskItem,
   MatchGrade,
   PostingTier,
+  TaskTrackScope,
 } from "@/types";
+import { toScopeSummary, toScopedTaskRef, type TaskScopeDTO } from "./taskScope";
 
 /* ───────────────────────── 后端原始结构（snake_case） ───────────────────────── */
 
@@ -73,6 +75,8 @@ interface JobHuntDTO {
     done: number;
     doing: number;
     todo: number;
+    frozen_excluded: number;
+    unclassified?: number;
     items: Array<{
       id: number;
       title: string;
@@ -80,7 +84,17 @@ interface JobHuntDTO {
       status: string;
       duration: number | null;
       objective: string | null;
+      track_key?: string | null;
+      scope?: string;
     }>;
+    frozen_items?: Array<{
+      id: number;
+      title: string;
+      track_key: string | null;
+      status: string;
+      scope: string;
+    }>;
+    scope?: TaskScopeDTO;
   };
   applications: {
     total: number;
@@ -196,6 +210,8 @@ function toBoard(dto: JobHuntDTO): JobHuntBoard {
       done: dto.tasks.done,
       doing: dto.tasks.doing,
       todo: dto.tasks.todo,
+      frozenExcluded: dto.tasks.frozen_excluded ?? 0,
+      unclassified: dto.tasks.unclassified ?? 0,
       items: dto.tasks.items.map(
         (t): JobTaskItem => ({
           id: String(t.id),
@@ -204,8 +220,14 @@ function toBoard(dto: JobHuntDTO): JobHuntBoard {
           status: t.status,
           duration: t.duration,
           objective: t.objective,
+          trackKey: t.track_key ?? null,
+          scope: (t.scope as TaskTrackScope | undefined) ?? undefined,
         })
       ),
+      frozenItems: (dto.tasks.frozen_items ?? []).map(toScopedTaskRef),
+      // 老后端（Milestone A 及更早）没有 scope 字段：回落到"未限缩"的空口径，
+      // 而不是抛错或猜一个 —— 页面表现为"没有口径提示"，与改造前一致。
+      scope: toScopeSummary(dto.tasks.scope, dto.tasks.frozen_excluded ?? 0),
     },
     applications: {
       total: dto.applications.total,

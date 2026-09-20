@@ -102,6 +102,21 @@ export default function TodayBoard({ today }: Props) {
     );
   }
 
+  // 口径提示文案：只在"确实有任务被排除"或"有未归类任务"时出现，
+  // 无事可提示时保持页面干净。措辞与数字全部取自后端，前端不加工。
+  const scopeNotice = (() => {
+    const s = today.taskScope;
+    if (!s) return null;
+    const parts: string[] = [];
+    if (s.frozenExcluded > 0) {
+      parts.push(`已排除冻结赛道任务 ${s.frozenExcluded} 条（${s.scopeReason}）`);
+    }
+    if (s.unclassified > 0) {
+      parts.push(`另有 ${s.unclassified} 条任务未归类赛道，仍列在下方`);
+    }
+    return parts.length > 0 ? parts.join("；") : null;
+  })();
+
   return (
     <div className="flex flex-col" style={{ gap: 18 }}>
       {/* ═══════ 顶部：今天第几天 ═══════ */}
@@ -428,6 +443,10 @@ export default function TodayBoard({ today }: Props) {
         <SectionTitle hint={`完成 ${today.completedTasks} / ${today.tasks.length} 项`}>
           今日任务
         </SectionTitle>
+
+        {/* 口径提示（Milestone B）：为什么这里的条数比"当天全部任务"少。
+            数字与措辞全部来自后端 taskScope，前端不重算、不改口径。 */}
+        {scopeNotice ? <Notice tone="amber">{scopeNotice}</Notice> : null}
 
         {today.tasks.length === 0 ? (
           <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>

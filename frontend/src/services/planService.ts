@@ -21,6 +21,12 @@ import type {
   TodayView,
 } from "@/types";
 import { toTask, type TaskDTO } from "./taskService";
+import {
+  toScopeSummary,
+  toScopedTaskRef,
+  type ScopedTaskRefDTO,
+  type TaskScopeDTO,
+} from "./taskScope";
 
 /** 后端 PlanDay 原始结构。 */
 interface PlanDayDTO {
@@ -68,6 +74,9 @@ interface TodayDTO {
   missing_kinds: string[];
   all_done: boolean;
   ledger: { key: string; label: string; done: number; target: number }[];
+  /** Milestone B：与 /api/job-hunt 同源的任务赛道口径（可选，向后兼容） */
+  task_scope?: TaskScopeDTO | null;
+  excluded_tasks?: ScopedTaskRefDTO[];
 }
 
 function toPlanDay(dto: PlanDayDTO): PlanDay {
@@ -117,6 +126,10 @@ function toToday(dto: TodayDTO): TodayView {
     missingKinds: (dto.missing_kinds ?? []) as ArtifactKind[],
     allDone: dto.all_done,
     ledger: (dto.ledger ?? []) as LedgerItem[],
+    // 口径与"被排除任务"：转换逻辑与 /api/job-hunt 共用 services/taskScope.ts，
+    // 不在这里各写一遍（后端也只有一份判定，前端也只有一份搬运）。
+    taskScope: dto.task_scope ? toScopeSummary(dto.task_scope) : null,
+    excludedTasks: (dto.excluded_tasks ?? []).map(toScopedTaskRef),
   };
 }
 

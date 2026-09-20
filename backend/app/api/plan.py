@@ -18,6 +18,10 @@
    否则"录了一次"和"录了 5 道题"会混为一谈。
 3. 四件套的 questions 槽位判定为「当天至少录过一次题」，
    与题库总账是两个层级：前者管"今天动没动"，后者管"攒够没有"。
+4. 今日任务的**赛道口径**（Milestone B）不在本文件实现：
+   统一走 services/action_planning/task_scope.py，与 /api/job-hunt 同一个入口。
+   本路由只负责"第几天"这个轴（plan_day_id），"哪条赛道"由服务层负责 ——
+   两个轴正交，各留各的模块，避免复制出第二份赛道判断。
 """
 
 from __future__ import annotations
@@ -63,6 +67,12 @@ from app.schemas.plan import (
     TodayView,
 )
 from app.schemas.task import TaskOut
+from app.schemas.task_scope import to_scoped_task_ref, to_task_scope_out
+from app.services.action_planning.task_scope import (
+    TaskTrackScope,
+    resolve_task_scope,
+    select_tasks,
+)
 
 router = APIRouter(prefix="/plan", tags=["plan"])
 
@@ -214,13 +224,33 @@ def get_today(
     plan_day = _load_day(db, seq)
 
     # 今日任务
-    tasks = (
+    #
+    # 口径（Milestone B）：与 /api/job-hunt **共用** services/action_planning/
+    # task_scope.py —— 赛道过滤只有那一处实现，本路由不自己拼 track_key 条件。
+    #
+    # 为什么课程日任务也要按模式过滤（而不是"课程日是硬排期、不受模式影响"）：
+    #   本次改造要回答的是"总数为什么变小"，两个视图必须给同一个答案。若看板
+    #   按模式排除了冻结赛道的任务、今日页却把它列成"今天要做的事"，同一份库里
+    #   就有两个口径，用户无从判断哪个数字可信，冻结赛道的任务也会继续占用
+    #   今日待办 —— 正是 Milestone B 要消灭的现象。
+    #
+    # 两个轴是正交的，各自留在自己的模块：`plan_day_id`（第几天）由课程计划
+    #   权威（core/plan_30d.py），`track_key`（哪条赛道）由 task_scope 权威。
+    #   本查询只负责前者，后者整段交给 select_tasks。
+    #
+    # 当前配置下的实际效果：30 天课程的 track_key 只有 llm / vlm，二者均未冻结，
+    #   因此这里的过滤是**恒等变换**（不排除任何任务）。它是为"课程日将来落到
+    #   冻结赛道、或课程日任务被标为冻结赛道"准备的，届时无需改动本处。
+    #   该恒等性质由 tests/test_task_scope_service.py 显式钉住，防止有人误以为
+    #   "课程日不受模式影响"而把这段删掉。
+    scoped_tasks = select_tasks(
         db.query(Task)
         .filter(Task.plan_day_id == plan_day.id)
         .filter(Task.source != "test")
-        .order_by(Task.id.asc())
-        .all()
+        .order_by(Task.id.asc()),
+        resolve_task_scope(db),
     )
+    tasks = list(scoped_tasks.included)
     completed = sum(1 for t in tasks if t.status == "done")
 
     # 四件套状态（手工 artifact 计数）
@@ -301,6 +331,11 @@ def get_today(
             is_after_end=after_end,
             tasks=[TaskOut.model_validate(t) for t in tasks],
             completed_tasks=completed,
+            task_scope=to_task_scope_out(scoped_tasks),
+            excluded_tasks=[
+                to_scoped_task_ref(t, TaskTrackScope.FROZEN)
+                for t in scoped_tasks.frozen_items
+            ],
             artifacts=[ArtifactOut.model_validate(a) for a in artifacts],
             artifact_status=status,
             questions_from_bank=questions_from_bank,

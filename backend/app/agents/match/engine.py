@@ -76,6 +76,8 @@ _JD_ALIASES: dict[str, str] = {
     "transformer": "Transformer",
     "attention": "Attention",
     "self-attention": "Attention",
+    # 中文写法：JD 普遍写"注意力机制/多头注意力"，此前只有英文别名 → 整类漏抽
+    "注意力": "Attention",
     "rope": "RoPE",
     "rmsnorm": "RMSNorm",
     "swiglu": "SwiGLU",
@@ -96,7 +98,12 @@ _JD_ALIASES: dict[str, str] = {
     "quantization": "Quantization",
     "deepspeed": "FSDP/ZeRO",
     "fsdp": "FSDP/ZeRO",
-    "zero": "FSDP/ZeRO",
+    # 刻意不收录裸 "zero"：英文里 zero-shot / zero-cost 太常见，
+    # 会把普通描述误判成 ZeRO 并行（2026-09-11 修正）
+    "zero3": "FSDP/ZeRO",
+    "zero-3": "FSDP/ZeRO",
+    # 画像里有 Distributed Training，但此前无别名 → JD 写"分布式训练"抽不到
+    "分布式训练": "Distributed Training",
     "moe": "MoE",
     "混合专家": "MoE",
     "flashattention": "FlashAttention",
@@ -112,7 +119,10 @@ _JD_ALIASES: dict[str, str] = {
     "qformer": "Q-Former",
     "flamingo": "Flamingo",
     "多模态": "Multimodal Alignment",
-    "对齐": "Multimodal Alignment",
+    # 刻意不收录裸 "对齐"：知识图谱语境的"语义对齐 / 实体对齐"会被误判成
+    # "多模态对齐"（2026-09-11 实测某 JD 命中该误判，凭空多出一条 gap）
+    "多模态对齐": "Multimodal Alignment",
+    "跨模态对齐": "Multimodal Alignment",
     "vision-language": "Multimodal Alignment",
     "vlm": "VLM",
     "视觉语言": "VLM",
@@ -122,6 +132,10 @@ _JD_ALIASES: dict[str, str] = {
     "深度学习": "Deep Learning",
     "deep learning": "Deep Learning",
     "神经网络": "Deep Learning",
+    # 用户核心强项（时间序列/预测）此前画像无对应项 → JD 写"时间序列预测"整类漏抽（2026-09-15 补）
+    # 注意：只收"时间序列/time series"这种领域明确的词，不要收裸"时序"，避免数字电路等语境误命中
+    "时间序列": "Time Series Forecasting",
+    "time series": "Time Series Forecasting",
     "rag": "RAG",
     "检索增强": "RAG",
     "agent": "Agent Application",

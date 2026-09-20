@@ -31,6 +31,12 @@ from app.models.milestone import Milestone
 from app.models.project import Project
 from app.models.skill import Skill
 from app.models.task import Task
+from app.schemas.task_scope import to_scoped_task_ref, to_task_scope_out
+from app.services.action_planning.task_scope import (
+    TaskTrackScope,
+    resolve_task_scope,
+    select_tasks,
+)
 
 router = APIRouter(prefix="/job-hunt", tags=["job-hunt"])
 
@@ -129,7 +135,21 @@ def job_hunt_board(db: Session = Depends(get_db)):
         ]
 
     # ---- 任务 ----
-    tasks = db.query(Task).order_by(Task.id).all()
+    # 口径（Milestone B）：由**当前 CareerMode** 决定哪些赛道进入默认视图。
+    #
+    # 规则与三分类（active / frozen / unclassified）全部在
+    # ``services/action_planning/task_scope.py`` —— 赛道过滤的唯一权威实现；
+    # 本路由只调用与序列化，不再自己拼 track_key 条件。
+    #
+    # 历史背景（勿删）：这里原本是 ``db.query(Task).order_by(Task.id).all()``
+    # ——**全库裸查**。后果是 target_roles.py 中 frozen=True 的具身赛道任务
+    # 被当成"仍在推动的待办"计入总数（2026-09-11 实测 23 条待办里混了 8 条具身），
+    # 与"冻结赛道不占学习时间"的设计意图冲突。修法**不是**在路由里内联一段
+    # ``track_key in frozen_keys``：/api/plan/today 也要遵守同一口径，写两遍
+    # 就有两份真相（CODEBUDDY_IMPLEMENTATION_CONSTRAINTS / CODEX_MODULAR_DESIGN_STANDARD
+    # §4.2 一条规则一个权威实现），所以判断整体收进上面那个服务模块。
+    scoped = select_tasks(db.query(Task).order_by(Task.id), resolve_task_scope(db))
+
     task_out = [
         {
             "id": t.id,
@@ -138,8 +158,18 @@ def job_hunt_board(db: Session = Depends(get_db)):
             "status": t.status,
             "duration": t.duration,
             "objective": t.objective,
+            "track_key": t.track_key,
+            # 分类由服务给出（含"未归类"），前端只展示、不再自行判断赛道
+            "scope": scoped.classification_of(t).value,
         }
-        for t in tasks
+        for t in scoped.included
+    ]
+
+    # 被口径排除的任务一并返回摘要，供用户**查看**（PRD §5 F5.3：
+    # 隐藏不等于删除）。字段形状取自 schemas/task_scope.py 的 ScopedTaskRef ——
+    # /api/plan/today 用的是同一个模型，两边不会各自漂移。
+    frozen_items = [
+        to_scoped_task_ref(t, TaskTrackScope.FROZEN) for t in scoped.frozen_items
     ]
 
     # ---- 投递漏斗 ----
@@ -201,11 +231,21 @@ def job_hunt_board(db: Session = Depends(get_db)):
             "milestone_completed": sum(1 for m in milestones if m["status"] == "completed"),
         },
         "tasks": {
+            # 统计口径与 items 同源（Milestone B）：total/done/doing/todo 全部
+            # 基于 task_out，即"当前模式默认视图里的任务"，不含被排除的冻结任务。
             "total": len(task_out),
             "done": sum(1 for t in task_out if t["status"] == "done"),
             "doing": sum(1 for t in task_out if t["status"] == "doing"),
             "todo": sum(1 for t in task_out if t["status"] == "todo"),
+            # 被口径排除的冻结赛道任务数（透明化：让"为什么总数变小了"可解释）
+            "frozen_excluded": scoped.frozen_excluded,
+            # 未归类（track_key 为空）任务数：始终计入默认视图，此处仅提示
+            "unclassified": scoped.unclassified,
             "items": task_out,
+            # 支持查看：被排除任务的识别信息（PRD §5 F5.3 隐藏不等于删除）
+            "frozen_items": frozen_items,
+            # 口径自描述：前端据此解释"为什么总数变化"，不在 React 侧重算
+            "scope": to_task_scope_out(scoped).model_dump(),
         },
         "applications": {
             "total": total_apps,

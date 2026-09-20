@@ -5,16 +5,11 @@ import Link from "next/link";
 
 import type {
   JobAppStatus,
-  JobApplication,
-  JobApplicationCreate,
   JobHuntBoard,
+  ScopedTaskRef,
   TargetRole,
+  TaskScopeSummary,
 } from "@/types";
-import {
-  createApplication,
-  deleteApplication,
-  updateApplication,
-} from "@/services/jobHuntService";
 
 /* ───────────────────────── 元数据 ───────────────────────── */
 
@@ -53,14 +48,6 @@ const GRADE_META: Record<string, { label: string; color: string; soft: string }>
   C: { label: "C · 练手", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
   D: { label: "D · 不推荐", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
 };
-
-const STATUS_ORDER: JobAppStatus[] = [
-  "applied",
-  "screening",
-  "interview",
-  "offer",
-  "rejected",
-];
 
 /* ───────────────────────── 复用样式 ───────────────────────── */
 
@@ -163,20 +150,6 @@ type Props = {
 };
 
 export default function JobsBoard({ board }: Props) {
-  const [apps, setApps] = useState<JobApplication[]>(board.applications.items);
-  const [busy, setBusy] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<JobApplicationCreate>({
-    company: "",
-    role: "",
-    track: "agent",
-    source: "",
-    status: "applied",
-    salaryRange: "",
-    appliedAt: null,
-    nextAction: "",
-  });
-
   const daysLeft = board.daysLeft;
   const urgency =
     daysLeft > 21
@@ -191,74 +164,13 @@ export default function JobsBoard({ board }: Props) {
 
   const career = board.career;
 
-  /* 投递漏斗统计（从本地列表实时计算） */
-  const funnel = useMemo(() => {
-    const by: Record<JobAppStatus, number> = {
-      applied: 0,
-      screening: 0,
-      interview: 0,
-      offer: 0,
-      rejected: 0,
-    };
-    for (const a of apps) by[a.status] += 1;
-    const total = apps.length;
-    const responded = by.screening + by.interview + by.offer;
-    const responseRate = total ? Math.round((responded / total) * 100) : 0;
-    return { by, total, responseRate, offerCount: by.offer };
-  }, [apps]);
-
   const topGaps = useMemo(
     () => [...board.skillGaps].sort((a, b) => b.gap - a.gap).slice(0, 8),
     [board.skillGaps]
   );
 
-  async function handleCreate() {
-    if (!form.company.trim() || !form.role.trim()) return;
-    setBusy(true);
-    try {
-      const created = await createApplication({
-        ...form,
-        appliedAt: form.appliedAt || null,
-      });
-      setApps((prev) => [created, ...prev]);
-      setForm({
-        company: "",
-        role: "",
-        track: "agent",
-        source: "",
-        status: "applied",
-        salaryRange: "",
-        appliedAt: null,
-        nextAction: "",
-      });
-      setShowForm(false);
-    } catch (e) {
-      alert("添加失败：" + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleStatusChange(id: string, status: JobAppStatus) {
-    const prev = apps.find((a) => a.id === id);
-    if (!prev || prev.status === status) return;
-    try {
-      const updated = await updateApplication(id, { status });
-      setApps((list) => list.map((a) => (a.id === id ? updated : a)));
-    } catch (e) {
-      alert("更新失败：" + (e instanceof Error ? e.message : String(e)));
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("确认删除该投递记录？")) return;
-    try {
-      await deleteApplication(id);
-      setApps((list) => list.filter((a) => a.id !== id));
-    } catch (e) {
-      alert("删除失败：" + (e instanceof Error ? e.message : String(e)));
-    }
-  }
+  /* 投递漏斗（从后端聚合数据读取） */
+  const funnel = board.applications;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -299,8 +211,6 @@ export default function JobsBoard({ board }: Props) {
             display: "flex",
             alignItems: "center",
             gap: 28,
-            background:
-              "linear-gradient(120deg, var(--color-card), var(--color-card))",
             borderColor: urgency,
           }}
         >
@@ -368,13 +278,13 @@ export default function JobsBoard({ board }: Props) {
           </div>
         </div>
 
-        {/* Recommended Job Pool（Batch 1：岗位池推荐直接进求职看板） */}
+        {/* Recommended Job Pool */}
         {board.jobPool && board.jobPool.total > 0 ? (
           <div style={cardStyle}>
             <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
               <h2 style={sectionTitleStyle}>推荐岗位（来自岗位池）</h2>
               <Link
-                href="/jd"
+                href="/jobs/pool"
                 className="text-xs font-semibold no-underline"
                 style={{ color: "var(--color-primary)" }}
               >
@@ -389,7 +299,7 @@ export default function JobsBoard({ board }: Props) {
               {board.jobPool.top.map((t) => (
                 <Link
                   key={t.id}
-                  href="/jd"
+                  href="/jobs/pool"
                   className="flex items-center no-underline"
                   style={{
                     gap: 12,
@@ -527,7 +437,21 @@ export default function JobsBoard({ board }: Props) {
 
         {/* This Week Tasks */}
         <div style={cardStyle}>
-          <SectionHeader title="本周任务" hint={`${board.tasks.done}/${board.tasks.total} 已完成`} />
+          <SectionHeader
+            title="本周任务"
+            hint={
+              board.tasks.frozenExcluded > 0
+                ? `${board.tasks.done}/${board.tasks.total} 已完成 · 已排除冻结赛道 ${board.tasks.frozenExcluded} 条`
+                : `${board.tasks.done}/${board.tasks.total} 已完成`
+            }
+          />
+
+          <TaskScopeNote
+            scope={board.tasks.scope}
+            unclassified={board.tasks.unclassified}
+            frozenItems={board.tasks.frozenItems}
+          />
+
           <div className="flex flex-col" style={{ gap: 10 }}>
             {board.tasks.items.slice(0, 6).map((t) => (
               <div
@@ -578,223 +502,33 @@ export default function JobsBoard({ board }: Props) {
           </div>
         </div>
 
-        {/* Applications */}
+        {/* Applications Summary */}
         <div style={cardStyle}>
           <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-            <h2 style={sectionTitleStyle}>投递漏斗与跟进</h2>
-            <button
-              onClick={() => setShowForm((v) => !v)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "var(--radius-pill)",
-                border: "1px solid var(--color-primary)",
-                background: showForm ? "var(--color-primary)" : "transparent",
-                color: showForm ? "#fff" : "var(--color-primary)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
+            <h2 style={sectionTitleStyle}>投递漏斗</h2>
+            <Link
+              href="/jobs/applications"
+              className="text-xs font-semibold no-underline"
+              style={{ color: "var(--color-primary)" }}
             >
-              {showForm ? "收起" : "＋ 新增投递"}
-            </button>
+              管理投递 →
+            </Link>
           </div>
-
-          {/* Funnel stats */}
-          <div className="grid" style={{ gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", marginBottom: 16 }}>
-            <FunnelStat label="已投递" value={funnel.by.applied} color="#86868B" />
-            <FunnelStat label="筛选中" value={funnel.by.screening} color="#0EA5E9" />
-            <FunnelStat label="面试中" value={funnel.by.interview} color="#8B5CF6" />
-            <FunnelStat label="已拿offer" value={funnel.by.offer} color="var(--color-emerald)" />
-            <FunnelStat label="已挂" value={funnel.by.rejected} color="var(--color-rose)" />
+          <div
+            className="grid"
+            style={{ gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))" }}
+          >
+            <FunnelStat label="已投递" value={funnel.byStatus.applied ?? 0} color="var(--color-ink-48)" />
+            <FunnelStat label="筛选中" value={funnel.byStatus.screening ?? 0} color="#0EA5E9" />
+            <FunnelStat label="面试中" value={funnel.byStatus.interview ?? 0} color="#8B5CF6" />
+            <FunnelStat label="已拿offer" value={funnel.byStatus.offer ?? 0} color="var(--color-emerald)" />
+            <FunnelStat label="已挂" value={funnel.byStatus.rejected ?? 0} color="var(--color-rose)" />
             <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--color-primary)" />
-          </div>
-
-          {/* Add form */}
-          {showForm ? (
-            <div
-              className="flex flex-col"
-              style={{
-                gap: 10,
-                padding: 16,
-                marginBottom: 16,
-                background: "var(--color-zinc-100)",
-                borderRadius: "var(--radius-item-md)",
-              }}
-            >
-              <div className="flex" style={{ gap: 10, flexWrap: "wrap" }}>
-                <input
-                  placeholder="公司 *"
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder="岗位 *"
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  style={inputStyle}
-                />
-                <select
-                  value={form.track}
-                  onChange={(e) => setForm({ ...form, track: e.target.value })}
-                  style={inputStyle}
-                >
-                  {Object.entries(TRACK_LABEL).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  placeholder="来源（Boss/内推/猎聘…）"
-                  value={form.source ?? ""}
-                  onChange={(e) => setForm({ ...form, source: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder="薪资范围 如 36-42K"
-                  value={form.salaryRange ?? ""}
-                  onChange={(e) => setForm({ ...form, salaryRange: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  type="date"
-                  value={form.appliedAt ?? ""}
-                  onChange={(e) => setForm({ ...form, appliedAt: e.target.value || null })}
-                  style={inputStyle}
-                />
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value as JobAppStatus })}
-                  style={inputStyle}
-                >
-                  {STATUS_ORDER.map((s) => (
-                    <option key={s} value={s}>
-                      {APP_STATUS_META[s].label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <input
-                placeholder="下一步动作（如 9/12 前发感谢信）"
-                value={form.nextAction ?? ""}
-                onChange={(e) => setForm({ ...form, nextAction: e.target.value })}
-                style={inputStyle}
-              />
-              <div className="flex" style={{ gap: 10, justifyContent: "flex-end" }}>
-                <button
-                  onClick={handleCreate}
-                  disabled={busy}
-                  style={{
-                    padding: "8px 20px",
-                    borderRadius: "var(--radius-pill)",
-                    border: "none",
-                    background: "var(--color-primary)",
-                    color: "#fff",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: busy ? "not-allowed" : "pointer",
-                    opacity: busy ? 0.6 : 1,
-                  }}
-                >
-                  {busy ? "添加中…" : "添加记录"}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {/* List */}
-          <div className="flex flex-col" style={{ gap: 8 }}>
-            {apps.length === 0 ? (
-              <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>暂无投递记录，点击「＋ 新增投递」开始跟踪。</p>
-            ) : (
-              apps.map((a) => {
-                const meta = APP_STATUS_META[a.status];
-                return (
-                  <div
-                    key={a.id}
-                    className="flex items-center"
-                    style={{
-                      gap: 12,
-                      padding: "12px 14px",
-                      border: "1px solid var(--color-hairline-soft)",
-                      borderRadius: "var(--radius-item-md)",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div className="flex flex-col" style={{ gap: 2, minWidth: 180, flex: 1 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>
-                        {a.company}
-                      </span>
-                      <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
-                        {a.role}
-                        {a.salaryRange ? ` · ${a.salaryRange}` : ""}
-                      </span>
-                    </div>
-                    <Pill label={TRACK_LABEL[a.track] || a.track} color="var(--color-ink-48)" soft="var(--color-zinc-100)" />
-                    {a.appliedAt ? (
-                      <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{a.appliedAt}</span>
-                    ) : null}
-                    {a.nextAction ? (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "var(--color-amber-deep)",
-                          flex: "1 1 160px",
-                          minWidth: 120,
-                        }}
-                      >
-                        → {a.nextAction}
-                      </span>
-                    ) : null}
-                    <span
-                      style={{
-                        padding: "3px 10px",
-                        borderRadius: "var(--radius-pill)",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: meta.color,
-                        background: meta.soft,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {meta.label}
-                    </span>
-                    <select
-                      value={a.status}
-                      onChange={(e) => handleStatusChange(a.id, e.target.value as JobAppStatus)}
-                      style={{ ...inputStyle, width: 110, padding: "4px 8px", fontSize: 12 }}
-                    >
-                      {STATUS_ORDER.map((s) => (
-                        <option key={s} value={s}>
-                          {APP_STATUS_META[s].label}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => handleDelete(a.id)}
-                      title="删除"
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        color: "var(--color-ink-48)",
-                        cursor: "pointer",
-                        fontSize: 16,
-                        lineHeight: 1,
-                        padding: "2px 6px",
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })
-            )}
           </div>
         </div>
 
         <footer style={{ fontSize: 12, color: "var(--color-ink-48)", textAlign: "center", paddingTop: 8 }}>
-          Career OS · 求职作战看板 · 数据来自 /api/job-hunt 与 /api/job-applications
+          Career OS · 求职作战看板 · 数据来自 /api/job-hunt
         </footer>
       </div>
     </div>
@@ -803,16 +537,85 @@ export default function JobsBoard({ board }: Props) {
 
 /* ───────────────────────── 子组件（同文件内联） ───────────────────────── */
 
-const inputStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  borderRadius: "var(--radius-item-sm)",
-  border: "1px solid var(--color-hairline)",
-  background: "var(--color-card)",
-  fontSize: 13,
-  color: "var(--color-ink)",
-  outline: "none",
-  minWidth: 140,
-};
+/** 任务口径说明 + 「已排除任务」查看入口。 */
+function TaskScopeNote({
+  scope,
+  unclassified,
+  frozenItems,
+}: {
+  scope: TaskScopeSummary;
+  unclassified: number;
+  frozenItems: ScopedTaskRef[];
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!scope.scopeReason && unclassified === 0 && frozenItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col" style={{ gap: 8, marginBottom: 12 }}>
+      {scope.scopeReason ? (
+        <p style={{ fontSize: 12, color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+          {scope.scopeReason}
+        </p>
+      ) : null}
+
+      {unclassified > 0 ? (
+        <p style={{ fontSize: 12, color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+          另有 {unclassified} 条任务未归类赛道（历史 / 手写任务），仍列在下方。
+        </p>
+      ) : null}
+
+      {frozenItems.length > 0 ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setIsExpanded((previous) => !previous)}
+            aria-expanded={isExpanded}
+            style={{
+              alignSelf: "flex-start",
+              padding: "5px 12px",
+              borderRadius: "var(--radius-pill)",
+              border: "1px solid var(--color-hairline)",
+              background: "transparent",
+              color: "var(--color-ink-48)",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {isExpanded ? "收起已排除任务" : `查看已排除的 ${frozenItems.length} 条冻结赛道任务`}
+          </button>
+
+          {isExpanded ? (
+            <div className="flex flex-col" style={{ gap: 6 }}>
+              {frozenItems.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center"
+                  style={{ gap: 10, justifyContent: "space-between" }}
+                >
+                  <span style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+                    {task.title}
+                  </span>
+                  <Pill
+                    label="冻结 · 不计入"
+                    color="var(--color-ink-48)"
+                    soft="var(--color-zinc-100)"
+                  />
+                </div>
+              ))}
+              <span style={{ fontSize: 11, color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+                这些任务只是不进默认统计与今日推荐，记录本身完整保留，随时可在任务页查看。
+              </span>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
 
 function TargetRoleCard({ role }: { role: TargetRole }) {
   const pri = PRIORITY_META[role.priority] ?? PRIORITY_META["保底"];
@@ -826,7 +629,6 @@ function TargetRoleCard({ role }: { role: TargetRole }) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        // 冻结赛道（长期观察）：仍展示匹配度，但视觉降权，避免误当成今日重点
         opacity: role.frozen ? 0.62 : 1,
       }}
     >

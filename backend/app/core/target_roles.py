@@ -20,6 +20,18 @@
 
 这样具身方向的已有积累（SO101、ROS2 demo、Mujoco 控制）仍是简历里的
 工程能力旁证，但不会被系统当成"今天的待办"推给你。
+
+================================================================================
+2026-09-18 战略再调整 v3.0（主线收敛为 Post-Training）
+================================================================================
+依据岗位面现状与本人底牌（RAG/文档解析/合规 badcase = 后训练的数据与评测能力），
+主轴由「LLM+VLM」收敛为 **Post-Training / 大模型后训练**：
+- llm 赛道改名「大模型后训练 / Post-Training 算法工程师」（主攻），
+  要求技能补 DPO / RLHF / GRPO（偏好优化与强化学习后训练）
+- vlm 降级为「模型方向」：Post-Training 内的多模态分支，不再独立成 hedge
+- ai-algo（保底）不变，承载 AI Infra / Inference 增强
+- embodied 维持 frozen（VLA / Robot Learning 是 on-job 长期目标，不是 30 天内容）
+- 贯穿式项目由 Mini-VLM 升级为 **Mini Post-Training Lab**（SFT→LoRA→DPO→Eval→Badcase→VLM SFT→Inference）
 """
 
 from __future__ import annotations
@@ -49,25 +61,28 @@ class TargetRole:
 TARGET_ROLES: list[TargetRole] = [
     TargetRole(
         key="llm",
-        name="LLM / 大模型算法工程师",
+        name="大模型后训练 / Post-Training 算法工程师",
         priority="主攻",
         salary_range="36-45K",
-        note="30 天冲刺核心盘：Transformer→SFT→LoRA/QLoRA→KV Cache→vLLM 必须能讲透",
+        note="v3.0 主轴：Post-Training 横向能力（SFT→DPO→RL），VLM 是其模型分支；"
+             "Transformer→SFT→LoRA/QLoRA→DPO/GRPO→Eval 必须能讲透并做过实验",
         required_skills=[
             "Transformer", "Attention", "Pretraining", "SFT",
-            "LoRA/QLoRA", "PyTorch", "Python", "Deep Learning",
+            "LoRA/QLoRA", "DPO", "RLHF", "GRPO",
+            "PyTorch", "Python", "Deep Learning",
         ],
         required_level=4,
     ),
     TargetRole(
         key="vlm",
-        name="多模态 / VLM 算法工程师",
+        name="多模态 / VLM（Post-Training 模型方向）",
         priority="卡位",
         salary_range="36-45K",
-        note="差异化 + 长期方向：ViT / CLIP / 对齐 / Projector 讲清楚，配一次小型 VLM LoRA 微调",
+        note="v3.0 改为模型方向：VLM 是 Post-Training 的多模态分支，不是独立 hedge；"
+             "ViT / CLIP / 对齐 / Projector 讲清楚，配 Mini Post-Training Lab 的 VLM SFT 子实验",
         required_skills=[
             "ViT", "Multimodal Alignment", "VLM",
-            "LoRA/QLoRA", "PyTorch", "Python",
+            "LoRA/QLoRA", "DPO", "PyTorch", "Python",
         ],
         required_level=4,
     ),

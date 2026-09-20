@@ -11,6 +11,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.task import TaskOut
+from app.schemas.task_scope import ScopedTaskRef, TaskScopeOut
 
 
 class PlanDayOut(BaseModel):
@@ -111,9 +112,16 @@ class TodayView(BaseModel):
     is_before_start: bool
     is_after_end: bool
 
-    # 今日任务（tasks.plan_day_id == day.id）
+    # 今日任务（tasks.plan_day_id == day.id 且 source != 'test'，再过赛道口径）
     tasks: list[TaskOut] = []
     completed_tasks: int = 0
+
+    # 任务赛道口径（Milestone B）：与 /api/job-hunt 共用同一服务，
+    # 因此"今日任务数为什么比库里的少"与看板给出的是同一句解释。
+    # 默认 None 只为向后兼容（老调用方不传也能构造）。
+    task_scope: TaskScopeOut | None = None
+    # 被口径排除、因而**不在** tasks 里的任务（PRD F5.3 隐藏不等于删除，可查看）
+    excluded_tasks: list[ScopedTaskRef] = []
 
     # 四件套状态
     artifacts: list[ArtifactOut] = []

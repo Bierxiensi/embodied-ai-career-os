@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict
+import json
+
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class JobPostingCreate(BaseModel):
@@ -70,6 +72,17 @@ class JobPostingOut(BaseModel):
     """岗位出参（内联匹配结果）。"""
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("required_skills", "dimension_scores", "gaps", mode="before")
+    @classmethod
+    def _parse_json_fields(cls, v):
+        """SQLite JSON columns may come back as strings — parse them."""
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                return v
+        return v
 
     id: int
     company: str

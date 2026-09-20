@@ -70,6 +70,19 @@ def weakness_stats(logs: list[dict]) -> list[WeakItem]:
     return items
 
 
+def _match_skill_name(topic: str) -> str | None:
+    """尝试把弱项文本匹配到规范技能名（大小写不敏感）。"""
+    try:
+        from app.core.skill_profile import SKILL_PROFILE
+        topic_lower = topic.strip().lower()
+        for name in SKILL_PROFILE:
+            if name.lower() == topic_lower:
+                return name
+    except ImportError:
+        pass
+    return None
+
+
 def weak_to_tasks(
     weak_items: list[WeakItem],
     gaps: list[str] | None = None,
@@ -79,6 +92,7 @@ def weak_to_tasks(
     """弱项（+ 知识缺口）→ 学习任务草稿。
 
     取前 limit 条：弱项优先，其次 knowledge_gaps 中未与弱项重复的条目。
+    尝试把弱项文本匹配到规范技能名（skill_name），打通面试→学习→题库闭环。
     """
     topics: list[str] = []
     seen: set[str] = set()
@@ -99,7 +113,7 @@ def weak_to_tasks(
             objective=f"针对面试暴露的弱项「{topic}」做专项补强，能独立讲清原理并给出实践例子",
             duration=duration,
             difficulty="intermediate",
-            skill_name=None,
+            skill_name=_match_skill_name(topic),
             acceptance=[
                 f"能不看资料讲清 {topic} 的核心原理",
                 f"写出一个与 {topic} 相关的最小可运行示例 / 实验",
@@ -113,6 +127,7 @@ def pick_questions(
     items: list[dict],
     category: str | None = None,
     difficulty: str | None = None,
+    skill_name: str | None = None,
     limit: int = 5,
 ) -> list[dict]:
     """从题库抽题。
@@ -121,6 +136,7 @@ def pick_questions(
         items: 每题形如 {"id", "category", "question", "difficulty", "hit_count", ...}
         category: 过滤分类（None 表示不限）
         difficulty: 过滤难度（None 表示不限）
+        skill_name: 过滤关联技能（None 表示不限，精确匹配）
         limit: 最多返回数量
 
     Returns:
@@ -131,6 +147,8 @@ def pick_questions(
         if category and it.get("category") != category:
             continue
         if difficulty and it.get("difficulty") != difficulty:
+            continue
+        if skill_name and it.get("skill_name") != skill_name:
             continue
         pool.append(it)
     # 命中次数少者优先；稳定保持原顺序

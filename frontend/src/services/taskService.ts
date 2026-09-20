@@ -6,7 +6,7 @@
  */
 
 import { apiClient } from "@/lib/apiClient";
-import type { Task, TaskStatus } from "@/types";
+import type { Task, TaskScopeMode, TaskStatus } from "@/types";
 
 /** 后端 Task 响应原始结构（snake_case）。 */
 export interface TaskDTO {
@@ -57,17 +57,28 @@ export function toTask(dto: TaskDTO): Task {
 export interface TaskQuery {
   /** 按项目过滤 */
   projectId?: string;
-  /** 按赛道过滤（看板视角）—— 传了就只返回该赛道的任务 */
+  /** 按赛道过滤 —— **显式**的赛道查询（例如"查看某赛道的全部任务"）。
+   * 这是查询条件，不代表"当前看哪个视角"：
+   * **禁止**用 ViewRole 推导出它去请求任务列表（Milestone B 契约）。 */
   trackKey?: string | null;
   /** 赛道过滤时是否一并带上未归类（历史 / 手写）任务 */
   includeUntracked?: boolean;
+  /** 范围口径：
+   * - `all`（默认）：原始全量，不施加阶段口径
+   * - `current_mode`：平台默认视图口径，由当前 CareerMode 决定，与 /jobs、/today 同源
+   * 只随 CareerMode 变化，不得由 ViewRole 推导。 */
+  scope?: TaskScopeMode;
 }
 
 /** 获取任务列表。
  *
- * `trackKey` 用于让任务列表跟随看板视角：
- *   求职冲刺视角 → track_key=llm，具身视角 → track_key=embodied。
- * 不传则返回全量（"全部任务池"口径）。
+ * `scope` 决定"要哪个范围"（见 TaskScopeMode）；不传即原始全量。
+ * `trackKey` 是显式的赛道查询条件，与视角无关。
+ *
+ * 历史修正（2026-09-10 的注释曾写"trackKey 用于让任务列表跟随看板视角：
+ * 求职冲刺 → llm、具身 → embodied"）：那句说明把**展示视角**当成了**任务策略**，
+ * 已被 Milestone B 收尾推翻。任务范围只能由 CareerMode 决定；
+ * 视角切换不得改变这里的请求参数（见 docs/PRD_CAREER_OS_MODES.md §5 F5）。
  */
 export async function getTasks(
   query: TaskQuery | string = {}
@@ -79,6 +90,7 @@ export async function getTasks(
   if (q.projectId) params.set("project_id", q.projectId);
   if (q.trackKey) params.set("track_key", q.trackKey);
   if (q.includeUntracked) params.set("include_untracked", "true");
+  if (q.scope && q.scope !== "all") params.set("scope", q.scope);
 
   const qs = params.toString();
   const dtos = await apiClient.get<TaskDTO[]>(`/api/tasks${qs ? `?${qs}` : ""}`);

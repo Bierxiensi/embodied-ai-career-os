@@ -36,6 +36,7 @@ from app.schemas.interview import (
     InterviewLogOut,
     InterviewQuestionCreate,
     InterviewQuestionOut,
+    InterviewQuestionPatch,
     QuestionCoverageOut,
     SimulateIn,
     TaskDraftOut,
@@ -166,25 +167,34 @@ def interview_to_tasks(log_id: int, payload: ToTasksIn, db: Session = Depends(ge
 def list_questions(
     category: str | None = None,
     difficulty: str | None = None,
+    source: str | None = None,
+    skill_name: str | None = None,
     db: Session = Depends(get_db),
 ):
-    """题库（可按分类 / 难度过滤）。"""
+    """题库（可按分类 / 难度 / 来源 / 技能过滤）。"""
     q = db.query(InterviewQuestion)
     if category:
         q = q.filter(InterviewQuestion.category == category)
     if difficulty:
         q = q.filter(InterviewQuestion.difficulty == difficulty)
+    if source:
+        q = q.filter(InterviewQuestion.source == source)
+    if skill_name:
+        q = q.filter(InterviewQuestion.skill_name == skill_name)
     rows = q.order_by(InterviewQuestion.category, InterviewQuestion.id).all()
     return ok([InterviewQuestionOut.model_validate(r).model_dump() for r in rows])
 
 
 @router.get("/interview-questions/coverage")
 def question_coverage(
-    track_key: str | None = None, db: Session = Depends(get_db)
+    track_key: str | None = None,
+    extra_skills: str | None = None,
+    db: Session = Depends(get_db),
 ):
     """题库覆盖率矩阵（P3 · 决策 5）：回答「缺口在哪」。
 
     矩阵行 = 目标赛道的硬性要求技能（`track_key` 指定，缺省取「主攻」赛道）
+    ∪ extra_skills（逗号分隔，用于合并 JD 要求的额外技能）
     ∪ 题库里已出现过的 `skill_name`；列为四个分类，**红格 = 该 (技能, 分类) 一题为 0**。
 
     分类目标见 engine.QUESTION_CATEGORY_TARGETS（累计 150，核心必达 80）。
@@ -200,6 +210,15 @@ def question_coverage(
         )
     skills = list(track.required_skills) if track else []
 
+    # 合并 JD 额外技能（去重追加）
+    if extra_skills:
+        seen = {s.lower() for s in skills}
+        for s in extra_skills.split(","):
+            s = s.strip()
+            if s and s.lower() not in seen:
+                skills.append(s)
+                seen.add(s.lower())
+
     rows = db.query(InterviewQuestion).all()
     questions = [{"category": r.category, "skill_name": r.skill_name} for r in rows]
     data = coverage_matrix(questions, skills)
@@ -212,7 +231,18 @@ def create_question(payload: InterviewQuestionCreate, db: Session = Depends(get_
 
     P2：可携带 source_day_seq / skill_name / is_verified，
     用于「四件套 questions 由题库当日条数自动判定」与 evidence-gated 晋级。
+    skill_name 会尝试匹配规范技能名（大小写不敏感），匹配不上原样保留。
     """
+    # 归一化 skill_name：尝试匹配规范名
+    skill_name = payload.skill_name
+    if skill_name:
+        from app.core.skill_profile import SKILL_PROFILE
+        skill_lower = skill_name.strip().lower()
+        for canonical in SKILL_PROFILE:
+            if canonical.lower() == skill_lower:
+                skill_name = canonical
+                break
+
     q = InterviewQuestion(
         category=payload.category,
         question=payload.question,
@@ -220,7 +250,7 @@ def create_question(payload: InterviewQuestionCreate, db: Session = Depends(get_
         answer_outline=payload.answer_outline,
         source=payload.source,
         source_day_seq=payload.source_day_seq,
-        skill_name=payload.skill_name,
+        skill_name=skill_name,
         is_verified=payload.is_verified,
         hit_count=0,
     )
@@ -240,11 +270,24 @@ def delete_question(question_id: int, db: Session = Depends(get_db)):
     return ok(None, "已删除题目")
 
 
+@router.patch("/interview-questions/{question_id}")
+def patch_question(question_id: int, payload: InterviewQuestionPatch, db: Session = Depends(get_db)):
+    """更新题目（标记已练习 / 已验证 / 改分类等）。"""
+    q = db.query(InterviewQuestion).filter(InterviewQuestion.id == question_id).first()
+    if not q:
+        raise HTTPException(status_code=404, detail="题目不存在")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(q, field, value)
+    db.commit()
+    db.refresh(q)
+    return ok(InterviewQuestionOut.model_validate(q).model_dump(), "已更新")
+
+
 # ───────────────────────────── 模拟抽题 ─────────────────────────────
 
 @router.post("/interview/simulate")
 def simulate(payload: SimulateIn, db: Session = Depends(get_db)):
-    """模拟面试抽题（纯规则）：按分类 / 难度抽 limit 道，命中次数少者优先。"""
+    """模拟面试抽题（纯规则）：按分类 / 难度 / 技能抽题，命中次数少者优先。"""
     rows = db.query(InterviewQuestion).all()
     items = [
         {
@@ -254,6 +297,7 @@ def simulate(payload: SimulateIn, db: Session = Depends(get_db)):
             "difficulty": r.difficulty,
             "answer_outline": r.answer_outline,
             "source": r.source,
+            "skill_name": r.skill_name,
             "hit_count": r.hit_count,
         }
         for r in rows
@@ -262,6 +306,7 @@ def simulate(payload: SimulateIn, db: Session = Depends(get_db)):
         items,
         category=payload.category,
         difficulty=payload.difficulty,
+        skill_name=payload.skill_name,
         limit=payload.limit,
     )
 

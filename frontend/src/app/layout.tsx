@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import GlobalNav from "@/components/GlobalNav";
+import SectionNav from "@/components/SectionNav";
+import { CareerModeProvider } from "@/lib/careerModeContext";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,7 +40,10 @@ export default function RootLayout({
         className="flex min-h-full flex-col"
         style={{ background: "var(--color-canvas)" }}
       >
-        <GlobalNav />
+        <CareerModeProvider>
+          <GlobalNav />
+          <SectionNav />
+        </CareerModeProvider>
         <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>

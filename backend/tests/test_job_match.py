@@ -133,3 +133,42 @@ def test_jd_parser_extracts_known_skills():
 def test_jd_parser_empty_text():
     assert JDParser.parse_required_skills("") == []
     assert JDParser.parse_required_skills(None) == []
+
+
+# ============================================================
+# 别名表防误判（2026-09-11 修正回归）
+# ============================================================
+# 背景：别名表是「小写子串命中」，过宽的别名会把毫不相干的描述误判成技能。
+# 实测某 JD（知识图谱 / 标准文本方向）因裸 "对齐" 别名，把"语义对齐 / 实体对齐"
+# 误判成 Multimodal Alignment，凭空多出一条 gap=3 的缺口；裸 "zero" 则会把
+# 英文 zero-shot 误判成 FSDP/ZeRO 并行。两处别名已收窄。
+
+def test_jd_parser_ignores_semantic_alignment():
+    """知识图谱语境的"对齐"不应被当成多模态对齐。"""
+    found = JDParser.parse_required_skills(
+        "实现实体对齐与关系推理，建立跨文档的统一语义对齐标准，构建知识图谱。"
+    )
+    assert "Multimodal Alignment" not in found
+
+
+def test_jd_parser_ignores_bare_zero():
+    """英文 zero-shot / zero-cost 不应被当成 ZeRO 并行。"""
+    found = JDParser.parse_required_skills("支持 zero-shot 与少样本场景，zero cost 部署。")
+    assert "FSDP/ZeRO" not in found
+
+
+def test_jd_parser_still_captures_real_multimodal_alignment():
+    """收窄后，真正的多模态对齐仍要能抽到（不能把功能修没了）。"""
+    found = JDParser.parse_required_skills("做过多模态对齐与跨模态对齐，理解 vision-language 空间。")
+    assert "Multimodal Alignment" in found
+
+
+def test_jd_parser_captures_chinese_aliases():
+    """中文写法此前整类漏抽：注意力机制 / 分布式训练。"""
+    found = JDParser.parse_required_skills(
+        "熟练掌握 Transformer、MoE 架构及注意力机制变种；熟悉分布式训练与模型压缩。"
+    )
+    assert "Attention" in found
+    assert "Distributed Training" in found
+    assert "Transformer" in found
+    assert "MoE" in found

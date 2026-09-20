@@ -1,0 +1,22 @@
+-- 0018_career_modes_current_unique.sql
+--
+-- 保证「至多一个当前模式」：career_modes 上 is_current 的部分唯一索引。
+--
+-- 为什么必须有这条索引：
+--   读取当前模式时若有两行 is_current 为真，代码的 .first() 会静默挑一条，
+--   页面显示的模式与库里真实状态不一致却毫无提示。加唯一索引后这种状态
+--   根本无法写入，问题在写入那一刻就暴露。
+--
+-- 为什么必须单独一条迁移，而不能只依赖 ORM 的 __table_args__：
+--   create_all 的 checkfirst 只判断**表**是否存在，表已存在就整表跳过
+--   （连带跳过它的索引）。开发库里 career_modes 由 0016 建出，若不在
+--   这里补索引，索引就永远不存在。这里补上后，两条路径（迁移建表 /
+--   create_all 建表）的最终结构一致。
+--
+-- 幂等：CREATE UNIQUE INDEX IF NOT EXISTS，重复执行无副作用。
+-- SQLite 与 PostgreSQL 均支持部分索引，TRUE 在两者中都可用
+-- （SQLite 3.23+ 起 TRUE 是 1 的关键字别名）。
+--
+-- ⚠️ 本文件里不要出现分号 —— 见 0016 的说明。
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_career_modes_current ON career_modes (is_current) WHERE is_current = TRUE;
