@@ -18,6 +18,8 @@
 
 import PageHeader from "@/components/PageHeader";
 import TodayBoard from "@/components/TodayBoard";
+import RiskRadar from "@/components/RiskRadar";
+import RoiTaskList from "@/components/RoiTaskList";
 import { ApiError } from "@/lib/apiClient";
 import { getToday } from "@/services/planService";
 
@@ -49,7 +51,13 @@ export default async function TodayPage({ searchParams }: PageProps) {
             title="今天干什么"
             subtitle="每天必须留下四样东西：一段代码、一页笔记、至少 5 道面试题、一次 commit。"
           />
+          {/* Phase 2：七维风险雷达（老响应无 risk 时跳过，向后兼容） */}
+          {today.risk ? <RiskRadar risk={today.risk} /> : null}
           <TodayBoard today={today} />
+          {/* Phase 2：今日 ROI 排名 Top5（老响应无 roiRankedTasks 时跳过） */}
+          {today.roiRankedTasks && today.roiRankedTasks.length > 0 ? (
+            <RoiTaskList tasks={today.roiRankedTasks} />
+          ) : null}
         </div>
       </main>
     );

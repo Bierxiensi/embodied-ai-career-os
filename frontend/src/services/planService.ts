@@ -18,6 +18,8 @@ import type {
   PlanDay,
   PlanDayStatus,
   PlanOverview,
+  RiskOut,
+  RoiTask,
   TodayView,
 } from "@/types";
 import { toTask, type TaskDTO } from "./taskService";
@@ -77,6 +79,25 @@ interface TodayDTO {
   /** Milestone B：与 /api/job-hunt 同源的任务赛道口径（可选，向后兼容） */
   task_scope?: TaskScopeDTO | null;
   excluded_tasks?: ScopedTaskRefDTO[];
+
+  /** Phase 2：七维风险雷达（可选，向后兼容老响应） */
+  risk?: {
+    dimensions: {
+      key: string;
+      label: string;
+      level: "green" | "amber" | "red";
+      reason: string;
+    }[];
+    overall_level: "green" | "amber" | "red";
+  } | null;
+  /** Phase 2：ROI 排名 Top5 任务（可选，向后兼容老响应） */
+  roi_ranked_tasks?: {
+    task_id: string;
+    title: string;
+    skill_name: string | null;
+    roi: number;
+    reasons: string[];
+  }[];
 }
 
 function toPlanDay(dto: PlanDayDTO): PlanDay {
@@ -130,6 +151,27 @@ function toToday(dto: TodayDTO): TodayView {
     // 不在这里各写一遍（后端也只有一份判定，前端也只有一份搬运）。
     taskScope: dto.task_scope ? toScopeSummary(dto.task_scope) : null,
     excludedTasks: (dto.excluded_tasks ?? []).map(toScopedTaskRef),
+    // Phase 2：风险雷达 + ROI 排名（后端 snake_case → 前端 camelCase）
+    risk: dto.risk
+      ? ({
+          dimensions: (dto.risk.dimensions ?? []).map((d) => ({
+            key: d.key,
+            label: d.label,
+            level: d.level,
+            reason: d.reason,
+          })),
+          overallLevel: dto.risk.overall_level,
+        } satisfies RiskOut)
+      : null,
+    roiRankedTasks: (dto.roi_ranked_tasks ?? []).map(
+      (t): RoiTask => ({
+        taskId: String(t.task_id),
+        title: t.title,
+        skillName: t.skill_name ?? null,
+        roi: t.roi,
+        reasons: t.reasons ?? [],
+      })
+    ),
   };
 }
 

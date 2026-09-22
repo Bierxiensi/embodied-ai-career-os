@@ -36,6 +36,7 @@ from app.api.plan import router as plan_router
 from app.api.planner import router as planner_router
 from app.api.projects import router as projects_router
 from app.api.reviewer import router as reviewer_router
+from app.api.risk import router as risk_router
 from app.api.skills import router as skills_router
 from app.api.tasks import router as tasks_router
 from app.api.tools import router as tools_router
@@ -110,6 +111,7 @@ app.include_router(reports_router, prefix=api_prefix)
 # 30 天施工执行台：课程脊梁 + 今日施工单 + 四件套（见 docs/platform-direction-30day.md）
 app.include_router(experiments_router, prefix=api_prefix)
 app.include_router(plan_router, prefix=api_prefix)
+app.include_router(risk_router, prefix=api_prefix)
 
 
 @app.get("/health")

@@ -10,6 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.schemas.risk import RiskOut, RoiTaskOut
 from app.schemas.task import TaskOut
 from app.schemas.task_scope import ScopedTaskRef, TaskScopeOut
 
@@ -132,6 +133,12 @@ class TodayView(BaseModel):
 
     # 总账（跨全部 30 天累计）
     ledger: list[LedgerItem] = []
+
+    # Phase 2：七维风险雷达（纯规则；llm 未配置时也可计算）
+    # 默认 None 仅为向后兼容（老调用方不传也能构造）
+    risk: RiskOut | None = None
+    # Phase 2：当日任务 ROI Top5 排序（附加视图，不改 tasks 原有排序）
+    roi_ranked_tasks: list[RoiTaskOut] = []
 
 
 class DayProgressOut(BaseModel):

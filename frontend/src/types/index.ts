@@ -1029,6 +1029,33 @@ export interface LedgerItem {
   target: number;
 }
 
+/** Phase 2 风险雷达：单个维度的评估结论。 */
+export interface RiskDimension {
+  key: string;
+  label: string;
+  /** green | amber | red —— 与后端硬编码阈值同源。 */
+  level: "green" | "amber" | "red";
+  /** 维度命中的具体原因（后端已写入中文说明）。 */
+  reason: string;
+}
+
+/** Phase 2 风险雷达：七个维度 + 综合等级（取最差维度）。 */
+export interface RiskOut {
+  dimensions: RiskDimension[];
+  overallLevel: "green" | "amber" | "red";
+}
+
+/** Phase 2 Career ROI：单条任务的投资回报排名项。 */
+export interface RoiTask {
+  taskId: string;
+  title: string;
+  skillName: string | null;
+  /** 0..1.5，两位小数展示。 */
+  roi: number;
+  /** 各维度评分理由（后端已写入中文说明）。 */
+  reasons: string[];
+}
+
 /** 今日施工单视图（GET /api/plan/today）。
  * 回答三个问题：今天第几天、今天干什么、今天做完没有。 */
 export interface TodayView {
@@ -1064,6 +1091,11 @@ export interface TodayView {
 
   /** 总账（跨全部 30 天累计） */
   ledger: LedgerItem[];
+
+  /** Phase 2：七维风险雷达（可选，向后兼容老响应）。 */
+  risk?: RiskOut | null;
+  /** Phase 2：ROI 排名 Top5 任务（可选，向后兼容老响应）。 */
+  roiRankedTasks?: RoiTask[];
 }
 
 /** 一天课程的进度状态（GET /api/plan/overview 的 days[] 元素）。 */

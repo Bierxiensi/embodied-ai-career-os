@@ -36,8 +36,10 @@ from sqlalchemy.orm import Session
 
 from app.core.github_client import fetch_github_commits
 from app.core.response import ApiResponse, ok
-from app.core.target_roles import SPRINT_END, SPRINT_START
+from app.core.target_roles import SPRINT_END, SPRINT_START, TARGET_ROLES
 from app.db.base import get_db
+from app.api.risk import build_risk_result
+from app.core.career_roi import compute_task_roi
 from app.models.day_artifact import (
     ARTIFACT_KIND_COMMIT,
     ARTIFACT_KIND_QUESTIONS,
@@ -54,6 +56,7 @@ from app.models.day_progress import (
 )
 from app.models.interview_question import InterviewQuestion
 from app.models.plan_day import PlanDay
+from app.models.skill import Skill
 from app.models.task import Task
 from app.schemas.plan import (
     ArtifactCreate,
@@ -66,6 +69,7 @@ from app.schemas.plan import (
     ProgressUpdate,
     TodayView,
 )
+from app.schemas.risk import RiskOut, RoiTaskOut
 from app.schemas.task import TaskOut
 from app.schemas.task_scope import to_scoped_task_ref, to_task_scope_out
 from app.services.action_planning.task_scope import (
@@ -253,6 +257,43 @@ def get_today(
     tasks = list(scoped_tasks.included)
     completed = sum(1 for t in tasks if t.status == "done")
 
+    # Phase 2：七维风险雷达（与 /api/risk 同源，复用 build_risk_result）
+    risk_result = build_risk_result(db, today)
+
+    # Phase 2：当日任务 ROI Top5（附加视图，不改 tasks 原有排序）
+    main_role = next((r for r in TARGET_ROLES if r.priority == "主攻"), None)
+    main_required = (
+        [s.lower() for s in main_role.required_skills] if main_role else []
+    )
+    active_track_keys = scoped_tasks.scope.active_track_keys
+    skill_rows = {s.name.lower(): s for s in db.query(Skill).all()}
+    roi_items: list[RoiTaskOut] = []
+    for t in tasks:
+        sname = t.skill_name
+        srow = skill_rows.get(sname.lower()) if sname else None
+        gap = max(srow.target_level - srow.level, 0) if srow else 0
+        res = compute_task_roi(
+            skill_name=sname,
+            skill_gap=gap,
+            track_keys_active=active_track_keys,
+            main_track_required=main_required,
+            task_source=t.source,
+            duration_minutes=t.duration,
+            track_key=t.track_key,
+        )
+        roi_items.append(
+            RoiTaskOut(
+                task_id=t.id,
+                title=t.title,
+                skill_name=sname,
+                roi=res.roi,
+                reasons=res.reasons,
+            )
+        )
+    # 不改 tasks 原有排序：ROI 列表是独立降序视图，取 Top5
+    roi_items.sort(key=lambda r: r.roi, reverse=True)
+    roi_ranked_tasks = roi_items[:5]
+
     # 四件套状态（手工 artifact 计数）
     artifacts = (
         db.query(DayArtifact)
@@ -342,6 +383,8 @@ def get_today(
             missing_kinds=missing,
             all_done=not missing,
             ledger=ledger,
+            risk=RiskOut(**risk_result.to_dict()),
+            roi_ranked_tasks=roi_ranked_tasks,
         )
     )
 
