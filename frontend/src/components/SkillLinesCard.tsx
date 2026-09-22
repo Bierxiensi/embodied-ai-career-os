@@ -94,7 +94,7 @@ export default function SkillLinesCard({ report }: Props) {
               style={{
                 gap: 8,
                 padding: "12px 14px",
-                background: "#FAFAFB",
+                background: "var(--color-item-bg)",
                 borderRadius: "var(--radius-item-md)",
               }}
             >
@@ -131,7 +131,7 @@ export default function SkillLinesCard({ report }: Props) {
         <div
           style={{
             padding: "14px 16px",
-            background: "#FAFAFB",
+            background: "var(--color-item-bg)",
             borderRadius: "var(--radius-item-md)",
             fontSize: 12,
             color: "var(--color-ink-48)",

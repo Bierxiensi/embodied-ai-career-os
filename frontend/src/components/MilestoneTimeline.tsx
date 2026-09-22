@@ -107,7 +107,7 @@ export default function MilestoneTimeline({
             style={{
               gap: 10,
               padding: "14px 16px",
-              background: isActive ? "var(--color-primary-soft)" : "#FAFAFB",
+              background: isActive ? "var(--color-primary-soft)" : "var(--color-item-bg)",
               border: `1px solid ${isActive ? style.border : "var(--color-hairline)"}`,
               borderRadius: "var(--radius-item-md)",
             }}

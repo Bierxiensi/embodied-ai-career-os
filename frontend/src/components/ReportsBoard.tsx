@@ -52,7 +52,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: "var(--radius-pill)",
   border: "none",
   background: "var(--color-primary)",
-  color: "#fff",
+  color: "var(--color-on-primary)",
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
@@ -267,7 +267,7 @@ export default function ReportsBoard({
             <StatCard
               label="周报"
               value={`${WEEKDAY_LABEL[schedule.weeklyDay] || schedule.weeklyDay} ${schedule.weeklyTime}`}
-              color="#8B5CF6"
+              color="var(--color-violet)"
             />
             <StatCard label="跟进提醒" value={schedule.followupTime} color="var(--color-amber)" />
             <StatCard label="停滞阈值" value={`${schedule.followupStaleDays} 天`} color="var(--color-ink-48)" />

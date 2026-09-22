@@ -22,7 +22,7 @@ const STATUS_META: Record<DayProgressStatus, { label: string; bg: string; fg: st
   done: { label: "完成", bg: "var(--color-emerald-soft)", fg: "var(--color-emerald-deep)" },
   compressed: { label: "压缩通过", bg: "var(--color-primary-soft)", fg: "var(--color-primary)" },
   deferred: { label: "已顺延", bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-  skipped: { label: "已放弃", bg: "#FEF2F2", fg: "var(--color-rose-deep)" },
+  skipped: { label: "已放弃", bg: "var(--color-rose-soft)", fg: "var(--color-rose-deep)" },
 };
 
 /** 三个滑期决策：状态 + 默认偏离说明（落 deviation_note）。 */
@@ -220,7 +220,7 @@ function DayCard({ day }: { day: PlanDayStatus }) {
       style={{
         gap: 10,
         padding: "12px 14px",
-        background: day.isMissed ? "#FEF7F2" : "#FAFAFB",
+        background: day.isMissed ? "#FEF7F2" : "var(--color-item-bg)",
         border: day.isMissed
           ? "1px solid var(--color-amber)"
           : "1px solid var(--color-hairline)",
@@ -295,7 +295,7 @@ function DayCard({ day }: { day: PlanDayStatus }) {
                     cursor: pending ? "wait" : "pointer",
                     background:
                       choice === dec.status ? "var(--color-primary)" : "var(--color-card)",
-                    color: choice === dec.status ? "#FFFFFF" : "var(--color-ink-48)",
+                    color: choice === dec.status ? "var(--color-on-primary)" : "var(--color-ink-48)",
                     border:
                       choice === dec.status
                         ? "none"
@@ -331,7 +331,7 @@ function DayCard({ day }: { day: PlanDayStatus }) {
                   padding: "6px 14px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--color-primary)",
-                  color: "#FFFFFF",
+                  color: "var(--color-on-primary)",
                   cursor: pending || choice === null ? "wait" : "pointer",
                   opacity: pending || choice === null ? 0.6 : 1,
                 }}
@@ -405,7 +405,7 @@ function DayCard({ day }: { day: PlanDayStatus }) {
 function Notice({ tone, children }: { tone: "amber" | "rose"; children: ReactNode }) {
   const map = {
     amber: { bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-    rose: { bg: "#FEF2F2", fg: "var(--color-rose-deep)" },
+    rose: { bg: "var(--color-rose-soft)", fg: "var(--color-rose-deep)" },
   } as const;
   const c = map[tone];
   return (

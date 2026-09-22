@@ -8,7 +8,7 @@ const thStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 600,
   whiteSpace: "nowrap",
-  background: "#FAFAFB",
+  background: "var(--color-item-bg)",
 };
 
 const tdStyle: React.CSSProperties = {

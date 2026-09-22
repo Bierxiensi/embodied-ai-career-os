@@ -114,7 +114,7 @@ export default function TaskList({
               padding: "5px 10px",
               borderRadius: "var(--radius-pill)",
               cursor: "pointer",
-              background: viewFilterOn ? "var(--color-primary-soft)" : "#F4F4F5",
+              background: viewFilterOn ? "var(--color-primary-soft)" : "var(--color-zinc-100)",
               color: viewFilterOn ? "var(--color-primary)" : "var(--color-ink-48)",
             }}
           >

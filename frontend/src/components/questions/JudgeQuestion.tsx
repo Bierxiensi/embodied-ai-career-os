@@ -36,7 +36,7 @@ export default function JudgeQuestion({ question, onAnswer, disabled }: Props) {
                 padding: "14px 20px",
                 borderRadius: 8,
                 border: `2px solid ${isSelected ? (v === "正确" ? "#22c55e" : "#ef4444") : "#e5e7eb"}`,
-                background: isSelected ? (v === "正确" ? "#f0fdf4" : "#fef2f2") : "white",
+                background: isSelected ? (v === "正确" ? "#f0fdf4" : "var(--color-rose-soft)") : "white",
                 cursor: disabled ? "default" : "pointer",
                 fontSize: 16,
                 fontWeight: 600,

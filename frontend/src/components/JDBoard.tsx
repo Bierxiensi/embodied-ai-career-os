@@ -20,14 +20,14 @@ import {
 
 const GRADE_META: Record<MatchGrade, { label: string; color: string; soft: string }> = {
   A: { label: "A · 强匹配", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  B: { label: "B · 正常投", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
+  B: { label: "B · 正常投", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
   C: { label: "C · 练手", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
   D: { label: "D · 不推荐", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
 };
 
 const TIER_META: Record<number, { label: string; color: string; soft: string }> = {
   1: { label: "主攻", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
-  2: { label: "卡位", color: "#8B5CF6", soft: "rgba(139,92,246,0.12)" },
+  2: { label: "卡位", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
   3: { label: "保底", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
 };
 
@@ -283,7 +283,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                 borderRadius: "var(--radius-pill)",
                 border: "1px solid var(--color-primary)",
                 background: showForm ? "var(--color-primary)" : "transparent",
-                color: showForm ? "#fff" : "var(--color-primary)",
+                color: showForm ? "var(--color-on-primary)" : "var(--color-primary)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -384,7 +384,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                     borderRadius: "var(--radius-pill)",
                     border: "none",
                     background: "var(--color-primary)",
-                    color: "#fff",
+                    color: "var(--color-on-primary)",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: busy ? "not-allowed" : "pointer",

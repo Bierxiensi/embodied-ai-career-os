@@ -18,16 +18,16 @@ const APP_STATUS_META: Record<
   { label: string; color: string; soft: string }
 > = {
   applied: { label: "已投递", color: "var(--color-ink-48)", soft: "var(--color-zinc-100)" },
-  screening: { label: "筛选中", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
-  interview: { label: "面试中", color: "#8B5CF6", soft: "rgba(139,92,246,0.12)" },
+  screening: { label: "筛选中", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
+  interview: { label: "面试中", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
   offer: { label: "已拿offer", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
   rejected: { label: "已挂", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
 };
 
 const PRIORITY_META: Record<string, { label: string; color: string; soft: string }> = {
   主攻: { label: "主攻", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
-  卡位: { label: "卡位", color: "#8B5CF6", soft: "rgba(139,92,246,0.12)" },
-  折中: { label: "折中", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
+  卡位: { label: "卡位", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
+  折中: { label: "折中", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
   保底: { label: "保底", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
   暂缓: { label: "暂缓 · 不投入", color: "var(--color-ink-48)", soft: "rgba(0,0,0,0.05)" },
 };
@@ -44,7 +44,7 @@ const TRACK_LABEL: Record<string, string> = {
 
 const GRADE_META: Record<string, { label: string; color: string; soft: string }> = {
   A: { label: "A · 强匹配", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  B: { label: "B · 正常投", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
+  B: { label: "B · 正常投", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
   C: { label: "C · 练手", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
   D: { label: "D · 不推荐", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
 };
@@ -397,7 +397,7 @@ export default function JobsBoard({ board }: Props) {
                                 : "var(--color-zinc-100)",
                           color:
                             m.status === "completed" || m.status === "doing" || m.status === "in_progress"
-                              ? "#fff"
+                              ? "var(--color-on-primary)"
                               : "var(--color-ink-48)",
                           fontSize: 11,
                           fontWeight: 700,
@@ -519,8 +519,8 @@ export default function JobsBoard({ board }: Props) {
             style={{ gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))" }}
           >
             <FunnelStat label="已投递" value={funnel.byStatus.applied ?? 0} color="var(--color-ink-48)" />
-            <FunnelStat label="筛选中" value={funnel.byStatus.screening ?? 0} color="#0EA5E9" />
-            <FunnelStat label="面试中" value={funnel.byStatus.interview ?? 0} color="#8B5CF6" />
+            <FunnelStat label="筛选中" value={funnel.byStatus.screening ?? 0} color="var(--color-sky)" />
+            <FunnelStat label="面试中" value={funnel.byStatus.interview ?? 0} color="var(--color-violet)" />
             <FunnelStat label="已拿offer" value={funnel.byStatus.offer ?? 0} color="var(--color-emerald)" />
             <FunnelStat label="已挂" value={funnel.byStatus.rejected ?? 0} color="var(--color-rose)" />
             <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--color-primary)" />

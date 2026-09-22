@@ -33,10 +33,21 @@ function daysToDeadline(deadline: string | null): number | null {
   return Math.ceil((d.getTime() - today.getTime()) / 86400000);
 }
 
+/**
+ * 倒计时标签（三态）。
+ *
+ * 为什么要区分「未录入」与「已过期」：库里现存院校的 deadline 全部落在过去，
+ * 若统一显示"已错过 N 天"，用户无法分辨「这所我不去了」和「这所我还没查截止日」——
+ * 前者是决策，后者是数据缺失，两者需要不同的下一步动作。
+ * 数据缺失必须显式呈现为缺失，不能伪装成一种状态。
+ *
+ * 「常年招生」不再由"deadline 为空"表达（那是两种不同的事），
+ * 需要时请在目标备注里写明。
+ */
 function countdownLabel(deadline: string | null): { text: string; color: string } {
   const days = daysToDeadline(deadline);
-  if (days === null) return { text: "常年招生", color: "var(--color-ink-48)" };
-  if (days < 0) return { text: `已错过 ${Math.abs(days)} 天`, color: "var(--color-rose)" };
+  if (days === null) return { text: "待补录截止日", color: "var(--color-ink-48)" };
+  if (days < 0) return { text: `已过期 ${Math.abs(days)} 天 · 待补录新周期`, color: "var(--color-rose)" };
   if (days <= 60) return { text: `剩余 ${days} 天`, color: "var(--color-amber)" };
   return { text: `剩余 ${days} 天`, color: "var(--color-emerald)" };
 }
@@ -169,8 +180,8 @@ function AdvisorCard({
         </div>
       )}
 
-      {/* 倒计时 + 缺口 */}
-      <div className="flex items-center justify-between" style={{ gap: 8 }}>
+      {/* 倒计时 + 缺口（wrap：过期文案较长，窄卡片下需换行而非溢出）*/}
+      <div className="flex items-center justify-between" style={{ gap: 8, flexWrap: "wrap" }}>
         <span className="text-xs font-medium" style={{ color: cd.color }}>
           {cd.text}
         </span>

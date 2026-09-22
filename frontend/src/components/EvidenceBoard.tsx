@@ -8,7 +8,7 @@ type Props = {
 };
 
 // L0..L4 颜色（与证据强度对应）
-const LEVEL_COLOR = ["#86868B", "#0EA5E9", "#8B5CF6", "#F59E0B", "#10B981"];
+const LEVEL_COLOR = ["#86868B", "var(--color-sky)", "var(--color-violet)", "var(--color-amber)", "var(--color-emerald)"];
 
 const KIND_PREFIX: Record<string, string> = {
   note: "因为这份笔记",
@@ -94,7 +94,7 @@ export default function EvidenceBoard({ skills }: Props) {
                         style={{
                           gap: 10,
                           padding: "10px 12px",
-                          background: "#FAFAFB",
+                          background: "var(--color-item-bg)",
                           borderRadius: "var(--radius-item-md)",
                         }}
                       >
@@ -107,7 +107,7 @@ export default function EvidenceBoard({ skills }: Props) {
                             borderRadius: "var(--radius-pill)",
                             fontSize: 11,
                             fontWeight: 700,
-                            color: "#fff",
+                            color: "var(--color-on-primary)",
                             background: LEVEL_COLOR[e.level] ?? "#86868B",
                           }}
                         >
@@ -143,7 +143,7 @@ function GateBadge({ level }: { level: number }) {
         borderRadius: "var(--radius-pill)",
         fontSize: 11,
         fontWeight: 700,
-        color: "#fff",
+        color: "var(--color-on-primary)",
         background: color,
       }}
     >

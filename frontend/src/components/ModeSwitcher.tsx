@@ -91,7 +91,7 @@ export default function ModeSwitcher() {
           paddingInline: 12,
           borderRadius: "var(--radius-pill)",
           background: "rgba(255, 255, 255, 0.14)",
-          color: "#F5F5F7",
+          color: "var(--color-canvas)",
           fontSize: 12,
           fontWeight: 600,
           cursor: "pointer",

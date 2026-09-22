@@ -133,7 +133,7 @@ export default function GenerateTaskButton({
             }}
           >
             <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 4L18 12L26 13L20 18L22 26L15 22L8 26L10 18L4 13L12 12L15 4Z" fill="#FFFFFF" />
+              <path d="M15 4L18 12L26 13L20 18L22 26L15 22L8 26L10 18L4 13L12 12L15 4Z" fill="var(--color-on-primary)" />
             </svg>
           </div>
           <span className="text-sm font-semibold text-white">{label}</span>

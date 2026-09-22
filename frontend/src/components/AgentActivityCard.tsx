@@ -99,7 +99,7 @@ export default function AgentActivityCard({
             key={run.id}
             style={{
               padding: 14,
-              background: "#FAFAFB",
+              background: "var(--color-item-bg)",
               borderRadius: "var(--radius-item-md)",
             }}
           >

@@ -20,9 +20,9 @@ const KIND_LABEL: Record<ExperimentKind, string> = {
 };
 
 const KIND_COLOR: Record<ExperimentKind, string> = {
-  finetune: "#8B5CF6",
-  benchmark: "#0EA5E9",
-  ablation: "#F59E0B",
+  finetune: "var(--color-violet)",
+  benchmark: "var(--color-sky)",
+  ablation: "var(--color-amber)",
 };
 
 const cardStyle: CSSProperties = {
@@ -209,7 +209,7 @@ export default function ExperimentBoard({ experiments }: Props) {
                 padding: "8px 16px",
                 borderRadius: "var(--radius-pill)",
                 background: "var(--color-primary)",
-                color: "#fff",
+                color: "var(--color-on-primary)",
                 cursor: busy ? "wait" : "pointer",
               }}
             >
@@ -221,7 +221,7 @@ export default function ExperimentBoard({ experiments }: Props) {
               style={{
                 padding: "8px 12px",
                 borderRadius: "var(--radius-pill)",
-                background: "#FAFAFB",
+                background: "var(--color-item-bg)",
                 border: "1px solid var(--color-hairline)",
                 color: "var(--color-ink-48)",
                 cursor: "pointer",
@@ -266,7 +266,7 @@ export default function ExperimentBoard({ experiments }: Props) {
                     borderRadius: "var(--radius-pill)",
                     fontSize: 11,
                     fontWeight: 600,
-                    background: "#FAFAFB",
+                    background: "var(--color-item-bg)",
                     border: "1px solid var(--color-hairline)",
                     color: "var(--color-ink-48)",
                   }}
@@ -280,7 +280,7 @@ export default function ExperimentBoard({ experiments }: Props) {
                     borderRadius: "var(--radius-pill)",
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#fff",
+                    color: "var(--color-on-primary)",
                     background: KIND_COLOR[exp.kind],
                   }}
                 >
@@ -327,7 +327,7 @@ export default function ExperimentBoard({ experiments }: Props) {
                       padding: "3px 9px",
                       borderRadius: "var(--radius-pill)",
                       fontSize: 11,
-                      background: "#FAFAFB",
+                      background: "var(--color-item-bg)",
                       border: "1px solid var(--color-hairline)",
                       color: "var(--color-ink-48)",
                     }}
@@ -355,7 +355,7 @@ const inputStyle: CSSProperties = {
   padding: "8px 10px",
   borderRadius: "var(--radius-item-md)",
   border: "1px solid var(--color-hairline)",
-  background: "#fff",
+  background: "var(--color-card)",
   color: "var(--color-ink)",
   fontSize: 13,
   width: "100%",

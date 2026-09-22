@@ -25,15 +25,15 @@ import SkillLinesCard from "@/components/SkillLinesCard";
 
 const FACT_CATEGORY_META: Record<FactCategory, { label: string; color: string; soft: string }> = {
   work: { label: "工作", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  project: { label: "项目", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
-  paper: { label: "论文", color: "#8B5CF6", soft: "rgba(139,92,246,0.12)" },
-  edu: { label: "教育", color: "#F59E0B", soft: "rgba(245,158,11,0.12)" },
+  project: { label: "项目", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
+  paper: { label: "论文", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
+  edu: { label: "教育", color: "var(--color-amber)", soft: "rgba(245,158,11,0.12)" },
   metric: { label: "指标/技能", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
 };
 
 const TIER_META: Record<number, { label: string; color: string; soft: string }> = {
   1: { label: "主攻", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
-  2: { label: "卡位", color: "#8B5CF6", soft: "rgba(139,92,246,0.12)" },
+  2: { label: "卡位", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
   3: { label: "保底", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
 };
 
@@ -119,7 +119,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: "var(--radius-pill)",
   border: "none",
   background: "var(--color-primary)",
-  color: "#fff",
+  color: "var(--color-on-primary)",
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
@@ -318,7 +318,7 @@ export default function ResumeBoard({
                 borderRadius: "var(--radius-pill)",
                 border: "1px solid var(--color-primary)",
                 background: showVerForm ? "var(--color-primary)" : "transparent",
-                color: showVerForm ? "#fff" : "var(--color-primary)",
+                color: showVerForm ? "var(--color-on-primary)" : "var(--color-primary)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -533,7 +533,7 @@ export default function ResumeBoard({
                 borderRadius: "var(--radius-pill)",
                 border: "1px solid var(--color-primary)",
                 background: showFactForm ? "var(--color-primary)" : "transparent",
-                color: showFactForm ? "#fff" : "var(--color-primary)",
+                color: showFactForm ? "var(--color-on-primary)" : "var(--color-primary)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",

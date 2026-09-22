@@ -21,8 +21,8 @@ import {
 
 const APP_STATUS_META: Record<JobAppStatus, { label: string; color: string; soft: string }> = {
   applied: { label: "已投递", color: "#86868B", soft: "var(--color-zinc-100)" },
-  screening: { label: "筛选中", color: "#0EA5E9", soft: "rgba(14,165,233,0.10)" },
-  interview: { label: "面试中", color: "#8B5CF6", soft: "rgba(139,92,246,0.10)" },
+  screening: { label: "筛选中", color: "var(--color-sky)", soft: "rgba(14,165,233,0.10)" },
+  interview: { label: "面试中", color: "var(--color-violet)", soft: "rgba(139,92,246,0.10)" },
   offer: { label: "已拿offer", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
   rejected: { label: "已挂", color: "var(--color-rose)", soft: "var(--color-rose-soft)" },
 };
@@ -185,8 +185,8 @@ export default function ApplicationsBoard({
           }}
         >
           <FunnelStat label="已投递" value={funnel.by.applied} color="#86868B" />
-          <FunnelStat label="筛选中" value={funnel.by.screening} color="#0EA5E9" />
-          <FunnelStat label="面试中" value={funnel.by.interview} color="#8B5CF6" />
+          <FunnelStat label="筛选中" value={funnel.by.screening} color="var(--color-sky)" />
+          <FunnelStat label="面试中" value={funnel.by.interview} color="var(--color-violet)" />
           <FunnelStat label="已拿offer" value={funnel.by.offer} color="var(--color-emerald)" />
           <FunnelStat label="已挂" value={funnel.by.rejected} color="var(--color-rose)" />
           <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--color-primary)" />
@@ -204,7 +204,7 @@ export default function ApplicationsBoard({
               borderRadius: "var(--radius-pill)",
               border: "1px solid var(--color-primary)",
               background: showForm ? "var(--color-primary)" : "transparent",
-              color: showForm ? "#fff" : "var(--color-primary)",
+              color: showForm ? "var(--color-on-primary)" : "var(--color-primary)",
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
@@ -295,7 +295,7 @@ export default function ApplicationsBoard({
                   borderRadius: "var(--radius-pill)",
                   border: "none",
                   background: "var(--color-primary)",
-                  color: "#fff",
+                  color: "var(--color-on-primary)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: busy ? "not-allowed" : "pointer",

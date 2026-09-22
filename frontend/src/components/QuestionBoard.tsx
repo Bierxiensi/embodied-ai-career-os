@@ -27,8 +27,8 @@ import QuestionCard from "./QuestionCard";
 
 const CATEGORY_META: Record<QuestionCategory, { label: string; color: string; soft: string }> = {
   LLM: { label: "LLM", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  Multimodal: { label: "多模态", color: "#8B5CF6", soft: "rgba(139,92,246,0.12)" },
-  Project: { label: "项目", color: "#0EA5E9", soft: "rgba(14,165,233,0.12)" },
+  Multimodal: { label: "多模态", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
+  Project: { label: "项目", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
   Coding: { label: "编码", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
 };
 
@@ -81,7 +81,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: "var(--radius-pill)",
   border: "none",
   background: "var(--color-primary)",
-  color: "#fff",
+  color: "var(--color-on-primary)",
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",

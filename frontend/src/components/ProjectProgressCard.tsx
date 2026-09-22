@@ -51,7 +51,7 @@ export default function ProjectProgressCard({ projects }: Props) {
             style={{
               gap: 10,
               padding: "14px 16px",
-              background: "#FAFAFB",
+              background: "var(--color-item-bg)",
               borderRadius: "var(--radius-item-md)",
             }}
           >
@@ -77,7 +77,7 @@ export default function ProjectProgressCard({ projects }: Props) {
               className="w-full overflow-hidden"
               style={{
                 height: 6,
-                background: "#E8E8ED",
+                background: "var(--color-hairline-soft)",
                 borderRadius: 3,
               }}
             >

@@ -59,7 +59,7 @@ export default function GlobalNav() {
             <path d="M7 7L13 13" stroke="var(--color-ink)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
-        <span className="text-[13px] font-semibold" style={{ color: "#F5F5F7" }}>
+        <span className="text-[13px] font-semibold" style={{ color: "var(--color-canvas)" }}>
           Career OS
         </span>
         <div className="flex" style={{ gap: 28 }}>

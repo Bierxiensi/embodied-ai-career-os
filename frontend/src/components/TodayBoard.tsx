@@ -231,7 +231,7 @@ export default function TodayBoard({ today }: Props) {
                   padding: "14px 16px",
                   borderRadius: "var(--radius-item-md)",
                   border: `1px solid ${done ? "var(--color-emerald)" : "var(--color-hairline)"}`,
-                  background: done ? "var(--color-emerald-soft)" : "#FAFAFB",
+                  background: done ? "var(--color-emerald-soft)" : "var(--color-item-bg)",
                   cursor: isPending ? "wait" : "pointer",
                   opacity: isPending ? 0.6 : 1,
                   textAlign: "left",
@@ -246,9 +246,9 @@ export default function TodayBoard({ today }: Props) {
                       borderRadius: 4,
                       fontSize: 11,
                       fontWeight: 700,
-                      background: done ? "var(--color-emerald)" : "#FFFFFF",
+                      background: done ? "var(--color-emerald)" : "var(--color-card)",
                       border: done ? "none" : "1px solid var(--color-hairline)",
-                      color: done ? "#FFFFFF" : "transparent",
+                      color: done ? "var(--color-on-primary)" : "transparent",
                     }}
                   >
                     ✓
@@ -280,7 +280,7 @@ export default function TodayBoard({ today }: Props) {
                   gap: 6,
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
-                  background: "#FAFAFB",
+                  background: "var(--color-item-bg)",
                   border: "1px solid var(--color-hairline)",
                   fontSize: 11,
                   color: "var(--color-ink-32)",
@@ -329,7 +329,7 @@ export default function TodayBoard({ today }: Props) {
             style={{
               padding: "6px 12px",
               borderRadius: "var(--radius-pill)",
-              background: "rgba(139,92,246,0.12)",
+              background: "var(--color-violet-soft)",
               color: "var(--color-violet)",
               cursor: pending === "sync" ? "wait" : "pointer",
             }}
@@ -464,7 +464,7 @@ export default function TodayBoard({ today }: Props) {
                 style={{
                   gap: 10,
                   padding: "12px 14px",
-                  background: "#FAFAFB",
+                  background: "var(--color-item-bg)",
                   borderRadius: "var(--radius-item-md)",
                 }}
               >
@@ -585,7 +585,7 @@ export default function TodayBoard({ today }: Props) {
 function Notice({ tone, children }: { tone: "amber" | "rose"; children: ReactNode }) {
   const map = {
     amber: { bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-    rose: { bg: "#FEF2F2", fg: "var(--color-rose-deep)" },
+    rose: { bg: "var(--color-rose-soft)", fg: "var(--color-rose-deep)" },
   } as const;
   const c = map[tone];
   return (
