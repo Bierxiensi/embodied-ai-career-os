@@ -3,6 +3,9 @@
  * 职责：一次性获取 Dashboard 所需全部数据，供 Server Component 调用。
  * 数据流：并行拉取 Career / Skills / AgentRuns / Projects / JobHunt，
  * 任务只请求一次（CareerMode 口径），与 /jobs、/today 同源。
+ *
+ * 边界说明：本服务不解析也不消费 ViewRole —— ViewRole 仅是展示视角（cookie/?role=），
+ * 禁止影响任务请求参数、数据范围与统计；数据范围一律由 CareerMode（scope: current_mode）决定。
  */
 
 import type {
@@ -56,6 +59,8 @@ function toActiveTrack(t: TargetRole): ActiveTrack {
     name: t.name,
     priority: t.priority,
     matchPct: t.matchPct,
+    strictPct: t.strictPct,
+    qualifiedCount: t.qualifiedCount,
     frozen: t.frozen,
     skillCount: t.skills.length,
     gapCount: t.skills.filter((s) => s.gap > 0).length,

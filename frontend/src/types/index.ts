@@ -252,6 +252,9 @@ export interface TargetRole {
   salaryRange: string;
   note: string;
   matchPct: number;
+  strictPct: number;        // v3.2 双轨口径：硬性达标率（level>=required 的技能占比）
+  qualifiedCount: number;   // 达标技能数
+  requiredCount: number;    // 要求技能总数
   frozen?: boolean;   // 冻结赛道：保留展示与匹配度，但不投入学习时间
   skills: Array<{
     name: string;
@@ -383,6 +386,10 @@ export interface ActiveTrack {
   name: string;
   priority: string;
   matchPct: number;
+  /** v3.2 双轨口径：硬性达标率（level>=required 的技能占比），与 JobsBoard 同源 */
+  strictPct?: number;
+  /** 达标技能数（v3.2） */
+  qualifiedCount?: number;
   /** 冻结赛道（长期观察）：只看不推，不占用主攻缺口 */
   frozen?: boolean;
   /** 该赛道硬性要求技能数（= 雷达轴数） */

@@ -647,6 +647,22 @@ function TargetRoleCard({ role }: { role: TargetRole }) {
         </div>
       </div>
 
+      {/* v3.2 双轨口径：推进度（上）+ 硬性达标率（下）。防止 82-89 的推进度被误读为"已达标"。 */}
+      <div className="flex items-center" style={{ gap: 8 }}>
+        <span
+          style={{
+            fontSize: 11,
+            color: role.strictPct >= 50 ? "var(--color-emerald)" : "var(--color-amber)",
+            fontWeight: 600,
+          }}
+        >
+          严格达标 {role.strictPct}%（{role.qualifiedCount}/{role.requiredCount} 项 level≥4）
+        </span>
+        <span style={{ fontSize: 11, color: "var(--color-ink-48)" }}>
+          上方百分比为向目标推进的进度，非达标判定
+        </span>
+      </div>
+
       <div className="flex flex-col" style={{ gap: 6 }}>
         {role.skills.map((s) => (
           <div key={s.name} className="flex items-center" style={{ gap: 8 }}>

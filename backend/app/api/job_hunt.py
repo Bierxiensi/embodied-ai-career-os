@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.response import ok
+from app.core.risk import track_strict_pct
 from app.core.target_roles import (
     DEFAULT_OFFER_DEADLINE,
     JOB_HUNT_PROJECT_NAME,
@@ -70,6 +71,8 @@ def job_hunt_board(db: Session = Depends(get_db)):
     # ---- 技能 ----
     skills = db.query(Skill).order_by(Skill.level).all()
     skill_map = {s.name.lower(): s for s in skills}
+    # 提供给 track_strict_pct 使用（键为小写规范名）
+    skill_levels = {name: s.level for name, s in skill_map.items()}
 
     # ---- 目标岗位匹配度 ----
     roles_out = []
@@ -87,6 +90,15 @@ def job_hunt_board(db: Session = Depends(get_db)):
             })
         need = sum(m["required"] for m in matches)
         have = sum(min(m["level"], m["required"]) for m in matches)
+        # v3.2 双轨口径（docs/项目梳理与迭代指导-2026-09-21.md 裁决②）：
+        # match_pct = 推进度（线性，向 required_level 推进的百分比）；
+        # strict_pct = 硬性达标率（level >= required 的技能占比）。
+        # 两者并列展示，避免 82-89 的推进度被误读为"已达标"（真实严格达标仅 13-23%）。
+        # strict_pct / qualified_count / required_count 统一走 core/risk.py 的
+        # track_strict_pct（与七维风险雷达同源，llm 67%/23%/3/13 为回归锚点）。
+        strict_pct, qualified_count, required_count = track_strict_pct(
+            role.required_skills, role.required_level, skill_levels
+        )
         roles_out.append({
             "key": role.key,
             "name": role.name,
@@ -95,6 +107,9 @@ def job_hunt_board(db: Session = Depends(get_db)):
             "note": role.note,
             "frozen": role.frozen,
             "match_pct": round(have / need * 100) if need else 0,
+            "strict_pct": strict_pct,
+            "qualified_count": qualified_count,
+            "required_count": required_count,
             "skills": matches,
         })
 

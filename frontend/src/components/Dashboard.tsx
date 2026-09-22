@@ -84,7 +84,8 @@ export default function Dashboard({
           readinessLabel="岗位匹配度"
           readinessSub={
             activeTrack
-              ? `按「${activeTrack.name}」的 ${activeTrack.skillCount} 项硬性要求技能计算`
+              ? `推进度按「${activeTrack.name}」的 ${activeTrack.skillCount} 项硬性要求技能计算；` +
+                `严格达标 ${activeTrack.strictPct ?? "—"}%（${activeTrack.qualifiedCount ?? "—"}/${activeTrack.skillCount} 项 level≥4）`
               : "按当前赛道硬性要求技能计算"
           }
           applicationCounts={applicationCounts}

@@ -58,18 +58,48 @@ class TargetRole:
 # 2. vlm      —— 卡位，差异化 + 长期方向（Multimodal Foundation Model）
 # 3. ai-algo  —— 保底，进入模型团队的入口岗
 # 4. embodied —— 暂缓（frozen），长期观察，保留已有资产但不投入时间
+#
+# ================================================================================
+# 2026-09-20 战略校准 v3.1（在职转型，非重写）
+# ================================================================================
+# 用户确认留在现公司（北航非全在读 + 在职转型窗口 2026.09–2027.03），战略基线由
+# job_hunt 切到 long_term_transition（激活机制见 services/career_mode/{presets,service}.py）。
+#
+# 关于 phd 赛道：long_term_transition 的 active_track_keys 已声明 phd，但本文件
+# **暂不**新增 phd 为 TargetRole。理由：
+#   1. 博士就绪度是"研究匹配"（导师 / 方向 / 论文 / 院校），不是技能匹配；提前进
+#      TARGET_ROLES 会让 /api/job-hunt 用 required_skills 算一张误导性的
+#      "博士申请 技能匹配度"卡片。
+#   2. 博士模块的六维匹配（Phase 1）会自带模型与 API，那时再正式建模 phd 赛道。
+# 因此 phd 在 Phase 0 只是 long_term 的一个"占位生效赛道"，不参与技能匹配计算；
+# 它也不出现在 job_hunt 的派生赛道里（job_hunt 仍严格由本文件的 frozen 标记派生）。
+#
+# ================================================================================
+# 2026-09-21 口径校准 v3.2（双轨匹配分 + 内核突击收口，docs/项目梳理与迭代指导-2026-09-21.md）
+# ================================================================================
+# 用户三项裁决：
+# 1. 确认留任 → long_term_transition 激活（presets.py v3.1 已定义，本文件无需新增 phd 赛道）。
+# 2. 匹配分双轨制：match_pct（推进度）继续展示，新增 strict 达标率
+#    （level >= required_level 的技能占比，见 api/job_hunt.py roles_out.strict_pct）。
+#    llm 赛道补 RAG / Agent Application —— 本人 level 4 的两项最强技能此前被排除在
+#    匹配计算外，导致分数系统性虚高（看板 82-89 分 vs 严格达标 13-20%）。
+# 3. 内核层 24 项不全铺：只突击 6 个最高频考点到 level 3（够答"是什么/为什么"）：
+#    KV Cache / FlashAttention / PagedAttention / FSDP-ZeRO / Quantization / MoE，
+#    与 Mini Post-Training Lab 实验绑定；其余维持 level 1-2，本窗口不投入。
 TARGET_ROLES: list[TargetRole] = [
     TargetRole(
         key="llm",
         name="大模型后训练 / Post-Training 算法工程师",
         priority="主攻",
         salary_range="36-45K",
-        note="v3.0 主轴：Post-Training 横向能力（SFT→DPO→RL），VLM 是其模型分支；"
-             "Transformer→SFT→LoRA/QLoRA→DPO/GRPO→Eval 必须能讲透并做过实验",
+        note="v3.2：Post-Training 横向能力（SFT→DPO→RL），VLM 是其模型分支；"
+             "Transformer→SFT→LoRA/QLoRA→DPO/GRPO→Eval 必须能讲透并做过实验；"
+             "补 RAG/Agent Application（真实 JD 要求且是本人强项，见 v3.2 注记）",
         required_skills=[
             "Transformer", "Attention", "Pretraining", "SFT",
             "LoRA/QLoRA", "DPO", "RLHF", "GRPO",
             "PyTorch", "Python", "Deep Learning",
+            "RAG", "Agent Application",
         ],
         required_level=4,
     ),

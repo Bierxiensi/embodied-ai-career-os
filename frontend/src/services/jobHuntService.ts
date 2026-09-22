@@ -39,6 +39,9 @@ interface JobHuntDTO {
     note: string;
     frozen?: boolean;
     match_pct: number;
+    strict_pct: number;
+    qualified_count: number;
+    required_count: number;
     skills: Array<{
       name: string;
       level: number;
@@ -171,6 +174,9 @@ function toBoard(dto: JobHuntDTO): JobHuntBoard {
       salaryRange: r.salary_range,
       note: r.note,
       matchPct: r.match_pct,
+      strictPct: r.strict_pct,
+      qualifiedCount: r.qualified_count,
+      requiredCount: r.required_count,
       frozen: r.frozen ?? false,
       skills: r.skills.map((s) => ({
         name: s.name,
