@@ -72,14 +72,24 @@ CAREER_MODE_PRESETS: tuple[CareerModePreset, ...] = (
     CareerModePreset(
         key=LONG_TERM_TRANSITION_MODE_KEY,
         name="长期转型模式",
-        objective="积累博士申请与具身智能转型所需的可验证能力和成果",
+        objective="在公司内完成从 Agent 应用向 Post-Training / 具身智能的在职转型，并行推进博士申请",
         # 长期阶段按季度 / 学期 / 项目里程碑推进，没有硬性截止日期，
         # 前端据此显示为"长期"而不是"剩余 0 天"（PRD §4.1 规定节奏不同）。
         deadline=None,
-        # 长期模式的赛道策略**首期未定义**：PRD §4.2 只固定了求职模式的生效/冻结
-        # 赛道。留空表示"不施加赛道约束"，而不是"没有赛道" —— 待 PRD 后续版本
-        # 明确长期路线（§6 非目标：本期不把具身/博士做成完整工作流）后再填。
-        active_track_keys=(),
+        # v3.1（2026-09-20）：长期模式的赛道策略**首次定义**（此前为空壳）。
+        # 生效赛道 = llm（Post-Training，与在职方向重合，主攻）
+        #           + vlm（模型分支，卡位）
+        #           + phd（长期研究目标；Phase 1 博士模块会建立独立六维匹配，本阶段只占位）。
+        # 冻结赛道 = 空。原因有两条，都是硬约束：
+        #   1. 长期转型期不施加赛道约束（PRD §4.2 + task_scope 排除制），所有历史 /
+        #      手写任务仍可见；且 test_only_career_mode_switch_changes_the_range 硬性要求
+        #      long_term 冻结集为空（冻结任务必须回到默认范围，否则该测试失败）。
+        #   2. ai-algo / embodied 不在本阶段"主动推动列表"里，但仍在范围内可见，
+        #      避免在职期误隐藏既有资产（SO101 / 推理工程等）。
+        # 注意：phd 故意**不**进入 core/target_roles.py 的 TARGET_ROLES —— 它的就绪度是
+        #       研究匹配（六维），不是技能匹配；提前进 TARGET_ROLES 会让 /api/job-hunt
+        #       强行产出一张误导性的"博士申请 技能匹配度"卡片。Phase 1 博士模块落地后再正式建模。
+        active_track_keys=("llm", "vlm", "phd"),
         frozen_track_keys=(),
     ),
 )
