@@ -14,6 +14,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from app.agents.interview.engine import (
+    CORE_CATEGORIES,
     CORE_TARGET,
     QUESTION_CATEGORY_TARGETS,
     coverage_matrix,
@@ -45,6 +46,25 @@ def test_category_targets_sum_to_150_and_core_80():
     assert sum(QUESTION_CATEGORY_TARGETS.values()) == 150
     assert CORE_TARGET == 80
     assert QUESTION_CATEGORY_TARGETS["LLM"] + QUESTION_CATEGORY_TARGETS["Multimodal"] == 80
+
+
+def test_targets_are_single_sourced_and_derived():
+    """护栏：150 / 80 必须**派生**自 QUESTION_CATEGORY_TARGETS，不得各处硬编码。
+
+    2026-09-22 修：原先 `api/plan.py` 另有一份 `TARGET_QUESTIONS = 150`，`CORE_TARGET`
+    也是字面量（不从分类目标派生）—— 改一处漏一处会静默产生不一致，且文档误称
+    "只改 QUESTION_CATEGORY_TARGETS 一处"。本测试把"单一真源"锁成约定。
+    """
+
+    from app.agents.interview.engine import TARGET_TOTAL
+    from app.api.plan import TARGET_QUESTIONS
+
+    # 核心必达 = 核心分类目标和
+    assert CORE_TARGET == sum(QUESTION_CATEGORY_TARGETS[c] for c in CORE_CATEGORIES)
+    # 累计目标 = 全部分类目标和
+    assert TARGET_TOTAL == sum(QUESTION_CATEGORY_TARGETS.values())
+    # 计划总账（另一个模块的 KPI）与题库口径必须是同一个值
+    assert TARGET_QUESTIONS == TARGET_TOTAL
 
 
 def test_coverage_matrix_marks_red_cells_and_appends_unknown_skills():

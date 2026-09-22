@@ -167,6 +167,11 @@ def pick_questions(
 #   §八 Day26/27「50 LLM + 25~30 VLM ≈ 80」 → **核心必达 80**（下界）
 # 两个数字都对，混在一起会让人以为要写 150 题而放弃。
 # Project / Coding 是把 150 补满的差额，按 40 / 30 分配。
+#
+# 🔴 单一真源：**本字典是全平台唯一可手改的口径**。
+#    150（TARGET_TOTAL）与 80（CORE_TARGET）均由它派生，不再各写各的
+#    —— 2026-09-22 修：原先这两个数字在 engine.py / api/plan.py 各硬编码一份，
+#    改一处漏一处会静默产生不一致（api/plan.py 的 TARGET_QUESTIONS 已改为派生）。
 QUESTION_CATEGORY_TARGETS: dict[str, int] = {
     "LLM": 50,
     "Multimodal": 30,
@@ -175,7 +180,10 @@ QUESTION_CATEGORY_TARGETS: dict[str, int] = {
 }
 # 核心必达分类（求职主攻盘：LLM + 多模态）
 CORE_CATEGORIES: tuple[str, ...] = ("LLM", "Multimodal")
-CORE_TARGET = 80
+# 核心必达 = 核心分类目标和（派生，勿手改成字面量）
+CORE_TARGET: int = sum(QUESTION_CATEGORY_TARGETS[c] for c in CORE_CATEGORIES)
+# 题库累计目标（派生；api/plan.py 的总账「面试题」KPI 引用此值）
+TARGET_TOTAL: int = sum(QUESTION_CATEGORY_TARGETS.values())
 
 
 def coverage_matrix(

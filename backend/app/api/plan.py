@@ -13,7 +13,7 @@
    （calendar_days_elapsed / is_before_start / is_after_end），
    就是为了让 P1 的改造只动这一处推导，不动下游。
 2. 总账（ledger）跨全部 30 天累计，口径固定为计划 §十：
-   30 段代码 / 30 篇笔记 / 30 个 commit / 150 道面试题 / 30 个"四件套齐全日"。
+   30 段代码 / 30 篇笔记 / 30 个 commit / 面试题累计目标（派生自 engine.QUESTION_CATEGORY_TARGETS，勿写死数字） / 30 个"四件套齐全日"。
    面试题数取题库真实条数（interview_questions），不取产出条数 ——
    否则"录了一次"和"录了 5 道题"会混为一谈。
 3. 四件套的 questions 槽位判定为「当天至少录过一次题」，
@@ -55,6 +55,7 @@ from app.models.day_progress import (
     DayProgress,
 )
 from app.models.interview_question import InterviewQuestion
+from app.agents.interview.engine import TARGET_TOTAL
 from app.models.plan_day import PlanDay
 from app.models.skill import Skill
 from app.models.task import Task
@@ -85,7 +86,9 @@ TOTAL_DAYS = 30
 TARGET_CODE = 30
 TARGET_NOTE = 30
 TARGET_COMMIT = 30
-TARGET_QUESTIONS = 150
+# 面试题累计目标：**派生**自 engine.QUESTION_CATEGORY_TARGETS（全平台唯一真源）。
+# 2026-09-22 修：原先此处硬编码 150，与 engine 各写一份，改一处漏一处会静默不一致。
+TARGET_QUESTIONS = TARGET_TOTAL
 
 
 class CommitSyncIn(BaseModel):

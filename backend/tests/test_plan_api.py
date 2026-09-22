@@ -5,7 +5,7 @@
   2. 今日施工单 /api/plan/today 回答三个问题
      —— 今天第几天（day_index）、今天干什么（day 内容）、今天做完没有（四件套）
   3. 四件套勾选 / 取消（POST / DELETE /api/plan/artifacts）
-  4. 总账口径（30 段代码 / 30 篇笔记 / 30 个 commit / 150 题 / 30 个齐全日）
+  4. 总账口径（30 段代码 / 30 篇笔记 / 30 个 commit / 面试题累计目标〔派生自 engine〕/ 30 个齐全日）
   5. 任务按 plan_day_id 归属到课程日
   6. 边界：day 越界 422、课程日不存在 404、kind 非法 422
 
@@ -16,9 +16,12 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.plan import _resolve_day_index
 from app.core.target_roles import SPRINT_START
 from app.db.base import SessionLocal
 from app.main import app
@@ -27,18 +30,41 @@ from app.models.plan_day import PlanDay
 
 client = TestClient(app)
 
-# 测试用的课程日：1 与 2 用于正常路径，29 故意不建用于 404
+# 固定种下的课程日（日历当天由 fixture 动态补种，见下）。
 _SEEDED_SEQS = (1, 2)
+
+
+def _calendar_seq() -> int:
+    """与 API 同源的日历推导口径（`_resolve_day_index`），即「今天是 Day N」。"""
+
+    return _resolve_day_index(date.today())[0]
+
+
+def _seeded_seqs() -> set[int]:
+    """当前临时库里已存在的课程日 seq。"""
+
+    db = SessionLocal()
+    try:
+        return {d.seq for d in db.query(PlanDay).all()}
+    finally:
+        db.close()
 
 
 @pytest.fixture(scope="module", autouse=True)
 def _seed_plan_days():
-    """建少量课程日供本文件使用（幂等：按 seq 存在即跳过）。"""
+    """建少量课程日供本文件使用（幂等：按 seq 存在即跳过）。
+
+    除固定的 1 / 2 外，还要补种**日历推导当天**：`_today()` 不带参数时走日历口径，
+    而日历随墙钟推进（Day 12 → Day 13 → ……）。不补种的话本文件会随日期推移稳定变红
+    —— 2026-09-22 修：此前 4 个用例长期因「课程日 Day 13 不存在」失败。
+    """
+
+    targets = set(_SEEDED_SEQS) | {_calendar_seq()}
 
     db = SessionLocal()
     try:
         existing = {d.seq for d in db.query(PlanDay).all()}
-        for seq in _SEEDED_SEQS:
+        for seq in sorted(targets):
             if seq in existing:
                 continue
             db.add(
@@ -84,13 +110,18 @@ def _today(day: int | None = None) -> dict:
     return resp.json()["data"]
 
 
-def _clear_artifacts(plan_day_id: int) -> None:
-    """清空某天的产出，避免模块内测试互相污染（共享临时库）。"""
+def _clear_artifacts(seq: int) -> None:
+    """清空**指定课程日**的产出，避免模块内测试互相污染（共享临时库）。
 
-    data = _today()
+    ⚠️ 必须显式传 seq：`/api/plan/today` 只返回**当天**的 artifacts（按 plan_day_id 过滤），
+    不带参数取到的是"日历当天"，拿它去清理别的 day 会**静默变成空操作**。
+    —— 2026-09-22 修：此前该 helper 实为 no-op，导致用例间残留 artifact，
+    `test_overview_reports_behind_when_incomplete` 被 Day2 的残留四件套算成"已完成"而误报。
+    """
+
+    data = _today(day=seq)
     for a in data["artifacts"]:
-        if a["plan_day_id"] == plan_day_id:
-            client.delete(f"/api/plan/artifacts/{a['id']}")
+        client.delete(f"/api/plan/artifacts/{a['id']}")
 
 
 # ============================================================
@@ -178,7 +209,12 @@ def test_today_invalid_day_is_422():
 def test_today_missing_day_is_404():
     """课程日不存在时 404，并在 detail 里提示跑种子脚本。"""
 
-    resp = client.get("/api/plan/today?day=29")
+    # 动态挑一个库中确实缺失的 seq —— 写死 29 会与 fixture 补种的"日历当天"撞车。
+    present = _seeded_seqs()
+    missing = next((s for s in range(1, 31) if s not in present), None)
+    assert missing is not None, "临时库已含全部 30 天，无法构造 404 用例"
+
+    resp = client.get(f"/api/plan/today?day={missing}")
     assert resp.status_code == 404
     assert "seed_plan_30d" in resp.json()["detail"]
 
@@ -192,7 +228,7 @@ def test_artifact_toggle_updates_status_and_ledger():
     """勾选 → 该槽位变已交、missing 减少、总账 +1；取消 → 全部还原。"""
 
     day_id = _day_id(1)
-    _clear_artifacts(day_id)
+    _clear_artifacts(1)
 
     before = _today(day=1)
     assert "code" in before["missing_kinds"]
@@ -236,7 +272,7 @@ def test_all_four_kinds_makes_day_complete():
     """四类齐全 → all_done=True、missing 为空、总账「齐全日」+1。"""
 
     day_id = _day_id(2)
-    _clear_artifacts(day_id)
+    _clear_artifacts(2)
 
     before = _today(day=2)
     assert before["all_done"] is False
