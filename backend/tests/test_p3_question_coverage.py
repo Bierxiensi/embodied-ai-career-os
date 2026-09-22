@@ -40,12 +40,22 @@ def _cov(track_key: str | None = None) -> dict:
 # ============================================================
 
 
-def test_category_targets_sum_to_150_and_core_80():
-    """计划口径裁决：累计目标 150，核心必达 80（见决策 5）。"""
+def test_category_targets_match_descriptive_distribution():
+    """targets = 题库真实分布（描述性口径）。
 
-    assert sum(QUESTION_CATEGORY_TARGETS.values()) == 150
-    assert CORE_TARGET == 80
-    assert QUESTION_CATEGORY_TARGETS["LLM"] + QUESTION_CATEGORY_TARGETS["Multimodal"] == 80
+    2026-09-22 D1/D2 一次性归位后：题库 150→147（LLM 61 / MM 30 / Project 26 /
+    Coding 30），题库已裁决不当 KPI，targets 跟随真实分布而非 KPI 目标。
+    """
+
+    assert QUESTION_CATEGORY_TARGETS == {
+        "LLM": 61,
+        "Multimodal": 30,
+        "Project": 26,
+        "Coding": 30,
+    }
+    assert sum(QUESTION_CATEGORY_TARGETS.values()) == 147
+    assert CORE_TARGET == 91  # LLM 61 + Multimodal 30
+    assert QUESTION_CATEGORY_TARGETS["LLM"] + QUESTION_CATEGORY_TARGETS["Multimodal"] == 91
 
 
 def test_targets_are_single_sourced_and_derived():
@@ -114,8 +124,8 @@ def test_coverage_matrix_ignores_unattributed_questions_in_rows_but_counts_total
 def test_coverage_endpoint_shape_and_targets():
     data = _cov()
 
-    assert data["target_total"] == 150
-    assert data["core_target"] == 80
+    assert data["target_total"] == 147  # D1/D2 归位后描述性口径（09-22）
+    assert data["core_target"] == 91
     assert {c["key"] for c in data["categories"]} == CATS
     assert data["cells_total"] == len(data["skills"]) * 4
     # 默认「主攻」赛道（llm）的硬性要求技能都在矩阵行里

@@ -172,10 +172,17 @@ def pick_questions(
 #    150（TARGET_TOTAL）与 80（CORE_TARGET）均由它派生，不再各写各的
 #    —— 2026-09-22 修：原先这两个数字在 engine.py / api/plan.py 各硬编码一份，
 #    改一处漏一处会静默产生不一致（api/plan.py 的 TARGET_QUESTIONS 已改为派生）。
+#
+# 2026-09-22 D1/D2 一次性归位（用户裁决「一次性做好」）：
+#   D2 去重删 3 题（74↔140 监控 / 75↔141 A-B / 76↔139 多轮对话，留 seed_v2 厚题）；
+#   D1 挪 11 道 LLM 内容题 Project→LLM（110 持续预训练 + 132-141 理论十题）。
+#   题库 150 → 147（LLM 61 / MM 30 / Project 26 / Coding 30），targets 同步为
+#   **描述性口径**（题库已裁决不当 KPI，targets = 当前真实分布，见
+#   docs/项目梳理与迭代指导-2026-09-22.md §3.1 P4）。
 QUESTION_CATEGORY_TARGETS: dict[str, int] = {
-    "LLM": 50,
+    "LLM": 61,
     "Multimodal": 30,
-    "Project": 40,
+    "Project": 26,
     "Coding": 30,
 }
 # 核心必达分类（求职主攻盘：LLM + 多模态）

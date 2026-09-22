@@ -28,6 +28,7 @@ from app.models.project import Project
 from app.models.quiz_question import QuizSessionQuestion
 from app.models.skill import Skill
 from app.models.skill_assessment import SkillAssessment
+from app.models.skill_graph import SkillDependency
 from app.models.task import Task
 
 __all__ = [
@@ -62,5 +63,6 @@ __all__ = [
     "QuizSessionQuestion",
     "Skill",
     "SkillAssessment",
+    "SkillDependency",
     "Task",
 ]

@@ -1,55 +1,56 @@
-# 项目长期记忆 · Embodied AI Career OS（第11版，2026-09-22）
+# 项目长期记忆 · Embodied AI Career OS（第13版，2026-09-22）
 
 ## 战略现状
-- v3.2（09-21 用户三裁决）：确认留任 → **当前模式已切 long_term_transition**（active=llm/vlm/phd，frozen=空），job_hunt 为历史。在职转型窗口 2026.09–2027.03；关键节点 2026-12 答辩、PhD 申请季 26秋–27春。
-- 赛道：llm 主攻 Post-Training（required_skills 13 项，已补 RAG/Agent Application）；vlm 卡位；ai-algo 保底；embodied frozen。**phd 故意不进 TARGET_ROLES**（博士就绪度=六维研究匹配，归 Phase 1 博士模块），在 long_term active 里仅占位。
-- 🔴 long_term 的 frozen_track_keys 必须为空（`test_only_career_mode_switch_changes_the_range` 硬约束）。
-- 匹配分**双轨已落地**（v3.2）：match_pct=推进度 + strict_pct/qualified_count/required_count=达标率（api/job_hunt.py roles_out；前端 JobsBoard 赛道卡 + Dashboard KPI 双显）。实测 llm 67%/23%(3/13)、vlm 54%/14%、ai-algo 75%/20%、embodied 38%/0%。
-- 内核突击收口 6 考点：KV Cache/FlashAttention/PagedAttention/FSDP-ZeRO/Quantization/MoE → level 3，绑 Mini Post-Training Lab（记于 target_roles.py v3.2 注记）。
-- v2.1 净新增四块：**博士模块（Phase 1 已落地 2026-09-21，hy3 会话全栈完成并经审计零回归**：models/phd.py 三表 + 迁移 0021-0023 + 六维引擎 agents/phd/agent.py + /api/phd CRUD+match + 前端 /phd 页；8 导师中 5 个"待确认"占位、deadline 多为空，**真实数据喂入是当前最高优先**）→ **风险雷达+Career ROI（Phase 2 已落地 2026-09-21：core/risk.py 七维 + core/career_roi.py + api/risk.py + 前端 RiskRadar/RoiTaskList；迁移 0024/0025 补 PhDAdvisor.contacted/contact_date）** → 技能依赖图+统一落地页（Phase 3 待做）；90% 能力已存在，**禁止重写**。施工计划 docs/CAREER_OS_V2_DEVELOPMENT_PLAN.md。
-- **hy3（低端模型）协作协议（09-21 审计后升级）**：授权 T0-T3 + T4 前端组件(<200行)；T5 架构/口径留高端。其 8 项声称全真、守全部硬规则、能自纠错；流程缺陷=收尾不重启后端/只跑子集测试/日志写错日期。任务包必须附「完成后必做」：重启+curl 新端点、全量 pytest 贴结果、tsc/eslint 贴 RC、日志写当天、git diff --stat 核对范围。审计详情 docs/hy3质量审计与后续规划-2026-09-21.md。
+- v3.2（09-21 用户三裁决）：确认留任 → **当前模式 long_term_transition**（active=llm/vlm/phd，frozen=空）。在职转型窗口 2026.09–2027.03；关键节点 2026-12 答辩、PhD 申请季 26秋–27春。
+- 赛道：llm 主攻 Post-Training（required_skills 13 项）；vlm 卡位；ai-algo 保底；embodied frozen。**phd 故意不进 TARGET_ROLES**（博士就绪度=六维研究匹配，归博士模块）。🔴 long_term 的 frozen_track_keys 必须为空（`test_only_career_mode_switch_changes_the_range`）。
+- 匹配分**双轨**：match_pct=推进度 + strict_pct/qualified_count/required_count=达标率（api/job_hunt.py roles_out；前端 JobsBoard + Dashboard 双显）。实测 llm 67%/23%(3/13)、vlm 54%/14%、ai-algo 75%/20%、embodied 38%/0%。
+- 内核突击收口 6 考点：KV Cache/FlashAttention/PagedAttention/FSDP-ZeRO/Quantization/MoE → level 3，绑 Mini Post-Training Lab。
+- v2.1 四块：**Phase 1 博士模块已落地**（models/phd.py 三表 + 迁移 0021-0023 + 六维引擎 + /api/phd CRUD+match + /phd 页）；**Phase 2 风险雷达+Career ROI 已落地**（core/risk.py 七维 + career_roi.py + api/risk.py + RiskRadar/RoiTaskList；迁移 0024/0025=advisor contacted 两列）；**Phase 3 技能依赖图+统一落地页已落地（09-22）**——迁移 0027 `skill_dependency`（52 边）+ skill_profile 六域 + `services/readiness`（就绪度唯一实现，job_hunt/plan/risk/dashboard 共用）+ `/api/transition/dashboard` + /today 收口五区（①职业进度+雷达 ②当前工作 ③学术与博士 ④ROI ⑤Risk）。**Phase 3 收口后 v2.1 四块全齐**。
+- **博士录入界面已建好（09-22 用户四裁决①）**：PhDEntryPanel（院校+导师双表单，router.refresh 联动）+ PhDAdvisorBoard 联系标记/删除按钮 + phdService CRUD。**用户自己录真实数据**：北航无联系人、北大过高、倾向北科大等 211；13 所 deadline 待补录。
+- **hy3 协作协议**：授权 T0-T3 + T4 前端组件(<200行)；T5 留高端。任务包必附「完成后必做」：重启+curl、全量 pytest、tsc/eslint RC、日志写当天、git diff --stat。详见 docs/hy3质量审计与后续规划-2026-09-21.md。
 
 ## 硬规则
-- 口径同源：services/action_planning/task_scope.py 唯一权威（排除制，禁白名单/禁路由再拼 track_key）；summary 须与列表同源断言。
-- 🔴 **数字口径单一真源**（09-22 修）：题库目标只在 `agents/interview/engine.QUESTION_CATEGORY_TARGETS` 手改；`CORE_TARGET`（=核心分类目标和）与 `TARGET_TOTAL`（供 `api/plan.py` 的 `TARGET_QUESTIONS`）**都是派生**。**禁止在别处再写死 150/80** —— 此前 plan.py 另有一份独立 `TARGET_QUESTIONS = 150`，文档还误称"只改一处"。护栏 = `test_p3_question_coverage.py::test_targets_are_single_sourced_and_derived`。
-- 🔴 **题库定位已裁决（09-22）：不当 KPI，降级为「存档 + 按需自测」**。用户留任后只需在需要时抽题练手、看学习效果。前端 150 题目标 / 红格缺口 / 核心必达的 KPI 叙事已全部拆除（`4a3982f`）。
-- 🔴 **接口"早就存在" ≠ 接口正确**（09-22 血泪）：所有 JSON 端点**必须走 `ok(...)` 包装**，包括**空数据分支**。`apiClient.ts:67` 是 `if (!body.success) throw new ApiError(...)` —— 裸返回 Pydantic 模型（无 `success` 字段）会被判为失败并抛错。`/api/interview/practice/stats` 空库分支就踩了这个坑，因长期无人调用而潜伏，一接前端即让"零练习记录"的新用户整页报错。
-- 🔴 **接死代码前必须实测其真实响应形状**（同上）：前后端各有一批"定义了但从未被调用"的函数/端点，其正确性从未被验证。接上前先 curl 一遍真实返回。
-- 🔴 测试隔离（09-22 血泪）：`/api/plan/today` **只返回当天**的 artifacts（按 plan_day_id 过滤）。任何"清空某天产出"的 helper **必须显式传 seq**，用不带参数的 `_today()`（=日历当天）去清别的 day 会**静默变成空操作**。当日就因此误报过 `completed_days`。
-- 用例**不得依赖墙钟**：`/api/plan/today` 不带参数走日历口径（`_resolve_day_index`），随日期推移会指向未种下的课程日 → fixture 必须动态补种"日历推导当天"（09-22 修好 4 个长期红用例）。
-- 🔴 测试不得写开发库（conftest 已指向临时库且会话级守卫拒绝 data/app.db）；pytest 后核对开发库指纹 md5（**当前基线 `42419914cfd1db900ef1abeb568963dc`**——09-22 迁移 0026 建 `quiz_session_questions` 后；迁移 ADD COLUMN / CREATE TABLE / 种子写入都会改指纹，属正常）。
-- 迁移：下一条 **0027**（0016-0026 已用：0021-0023=博士三表，0024-0025=advisor contacted 两列，0026=quiz_session_questions）；单语句；写 SQLite 写法；必跑 tests/test_migration_dialect_compat.py（该测试按 `list_migration_files()` 参数化，**新增一个迁移就会多 1 个用例**，改动测试总数属正常）。
-- SKILL_PROFILE 是 **SkillProfile 对象列表**——匹配 `.name`，勿当字符串遍历（09-21 修过 engine.py:79 与 interviews.py:242 两处）。
-- Pydantic v2 from_attributes + 未 flush ORM → `@field_validator(mode="before")` 回落处理 NULL。
+- 口径同源：services/action_planning/task_scope.py 唯一权威（排除制，禁白名单/禁路由再拼 track_key）。
+- 🔴 **数字口径单一真源**：题库目标只手改 `agents/interview/engine.QUESTION_CATEGORY_TARGETS`（现 {LLM:61, MM:30, Project:26, Coding:30}，**描述性分布，非 KPI**）；CORE_TARGET/TARGET_TOTAL/plan.py 的 TARGET_QUESTIONS 全派生。护栏 `test_targets_are_single_sourced_and_derived`。
+- 🔴 **接口"早就存在"≠接口正确**：所有 JSON 端点必须走 `ok(...)` 包装**包括空数据分支**（apiClient.ts:67 无 success 即抛错）。**接死代码前必须实测真实响应形状**——前端 getQuestionSources 指向的后端端点曾经从未存在（09-22 已连前端带后端一起删）。
+- 🔴 测试隔离：`/api/plan/today` 只返回当天 artifacts；清空 helper 必须显式传 seq，不带参数的 `_today()` 清别的 day 会静默空操作。用例**不得依赖墙钟**（fixture 动态补种日历推导当天）。
+- 🔴 测试不得写开发库；pytest 后核对开发库指纹 md5（**当前基线 `d033d6320d41f3c8088e5ad42f18017b`**——09-22 迁移 0027 落库后；迁移/种子写入改指纹属正常）。
+- 🔴 **共享测试库会被同会话其他用例改**：依赖"库即种子态"的绝对锚点（如 llm 67%/23%）必须自己防污染，或让改库的用例自清理。实证：`test_e2e_v2_learning_loop` 的 reviewer 晋级把 DPO 1→2 不还原 → 锚点假失败 69!=67。定位手法：临时 pytest 插件在 `pytest_runtest_teardown` 逐用例比对表快照并打印 diff（`.workbuddy/tmp/detect_leak.py`）。
+- 迁移：下一条 **0028**；单语句 SQLite 写法；必跑 test_migration_dialect_compat.py（按迁移文件参数化，新增迁移+1 用例属正常）。
+- SKILL_PROFILE 是 **SkillProfile 对象列表**——匹配 `.name`，勿当字符串遍历。
+- Pydantic v2 from_attributes + 未 flush ORM → `@field_validator(mode="before")` 回落 NULL。
 - service 层不透传 payload；apiClient 不做 key 转换，create/patch 显式列 snake_case。
-- 护栏测试先剥注释+命中哨兵断言；**重构改名后护栏断言要同步**（resolveTrack→resolvePrimaryTrack，09-21 已同步）。
-- 同一文件禁止并行 Edit；改后 Grep 复读落盘。**多会话并行开发常发生，动手前必复读目标文件**（09-21 presets/target_roles/MY_CONTEXT 曾被并发会话更新）。
-- 联调一律 127.0.0.1（不用 localhost）；杀进程 `MSYS_NO_PATHCONV=1 taskkill /F /T /PID`；改 ORM/配置后重启后端（无 --reload）。
+- 🔴 **回查原则**：题目发给用户前被改写/生成的流程，判分必须用**发出去的那一份**（quiz_session_questions 表，迁移 0026）；对外声明的题型必须与实际渲染一致，做不到就降级 open。
+- 护栏测试先剥注释+命中哨兵断言；**重构改名后护栏断言要同步**。
+- 同一文件禁止并行 Edit；改后 Grep 复读落盘。**多会话并行开发常发生，动手前必复读目标文件**。
+- 联调一律 127.0.0.1；杀进程 `MSYS_NO_PATHCONV=1 taskkill /F /T /PID`；改 ORM/配置后重启后端（无 --reload）。
 - .workbuddy/tmp/ 已在 .gitignore。岗位 tier 跟赛道；JobPostingPatch 无 PATCH 路由（改 tier 只能删了重录）。
 
 ## 环境 / 门禁
-- 后端启动（后台）：`backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000`；本地 SQLite backend/data/app.db。
-- pytest：chdir backend + venv python（python -c os.chdir 包一层）；**基线（09-22）= 336 passed / 0 failed / 2 skipped**（321 口径修复后 → 326 含 `test_practice_stats.py` 5 例 → 336 含 `test_quiz_api.py` 9 例 + 迁移参数化 1 例）。此前长期恒 4 failed（test_plan_api 日期驱动「课程日 Day N 不存在」，N 随日历推进），已于 09-22 连根修掉（见硬规则"用例不得依赖墙钟"）。
-- 跑 pytest 最稳姿势：`.workbuddy/tmp/run_pytest.py [目标...]`（managed python 调 venv python，落盘再读，顺带核对开发库指纹；不传目标跑全量）。**Git Bash 缺 mkdir/tail**，别用管道。
-- 写后端测试的两个可靠手法（09-22）：①需要"干净库"时用 `contextmanager` 覆盖 `get_db` 指向**临时文件库**并 `Base.metadata.create_all` —— **别用 `sqlite://` 内存库**，TestClient 把同步端点丢线程池，内存库连接不共享、表会"消失"；②在共享隔离库上只做**增量断言** + 自清理，免受同会话其他模块影响。
-- 前端门禁 node 直调（npm shim 进 WSL 黑名单）：`node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json` + `node node_modules/eslint/bin/eslint.js <files>`（cwd=frontend；managed node 绝对路径 + python os.chdir 包装）。**next build 本机跑不了（fonts.googleapis.com 不通）→ 验收以 tsc+eslint 双 RC0 为准**；eslint 的 `react-hooks/error-boundaries`（page 的 try/catch 内 JSX）是**全项目基线**（未改页同样报），非回归。
-- Git Bash 残缺（ls/head/cd/dirname 缺失）→ 文件操作走 Read/Write/Edit/Glob/Grep，命令用 managed python 绝对路径。
-- ⚠️ 本机 urllib/requests 走系统 HTTP 代理 → 打 127.0.0.1:8000 报 **502 Bad Gateway**（并非服务未启动），须 `build_opener(ProxyHandler({}))` 直连；Bash 工具非交互运行会回收 Popen 子进程 → 后端常驻必须 `run_in_background=true` + 包装进程 `Popen(...).wait()`，单跑 `os.execv` 约 8s 即被回收。
+- 后端启动（后台）：`backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000`；SQLite backend/data/app.db。
+- pytest：chdir backend + venv python；**基线（09-22 Phase 3 后）= 374 passed / 0 failed / 2 skipped**。最稳姿势 `.workbuddy/tmp/run_pytest.py [目标...]`（顺带核对开发库指纹）。
+  - ⚠️ 全量跑会把 `%TEMP%\pytest-of-*` 的 garbage 累积到 >50 项，触发 safe-delete 护栏使 **pytest exit=1（进度全是点、无 F，纯误报）**；加 `--basetemp=../.workbuddy/tmp/pytest-base` 把临时根挪进工作区即恢复 exit=0。
+- 写后端测试两手法：①干净库用 contextmanager 覆盖 get_db 指**临时文件库**（**别用内存库**，TestClient 线程池连接不共享）；②共享隔离库只做增量断言+自清理。
+- 前端门禁 node 直调：`node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json` + `node node_modules/eslint/bin/eslint.js <files>`（cwd=frontend，managed node 绝对路径）。**next build/dev 本机都跑不了（fonts.googleapis.com 不通）→ 验收 tsc + eslint「除基线外零新增」**。
+  - 基线噪音只有两类：`react-hooks/error-boundaries`（**16 个 page 全命中**，try/catch 里建 JSX 的既定写法，非回归）+ `components/Dashboard.tsx` 的 `skills` prop 未使用（历史既有）。除这两类外出现任何规则即为回归。
+  - 类型检查兜不住运行时行为时（如"六域雷达真的出 6 根轴"）：单独 `tsc src/services/xxx.ts --outDir` 编译成 JS，再让 node 直吃真实 HTTP 响应跑断言（见 `.workbuddy/tmp/radar_smoke.js`）。
+- Git Bash 残缺（ls/head/cd/dirname/mkdir/tail/**sleep** 缺失）→ 文件操作走 Read/Write/Edit/Glob/Grep，命令用 managed python 绝对路径。
+- ⚠️ 本机走系统代理 → 打 127.0.0.1:8000 须 `build_opener(ProxyHandler({}))` 直连；后端常驻必须 `run_in_background=true` + `Popen(...).wait()` 包装（单跑 os.execv 约 8s 被回收）。
 
 ## 数据与缺陷
-- 单一源：skill_profile.py（技能等级/证据）+ target_roles.py（赛道，含 TECH_BLACKLIST/SPRINT 窗口）+ plan_30d.py（课程唯一源，seq 不绑日历）。
-- 开发库基线：skills **50** / plan_days 30 / **interview_questions 150（09-22 D2 三连修后：LLM 50 / MM 30 / Project 40 / Coding 30，四类 gap 全 0，覆盖率 core_done=80）** / tasks 23 / job_applications 3（JD#7 华夏泰科 + JD#8 电价预测均 rejected）/ **research_directions 6 / phd_targets 13 / phd_advisors 8（09-21 博士种子）** / practice_records 7（自测答题记录，源 `/api/interview/practice`）/ **quiz_session_questions 表已建（09-22 迁移 0026，空表；小测验每发一题落一行）**。
-- 待修：巨型组件（JobsBoard 996 行等 7 个 >400 行）；**硬编码色值**（09-22 实测口径：`frontend/src/**/*.ts(x)` 内 `#hex` 或 `rgb/rgba(` 共 **200 处 / 33 文件**，不含 globals.css；本批已从 QuestionBoard 删掉 4 个 RED/GREEN 常量）；ViewRole 死代码 + SubNav 把视角 trackKey 传给 Planner 写接口（待裁决）。
-- ✅ **题库三块已解除阻塞（09-22 用户裁决：不当 KPI，只按需自测）**——不再是待拍板项，不构成阻塞。留档备查：**D1** Project 错挂 **14 道** LLM 内容（脚本 10 道 + 历史 id 74 监控 / 75 A-B / 76 多轮对话 / 110 持续预训练，挪走会让 Project 掉到 26/40）；**D2 三组近重复题**（74↔140 / 75↔141 / 76↔139，与 D1 是同一动作的两面，宜先去重再挪）；**D3** `is_verified` 全库 0（**需闭卷答题，非代码可修**）。若哪天真要动，记住 D1 必须与 targets 同改才不会留缺口。
-- 已修（09-21）：job-postings 500（并发会话修）、SKILL_PROFILE 遍历 ×2、viewrole 护栏、dashboardService 边界注释。已修（09-22）：D2 题库脚本三连修（`3d567e8`，core_done 78→80、110→150 题）、`a.md` 入 .gitignore（`03e9ac4`）、**口径单一真源化（E1/E2）+ 文档纠错（E3/E4）+ 测试护栏与隔离修复（E5/E6/E7）→ pytest 首次全绿**、**题库去 KPI 化 + 接入自测学情（`4a3982f`，5 文件：PracticeStatsCard 新增 / QuestionBoard 覆盖率矩阵改中性分布 / questions 页并行拉 stats；含修 `practice/stats` 空库分支漏 `ok()` 包装的真实缺陷 + 新增 `test_practice_stats.py` 5 例）**、**小测验接通（D4 选 A：迁移 0026 + `_emit` 落库 + 判分回查 + `_same_answer` 字母容忍 + 诚实降级；前端 QuizRunner/QuizResultView/lib/questionType.ts；`test_quiz_api.py` 9 例）**，详见 docs/口径与题库问题清单-2026-09-22.md。
-- ✅ **D4 已裁决并落地（09-22 用户选"A 接上"）**：小测验从死代码做成真功能。`startQuiz`/`getQuizResult` 已接前端（`QuizRunner` + `QuizResultView`），后端补 9 例测试（`test_quiz_api.py`）。**接的过程中挖出两处更深缺陷**：① `_generate_question_type` 把 `_parse_error` 当成功 → 发出"标题写单选题、实际无选项"的题；② 生成的 `correct_answer` 没落库 → 判分回落到题库原题（生成题 options 为 NULL）→ **生成的选择/判断题永远判不对**。修法：新增 `quiz_session_questions` 表（**迁移 0026**）把每道真正发出去的题（实际题型/选项/答案/位置）落库，`practice_answer` 按 `session_id+question_id` **回查**判分；`_same_answer()` 容忍选择题字母（`B` ≡ `B. xxx`）。无 LLM 时**诚实降级**为全 `open` 题。`getQuestionSources`/`getRecommendations` 仍 0 调用方（属另一件事）。
-- 🔴 **回查原则（09-22 新增）**：凡"题目在发给用户前被**改写/生成**"的流程，判分必须用**发出去的那一份**，不能用原始题库行；否则题型与答案都会漂移。等价规则：**任何对外声明的题型必须与实际渲染一致**（做不到就降级成 open，不要假称 choice/judge）。
+- 单一源：skill_profile.py + target_roles.py + plan_30d.py（seq 不绑日历）；**skill_graph.py 的 SKILL_EDGES（52 边）是依赖图单一真源**（投影进 skill_dependency 表，禁止反向从表推）；**transition_context.py 是答辩日/导师窗口/在职事实单一真源**（core/risk.py 也用它）。
+- 开发库基线：skills 50（43 标六域 / 7 未标=冻结具身）/ skill_dependency 52 / plan_days 30 / **interview_questions 147（09-22 D1/D2 手术：删近重复 74/75/76 + 11 道 LLM 内容题 Project→LLM；终态 LLM 61/MM 30/Project 26/Coding 30，gap 全 0；备份 app.db.bak-20260922-d1）** / tasks 23 / job_applications 3 / research_directions 6 / phd_targets 13 / phd_advisors 8 / practice_records 7 / quiz_session_questions 表已建（空表）。
+- ✅ 09-22 四裁决已落地：①博士录入界面（用户自录数据）；②死接口 getQuestionSources/getRecommendations 前后端全删；③ViewRole 整体删除（lib/viewRole.ts 删、护栏改为"不得复活"断言）；④D1/D2 题库手术一次性完成。
+- ✅ 09-22 Phase 3 已落地：技能依赖图（迁移 0027 + 种子脚本 + 18 例护栏）+ 统一落地页五区（today 页四路并行取数；`test_transition_dashboard` 19 例，核心是 `test_readiness_is_identical_to_job_hunt` 断言落地页与求职看板逐字同源）。
+- 待修：巨型组件（JobsBoard 708 行 / QuestionBoard 678 / ResumeBoard 647 / JDBoard 610 / TodayBoard 605 等仍 >400 行）；硬编码色值（09-22 口径 200 处/33 文件，已清 QuestionBoard 4 处 + PhDAdvisorBoard ~12 处；Phase 3 顺手修 `RoiTaskList` 的**未定义令牌** `var(--radius-card)` → `var(--radius-item-md)`）；D3 is_verified 全库 0（需用户闭卷答题，非代码可修）。
 - 数据缺口：中科院地理所 2 年 5 个月仍不在 resume_facts（9 条）；JD#9 track='agent' 漂移任务。
+- 历史执行记录（E1-E7 口径修复、题库去 KPI 化 `4a3982f`、小测验接通 D4 等）详见 docs/口径与题库问题清单-2026-09-22.md 与 docs/项目梳理与迭代指导-2026-09-22.md §四。
 
 ## 文档索引
-- 全量梳理+低端模型任务包（6 个四元组）：docs/项目梳理与迭代指导-2026-09-21.md
+- 全量梳理+任务包：docs/项目梳理与迭代指导-2026-09-21.md（v1，含 6 个四元组任务包）
+- **09-22 梳理 v2 + 四裁决执行结果**：docs/项目梳理与迭代指导-2026-09-22.md
 - 背景与能力结构：docs/候选人背景分析-2026-09-17.md；产品诊断：docs/产品设计诊断-2026-09-17.md
 - v2.1 四件套：docs/CAREER_OS_V2_{INCREMENTAL_PRD,ARCHITECTURE,AGENT_SPEC,DEVELOPMENT_PLAN}.md
 - 模式 PRD：docs/PRD_CAREER_OS_MODES.md；实施约束：docs/CODEBUDDY_IMPLEMENTATION_CONSTRAINTS.md / CODEX_MODULAR_DESIGN_STANDARD.md / CODEX_READABILITY_STANDARD.md
+- 口径与题库问题清单（09-22）：docs/口径与题库问题清单-2026-09-22.md（E1-E7/D1-D4 全收口，留档备查）
 - Spec 工作流：docs/superpowers/specs/（审 spec 一律先实测代码/DB，别信 spec 自述）
-- **口径与题库问题清单（09-22）**：docs/口径与题库问题清单-2026-09-22.md（E1-E7 已修 / D1-D3 已解除阻塞，留档备查）

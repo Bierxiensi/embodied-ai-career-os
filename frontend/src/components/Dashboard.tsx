@@ -3,8 +3,8 @@ import type {
   AgentRunRecord,
   JobAppStatus,
   Project,
-  RadarAxis,
   Skill,
+  SkillRadarData,
   Task,
 } from "@/types";
 import TopActionCard from "./TopActionCard";
@@ -23,7 +23,8 @@ import AgentActivityCard from "./AgentActivityCard";
 type Props = {
   skills: Skill[];
   activeTrack: ActiveTrack | null;
-  radarAxes: RadarAxis[];
+  /** 技能雷达数据（形态由当前模式决定，见 services/skillRadarService）。 */
+  skillRadar: SkillRadarData;
   defaultScopeTasks: Task[];
   frozenExcludedTasks: number;
   unclassifiedTasks: number;
@@ -38,7 +39,7 @@ type Props = {
 export default function Dashboard({
   skills,
   activeTrack,
-  radarAxes,
+  skillRadar,
   defaultScopeTasks,
   frozenExcludedTasks,
   unclassifiedTasks,
@@ -103,11 +104,7 @@ export default function Dashboard({
         </div>
 
         {/* ═══════ 第 3 层：能力盘点 ═══════ */}
-        <SkillRadarCard
-          axes={radarAxes}
-          trackName={activeTrack?.name ?? null}
-          readiness={readiness}
-        />
+        <SkillRadarCard data={skillRadar} />
 
         <AgentActivityCard runs={agentRuns} limit={5} />
 

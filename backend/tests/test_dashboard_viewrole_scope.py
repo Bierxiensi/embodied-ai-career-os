@@ -6,12 +6,16 @@
 「切换 Dashboard 的展示视角」**不能**改变任何任务请求范围、任务统计或推荐；
 任务的默认范围只能由 **CareerMode** 改变。
 
-为什么值得单独写一个测试文件：这类 bug 的形态是"没有报错、数字只是悄悄变了"。
-2026-09-10 为了让任务跟随看板视角，``dashboardService`` 曾把 ViewRole 解析成
-赛道 key 再 ``getTasks({ trackKey })`` 过滤任务，于是切到「具身智能」视角时
-Dashboard 的任务统计变成了**冻结赛道**的进度 —— 违反 PRD §5 F5.2，且与
-/jobs、/today 的数字对不上。改动撤销后，如果没有测试钉住，"顺手加回一个
-trackKey 过滤"是极其自然的下一次改动。
+**2026-09-22 更新**：ViewRole 概念已从前端整体删除（lib/viewRole.ts、
+ViewRole/ViewRoleOption 类型、SubNav 的视角 props 全部移除 —— 它长期是
+死代码：RoleSwitcher 无页面引用、dashboard 不收 searchParams）。
+本文件**保留为回归护栏**：即使概念已删，这些测试仍钉住"任何 role/视角参数
+不得影响任务范围"，防止未来以新名字（perspective / lens / filter）复活旧坑。
+
+历史背景：2026-09-10 为了让任务跟随看板视角，``dashboardService`` 曾把
+ViewRole 解析成赛道 key 再 ``getTasks({ trackKey })`` 过滤任务，于是切到
+「具身智能」视角时 Dashboard 的任务统计变成了**冻结赛道**的进度 —— 违反
+PRD §5 F5.2，且与 /jobs、/today 的数字对不上。
 
 ================================================================================
 四道防线（对应四个覆盖点）
@@ -27,7 +31,8 @@ trackKey 过滤"是极其自然的下一次改动。
    c. **只有** CareerMode 切换才改变这个集合（job_hunt → long_term_transition
       会把冻结任务放回范围内），且切换本身不改动任何任务记录
 4. 前端层（源码护栏）：``dashboardService.ts`` 不得把 trackKey 传进 ``getTasks``，
-   且必须用 ``scope: "current_mode"``；全前端不存在"用视角推赛道再查任务"的调用
+   且必须用 ``scope: "current_mode"``；全前端不存在"用视角推赛道再查任务"的调用；
+   lib/viewRole.ts 不复存在且无任何文件 import 它（删除后的固化检查）
 
 隔离由 tests/conftest.py 提供（会话级临时库），本文件不自建数据库、不写开发库。
 """
@@ -51,7 +56,8 @@ client = TestClient(app)
 
 _FROZEN = next((r for r in TARGET_ROLES if r.frozen), None)
 
-#: 展示视角的全部取值（与 frontend/src/lib/viewRole.ts 的 ViewRole 一致）
+#: 展示视角的全部取值（历史概念：ViewRole 已于 2026-09-22 从前端删除，
+#: 这里保留两个字面量仅用于构造"旧视角请求"做回归验证）
 _VIEW_ROLES = ("jobhunt", "embodied")
 
 #: 不允许出现在任务请求参数里的维度名（视角 / 角色）
@@ -365,9 +371,8 @@ def test_dashboard_service_does_not_feed_view_role_into_task_query():
         "dashboardService 未使用统一默认范围（scope: current_mode）取任务"
     )
 
-    # 注释里必须写明视角的边界（本轮要求 #4：命名/注释明确 ViewRole 是展示视角）
-    for phrase in ("展示视角", "CareerMode"):
-        assert phrase in src, f"dashboardService 文档注释缺少边界说明关键词：{phrase}"
+    # 注释里必须写明范围的唯一来源（CareerMode）
+    assert "CareerMode" in src, "dashboardService 文档注释缺少 CareerMode 边界说明"
 
     # 关键：**代码**（去注释后）里不得再把视角解析结果当查询条件
     code = _strip_ts_comments(src)
@@ -382,6 +387,16 @@ def test_dashboard_service_does_not_feed_view_role_into_task_query():
     # 2026-09-16 ActiveTrack 重构：resolveTrack 改名 resolvePrimaryTrack（types
     # 注释记录了改名理由 —— 视角可切到非主攻赛道），护栏同步跟进，不回改业务代码。
     assert "function resolvePrimaryTrack" in src
+
+    # 2026-09-22：ViewRole 已整体删除 —— 固化检查：文件不存在 + 全前端无 import
+    assert not (_FRONTEND_SRC / "lib" / "viewRole.ts").exists(), (
+        "lib/viewRole.ts 复活了：展示视角概念已于 2026-09-22 删除，不得重建"
+    )
+    for path in _FRONTEND_SRC.rglob("*.ts*"):
+        code = _strip_ts_comments(path.read_text(encoding="utf-8", errors="ignore"))
+        assert "lib/viewRole" not in code, (
+            f"{path.relative_to(_REPO_ROOT)} 仍在 import lib/viewRole（已删除的概念）"
+        )
 
 
 def test_no_view_role_driven_task_query_anywhere_in_frontend():

@@ -59,14 +59,15 @@ export interface TaskQuery {
   projectId?: string;
   /** 按赛道过滤 —— **显式**的赛道查询（例如"查看某赛道的全部任务"）。
    * 这是查询条件，不代表"当前看哪个视角"：
-   * **禁止**用 ViewRole 推导出它去请求任务列表（Milestone B 契约）。 */
+   * **禁止**用展示视角推导出它去请求任务列表（Milestone B 契约；
+   * ViewRole 概念已于 2026-09-22 删除）。 */
   trackKey?: string | null;
   /** 赛道过滤时是否一并带上未归类（历史 / 手写）任务 */
   includeUntracked?: boolean;
   /** 范围口径：
    * - `all`（默认）：原始全量，不施加阶段口径
    * - `current_mode`：平台默认视图口径，由当前 CareerMode 决定，与 /jobs、/today 同源
-   * 只随 CareerMode 变化，不得由 ViewRole 推导。 */
+   * 只随 CareerMode 变化，不得由展示视角推导。 */
   scope?: TaskScopeMode;
 }
 

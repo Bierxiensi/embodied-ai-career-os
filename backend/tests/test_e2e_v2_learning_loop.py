@@ -2,11 +2,45 @@
 
 场景：用户说"学 ROS2" → 系统生成任务 → 用户完成 → 系统评估 → 技能可能升级
 全程使用 mock LLM（规则 fallback），验证各环节不崩溃。
+
+⚠️ 本模块会**改技能等级**（reviewer 晋级），而 conftest 的临时库是全量会话
+共用的。因此下面的 autouse 夹具负责跑完还原 —— 不还原就会让依赖"库即种子态"
+的断言漂移（实测：DPO 1→2，llm 推进度 35/52→36/52，67% 变 69%）。
 """
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _restore_skill_levels():
+    """共享测试库自清理：本模块修改过的技能等级，跑完还原。
+
+    只还原**已存在技能**的等级（reviewer 晋级走的是 update），不动新增行
+    与证据表 —— 够用且不会误伤其他断言。
+    """
+
+    from app.db.base import SessionLocal
+    from app.models.skill import Skill
+
+    before = SessionLocal()
+    try:
+        snapshot = {s.id: s.level for s in before.query(Skill).all()}
+    finally:
+        before.close()
+
+    yield
+
+    after = SessionLocal()
+    try:
+        for s in after.query(Skill).all():
+            if s.id in snapshot and s.level != snapshot[s.id]:
+                s.level = snapshot[s.id]
+        after.commit()
+    finally:
+        after.close()
 
 
 def test_full_learning_loop():

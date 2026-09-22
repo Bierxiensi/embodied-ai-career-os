@@ -56,7 +56,7 @@ export default function RoiTaskList({ tasks }: Props) {
                 padding: 12,
                 background: "var(--color-canvas)",
                 border: "1px solid var(--color-hairline)",
-                borderRadius: "var(--radius-card)",
+                borderRadius: "var(--radius-item-md)",
               }}
             >
               <div className="flex items-center justify-between" style={{ gap: 10 }}>

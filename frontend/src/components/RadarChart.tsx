@@ -35,6 +35,10 @@ function polarToCartesian(
 
 /** 生成多边形顶点字符串（SVG points 属性）。
  * 给定技能数与等级，计算每个顶点坐标并拼成 "x1,y1 x2,y2 ..."。
+ *
+ * 等级取不到时按 0 处理：R2 域聚合的轴值是**均值**，某域没有技能时
+ * 均值为 NaN，不兜底就会算出一串 "NaN,NaN"，整条 polyline 静默消失
+ * （SVG 遇到非法坐标不报错、只丢元素，排查成本极高）。
  */
 function buildPolygonPoints(
   cx: number,
@@ -47,7 +51,8 @@ function buildPolygonPoints(
   return values
     .map((value, i) => {
       const angle = (360 / count) * i;
-      const r = (Math.min(value, maxLevel) / maxLevel) * radius;
+      const level = Number.isFinite(value) ? value : 0;
+      const r = (Math.min(level, maxLevel) / maxLevel) * radius;
       const { x, y } = polarToCartesian(cx, cy, r, angle);
       return `${x.toFixed(2)},${y.toFixed(2)}`;
     })
@@ -105,6 +110,11 @@ export default function RadarChart({
     };
   }, [cx, cy, radius, count, maxLevel, skills]);
 
+  /* 各技能分级：当前 / 目标（角标位置与 tooltip 都基于这个） */
+  const emptyHint = count === 0 ? "无可绘制的雷达轴" : null;
+  const levelOf = (v: number) => (Number.isFinite(v) ? v : 0);
+  const gapOf = (s: RadarSkill) => Math.round((levelOf(s.target) - levelOf(s.current)) * 10) / 10;
+
   return (
     <svg
       viewBox={`0 0 ${size} ${size}`}
@@ -112,6 +122,18 @@ export default function RadarChart({
       role="img"
       aria-label="技能雷达图"
     >
+      {emptyHint ? (
+        <text
+          x={cx}
+          y={cy}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="#71717A"
+          style={{ fontSize: 13 }}
+        >
+          {emptyHint}
+        </text>
+      ) : null}
       {/* 背景网格：从内到外 maxLevel 层正多边形 */}
       {gridLayers.map((points, i) => (
         <polygon
@@ -157,7 +179,7 @@ export default function RadarChart({
       {/* 当前能力顶点圆点 + 标签 + tooltip 触发区 */}
       {skills.map((skill, i) => {
         const angle = (360 / count) * i;
-        const r = (skill.current / maxLevel) * radius;
+        const r = (levelOf(skill.current) / maxLevel) * radius;
         const { x, y } = polarToCartesian(cx, cy, r, angle);
         const labelPos = polarToCartesian(cx, cy, radius + 18, angle);
         const isHover = hoverIndex === i;
@@ -212,7 +234,7 @@ export default function RadarChart({
                   fill="#fff"
                   style={{ fontSize: 11 }}
                 >
-                  {skill.name} {skill.current}/{skill.target}
+                  {skill.name} {levelOf(skill.current)}/{levelOf(skill.target)}
                 </text>
                 <text
                   x={x + 14}
@@ -220,7 +242,7 @@ export default function RadarChart({
                   fill="#9ca3af"
                   style={{ fontSize: 10 }}
                 >
-                  gap {skill.target - skill.current}
+                  gap {gapOf(skill)}
                 </text>
               </g>
             )}

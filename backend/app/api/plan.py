@@ -36,7 +36,7 @@ from sqlalchemy.orm import Session
 
 from app.core.github_client import fetch_github_commits
 from app.core.response import ApiResponse, ok
-from app.core.target_roles import SPRINT_END, SPRINT_START, TARGET_ROLES
+from app.core.target_roles import SPRINT_END, SPRINT_START
 from app.db.base import get_db
 from app.api.risk import build_risk_result
 from app.core.career_roi import compute_task_roi
@@ -78,6 +78,7 @@ from app.services.action_planning.task_scope import (
     resolve_task_scope,
     select_tasks,
 )
+from app.services.readiness.service import primary_role
 
 router = APIRouter(prefix="/plan", tags=["plan"])
 
@@ -264,7 +265,9 @@ def get_today(
     risk_result = build_risk_result(db, today)
 
     # Phase 2：当日任务 ROI Top5（附加视图，不改 tasks 原有排序）
-    main_role = next((r for r in TARGET_ROLES if r.priority == "主攻"), None)
+    # 「主攻赛道」的判定单点在 services/readiness.service.primary_role，
+    # 与 /api/job-hunt、/api/risk、/api/transition/dashboard 共用同一处定义。
+    main_role = primary_role()
     main_required = (
         [s.lower() for s in main_role.required_skills] if main_role else []
     )

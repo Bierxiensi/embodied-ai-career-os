@@ -611,7 +611,7 @@ export default function QuestionBoard({
         <div className="flex flex-col" style={{ gap: 8, marginTop: 14 }}>
           {questions.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
-              题库为空。上面输入框敲一道题开始攒（每天 5 题，30 天 150）。
+              题库为空。上面输入框敲一道题开始攒（题库是存档，不是 KPI）。
             </p>
           ) : (
             questions.map((q) => {

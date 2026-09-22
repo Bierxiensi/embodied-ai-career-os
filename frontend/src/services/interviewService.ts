@@ -15,16 +15,12 @@ import type {
   InterviewQuestionCreate,
   InterviewStats,
   PracticeResult,
-  PracticeSkillStats,
   PracticeStats,
-  PracticeTypeStats,
   QuestionCategory,
   QuestionCoverage,
   QuestionType,
-  QuizQuestion,
   QuizResult,
   QuizStart,
-  QuizTypeStats,
   TaskDraft,
 } from "@/types";
 
@@ -339,75 +335,6 @@ export async function simulate(payload?: {
     limit: payload?.limit ?? 5,
   });
   return { picked: dto.picked.map(toQuestion), count: dto.count };
-}
-
-/* ───────────────────────── 题目来源（P2） ───────────────────────── */
-
-interface QuestionSourcesDTO {
-  sources: string[];
-}
-
-/** 获取题库中已有来源列表（去重）。 */
-export async function getQuestionSources(): Promise<string[]> {
-  const data = await apiClient.get<QuestionSourcesDTO>("/api/interview-questions/sources");
-  return data.sources;
-}
-
-/* ───────────────────────── JD×题库推荐 ───────────────────────── */
-
-interface RecommendationGap {
-  skill: string;
-  level: string;
-  required: number;
-  gap: number;
-  questions: InterviewQuestionDTO[];
-}
-
-interface RecommendationsDTO {
-  posting_id: number;
-  title: string;
-  company: string;
-  match_score: number;
-  gaps: RecommendationGap[];
-  summary: { total_gaps: number; covered_gaps: number; total_questions: number };
-}
-
-/** 获取 JD 缺口推荐题单。 */
-export async function getRecommendations(postingId: number): Promise<{
-  postingId: number;
-  title: string;
-  company: string;
-  matchScore: number;
-  gaps: {
-    skill: string;
-    level: string;
-    required: number;
-    gap: number;
-    questions: InterviewQuestion[];
-  }[];
-  summary: { totalGaps: number; coveredGaps: number; totalQuestions: number };
-}> {
-  const dto = await apiClient.get<RecommendationsDTO>(
-    `/api/job-postings/${postingId}/recommendations`
-  );
-  return {
-    postingId: dto.posting_id,
-    title: dto.title,
-    company: dto.company,
-    matchScore: dto.match_score,
-    gaps: dto.gaps.map((g) => ({
-      skill: g.skill,
-      level: g.level,
-      required: g.required,
-      gap: g.gap,
-      questions: g.questions.map(toQuestion),
-    })),
-    summary: {
-      totalGaps: dto.summary.total_gaps,
-      coveredGaps: dto.summary.covered_gaps,
-      totalQuestions: dto.summary.total_questions,
-    },
-  };
 }
 
 /* ───────────────────────── 练习与测验 ───────────────────────── */

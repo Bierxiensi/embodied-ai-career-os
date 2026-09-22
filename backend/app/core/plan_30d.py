@@ -824,7 +824,7 @@ PLAN_30D: list[PlanDaySeed] = [
         ),
         acceptance=(
             "技术故事完整、连贯，能一口气讲 10 分钟",
-            "30 commits / 30 技术笔记 / 150 题三项总账核对",
+            "30 commits / 30 技术笔记 / 题库总账核对（口径以 engine.QUESTION_CATEGORY_TARGETS 为准）",
             "明确下一步：12 月硕士毕业，2027 年把工作与 Multimodal 科研结合",
         ),
         interview_topics=(

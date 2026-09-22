@@ -40,6 +40,7 @@ from app.api.risk import router as risk_router
 from app.api.skills import router as skills_router
 from app.api.tasks import router as tasks_router
 from app.api.tools import router as tools_router
+from app.api.transition import router as transition_router
 from app.agents.registry_setup import setup_default_agents
 from app.core.config import settings
 from app.db.base import SessionLocal, init_db
@@ -112,6 +113,8 @@ app.include_router(reports_router, prefix=api_prefix)
 app.include_router(experiments_router, prefix=api_prefix)
 app.include_router(plan_router, prefix=api_prefix)
 app.include_router(risk_router, prefix=api_prefix)
+# Phase 3 统一落地页：职业进度 + 当前工作 + 学术与博士（/today 页的数据源之一）
+app.include_router(transition_router, prefix=api_prefix)
 
 
 @app.get("/health")

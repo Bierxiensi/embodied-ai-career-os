@@ -23,7 +23,6 @@ from app.core.risk import (
     compute_risk,
     track_strict_pct,
 )
-from app.core.target_roles import TARGET_ROLES
 from app.db.base import get_db
 from app.models.day_artifact import ARTIFACT_KIND_CODE, DayArtifact
 from app.models.experiment import Experiment
@@ -31,17 +30,19 @@ from app.models.phd import PhDAdvisor
 from app.models.skill import Skill
 from app.models.task import Task
 from app.schemas.risk import RiskOut
+from app.services.readiness.service import primary_role
 
 router = APIRouter(prefix="/risk", tags=["risk"])
 
 
 def _main_track():
-    """返回主攻赛道（priority == '主攻'），无则返回 None。"""
+    """返回主攻赛道（priority == '主攻'），无则返回 None。
 
-    for role in TARGET_ROLES:
-        if role.priority == "主攻":
-            return role
-    return None
+    判定单点在 ``services/readiness.service.primary_role`` —— 这里保留一个
+    同名的薄包装只为不打断既有调用点（本模块内 1 处）。
+    """
+
+    return primary_role()
 
 
 def _days_since(dt) -> int | None:

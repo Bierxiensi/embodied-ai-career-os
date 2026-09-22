@@ -19,7 +19,7 @@ export default async function DashboardPage() {
         <Dashboard
           skills={data.skills}
           activeTrack={data.activeTrack}
-          radarAxes={data.radarAxes}
+          skillRadar={data.skillRadar}
           defaultScopeTasks={data.defaultScopeTasks}
           frozenExcludedTasks={data.frozenExcludedTasks}
           unclassifiedTasks={data.unclassifiedTasks}

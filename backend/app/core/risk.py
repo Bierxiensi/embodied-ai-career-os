@@ -4,8 +4,13 @@
 无 LLM 依赖，LLM 未配置时全功能可用。输出统一为
 ``{key, label, level, reason}``，level ∈ "green" | "amber" | "red"。
 
-同文件导出 ``track_strict_pct`` —— 供 /api/job-hunt 的 roles_out 复用，
+同文件导出 ``track_strict_pct`` —— 供 ``services/readiness`` 复用，
 消除「双实现」导致的口径漂移（llm 当前 67%/23%/3/13 是回归锚点）。
+
+日期常量（答辩截止 / 导师联系窗口）自 Phase 3 起改由
+``core/transition_context.py`` 定义 —— 它们同时被统一落地页使用，
+留在本模块会变成"只属于风险的日期"。此处 import 再导出，
+既有 ``from app.core.risk import DEFENSE_DEADLINE`` 的写法继续有效。
 """
 
 from __future__ import annotations
@@ -13,12 +18,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-# 固定参考日期（口径决策，不得自行调整）
-DEFENSE_DEADLINE = date(2026, 12, 31)      # 答辩硬截止
-PHD_CONTACT_WINDOW = date(2026, 11, 1)     # 导师联系窗口关闭日
+from app.core.transition_context import (  # noqa: F401  (对外再导出)
+    COMPANY_REASON,
+    DEFENSE_DEADLINE,
+    PHD_CONTACT_WINDOW,
+)
 
 # 公司 / 财务维度常量（恒 green，配置在文件顶部，便于一眼看清）
-_COMPANY_REASON = "已确认留任，在职转型窗口 2026.09–2027.03"
+_COMPANY_REASON = COMPANY_REASON
 _FINANCIAL_REASON = "在职收入稳定"
 
 

@@ -25,6 +25,90 @@ export interface Skill {
   level: number; // 当前等级 0-5
   targetLevel: number; // 目标等级 0-5
   evidence: string[]; // 能力证明项
+  /** Phase 3：六域 key（llm_foundation / ... / research_foundation）。
+   * null = **不在六域内**（当前是 7 项冻结 / 历史旁证技能，如 ROS2 / VLA）。
+   * 真源在后端 core/skill_profile.py，不是 skills 表的列。 */
+  domain?: SkillDomainKey | null;
+  /** 六域显示名（后端给，前端不维护映射表） */
+  domainLabel?: string | null;
+}
+
+/** 六域 key（R2 域聚合雷达的轴标识）。 */
+export type SkillDomainKey =
+  | "llm_foundation"
+  | "finetune_alignment"
+  | "inference_engineering"
+  | "multimodal"
+  | "engineering_delivery"
+  | "research_foundation";
+
+/** 一条技能先修及其达成状态（依赖图 → 落地页的"先修 X"标注）。 */
+export interface SkillPrereq {
+  name: string;
+  /** 库里该技能的等级；库里没有时为 null（缺项，按未满足处理） */
+  level: number | null;
+  /** 是否已达到先修阈值（后端 PREREQ_SATISFIED_LEVEL = 3） */
+  met: boolean;
+  note?: string | null;
+}
+
+/** 六域中某域内的一项待补技能。 */
+export interface SkillDomainGap {
+  name: string;
+  level: number;
+  targetLevel: number;
+  gap: number;
+  prerequisites: SkillPrereq[];
+}
+
+/** 六域中的一域（= R2 雷达的一根轴）。 */
+export interface SkillDomain {
+  key: SkillDomainKey;
+  label: string;
+  skillCount: number;
+  /** 域内技能等级均值 0-5（保留 1 位小数） */
+  currentAvg: number;
+  /** 域内目标等级均值 0-5 */
+  targetAvg: number;
+  /** 缺口均值 = targetAvg - currentAvg */
+  gapAvg: number;
+  /** 域内待补技能，按 gap 降序 */
+  gapSkills: SkillDomainGap[];
+}
+
+/** GET /api/skills/domains 响应。 */
+export interface SkillDomainOverview {
+  domains: SkillDomain[];
+  /** 六域覆盖的技能数 / 不在域内的技能数（后者为冻结区） */
+  mappedCount: number;
+  unmappedCount: number;
+  unmappedNames: string[];
+  /** 先修达标阈值（后端权威值，前端不硬编码） */
+  prereqSatisfiedLevel: number;
+}
+
+/** 依赖图节点。 */
+export interface SkillGraphNode {
+  name: string;
+  domain: SkillDomainKey | null;
+  domainLabel: string | null;
+  level: number | null;
+  targetLevel: number | null;
+  frozen: boolean;
+}
+
+/** 依赖图有向边：先修 → 后继。 */
+export interface SkillGraphEdge {
+  prerequisite: string;
+  dependent: string;
+  note?: string | null;
+}
+
+/** GET /api/skills/graph 响应。 */
+export interface SkillGraph {
+  nodes: SkillGraphNode[];
+  edges: SkillGraphEdge[];
+  prereqSatisfiedLevel: number;
 }
 
 /** 任务状态机：todo → doing → done。 */
@@ -47,7 +131,8 @@ export interface Task {
   milestoneId?: string | null; // V2: 关联里程碑
   /** 所属赛道（llm / vlm / ai-algo / embodied）—— 任务自身的数据。
    * null/undefined = 未归类（历史 / 手写任务）。
-   * 注意：它**不是**"当前看哪个视角"的开关，不得由 ViewRole 推导出请求参数。 */
+   * 注意：它**不是**"当前看哪个视角"的开关，不得由展示视角推导出请求参数
+   * （ViewRole 概念已于 2026-09-22 删除）。 */
   trackKey?: string | null;
   /** 归属课程第几天（plan_days.id）。与 trackKey 正交：
    * trackKey 说「属于哪条赛道」，planDayId 说「属于课程第几天」。
@@ -62,8 +147,8 @@ export interface Task {
  * - `current_mode`：平台**默认视图口径**，由当前 CareerMode 决定
  *   （求职冲刺模式排除冻结赛道、保留未归类）。与 /jobs、/today 同源。
  *
- * 纪律：这个值只能随 **CareerMode** 变化，**绝不允许**由 ViewRole 推导 ——
- * 否则展示视角就变成了任务策略开关（Milestone B 契约）。
+ * 纪律：这个值只能随 **CareerMode** 变化，**绝不允许**由展示视角推导 ——
+ * 否则展示视角就变成了任务策略开关（Milestone B 契约；ViewRole 已于 2026-09-22 删除）。
  */
 export type TaskScopeMode = "all" | "current_mode";
 
@@ -398,35 +483,13 @@ export interface ActiveTrack {
   gapCount: number;
 }
 
-/** 视角角色 —— 同一份能力数据的两种**观察方式**（纯展示层）。
+/** 视角角色（ViewRole）已于 2026-09-22 删除。
  *
- * - `jobhunt`：求职冲刺（默认）。对齐「主攻」赛道，服务于当前 offer 目标。
- * - `embodied`：具身智能。对齐冻结的长期赛道，用于随时盘点与巩固基础。
- *
- * 纪律（Milestone B 收尾，2026-09-16 收紧）：
- * **ViewRole 是展示视角，不是策略开关。** 它只允许影响"看什么"——
- * 标题文案、雷达轴、就绪度标签、项目视觉强调。
- * 它**不得**影响：任务请求参数、任务数据范围、任务统计、推荐。
- * 任务的业务策略（生效/冻结赛道）唯一来源是 CareerMode
- * （见 `services/action_planning/task_scope.py`），前端不得用 ViewRole 推导过滤。
+ * 历史：曾用 `jobhunt`/`embodied` 两个展示视角切换 Dashboard 观察方式，
+ * 但 RoleSwitcher 早已无页面引用、长期是死代码；任务范围的唯一来源是
+ * CareerMode（见 `services/action_planning/task_scope.py`），
+ * 类型与 lib/viewRole.ts 一并移除，避免"展示视角"再次被误当策略开关。
  */
-export type ViewRole = "jobhunt" | "embodied";
-
-
-/** 视角切换器的选项（由后端返回的赛道配置派生，前端不硬编码赛道 key）。 */
-export interface ViewRoleOption {
-  role: ViewRole;
-  label: string;
-  /** 一句话说明这个视角是干什么用的，显示在切换器下方 */
-  description: string;
-  /** 后端是否提供了对应赛道（false 时该视角不可点） */
-  available: boolean;
-  trackKey: string | null;
-  trackName: string | null;
-  matchPct: number | null;
-  /** 长期视角（冻结赛道）：UI 上标注「长期」，避免与冲刺目标混淆 */
-  isLongTerm: boolean;
-}
 
 /** 求职看板聚合数据（GET /api/job-hunt）。 */
 export interface JobHuntBoard {
@@ -1276,11 +1339,10 @@ export type CareerModeKey = "job_hunt" | "long_term_transition";
 
 /** 一个职业阶段 —— 当前阶段的北极星目标与期限。
  *
- * 与 ViewRole 的区别（两者不是同一件事，不要混用）：
- * - `ViewRole`（lib/viewRole.ts）：Dashboard 的**观察视角**，存 cookie，
- *   只影响"看哪张图"，不落库。
- * - `CareerMode`：产品**阶段**，存后端数据库，影响全局导航与默认推荐口径。
- *   切换它不会删除、修改或隐藏任何既有业务数据。
+ * 历史注记：曾存在 `ViewRole`（lib/viewRole.ts）作为 Dashboard 观察视角，
+ * 与 CareerMode 并存易混用，已于 2026-09-22 整体删除 —— 现在只剩 CareerMode：
+ * 产品**阶段**，存后端数据库，影响全局导航与默认推荐口径；
+ * 切换它不会删除、修改或隐藏任何既有业务数据。
  */
 export interface CareerMode {
   id: string;
@@ -1318,4 +1380,165 @@ export interface CareerModeTransition {
 export interface CareerModeSwitchResult {
   current: CareerMode;
   transition: CareerModeTransition;
+}
+
+/* ───────────── Phase 3：Career Transition Dashboard（/today 落地页） ───────────── */
+
+/** 倒计时紧张度分档（后端唯一权威，前端只做颜色映射）。 */
+export type CountdownStatus = "overdue" | "urgent" | "soon" | "ok";
+
+/** 一条赛道的进度摘要（比 JobHuntBoard.targetRoles 更薄，明细去 /jobs 页）。 */
+export interface TrackProgress {
+  key: string;
+  name: string;
+  priority: string;
+  frozen: boolean;
+  /** 推进度：向岗位要求等级线性推进的百分比（与 JobsBoard 同源） */
+  matchPct: number;
+  /** 硬性达标率：level >= required 的技能占比（与 JobsBoard 同源） */
+  strictPct: number;
+  qualifiedCount: number;
+  requiredCount: number;
+  skillCount: number;
+  gapCount: number;
+}
+
+/** 带截止日的关键节点（导师联系窗口 / 答辩）。 */
+export interface TransitionMilestone {
+  key: string;
+  label: string;
+  deadline: string;
+  /** 剩余天数，负数 = 已过期（后端算，前端不重算） */
+  daysLeft: number;
+  status: CountdownStatus;
+  note: string;
+}
+
+/** 第 1 区：职业进度。 */
+export interface CareerProgress {
+  primaryTrackKey: string | null;
+  tracks: TrackProgress[];
+  milestones: TransitionMilestone[];
+}
+
+/** 第 2 区：当前工作（在职事实 + 在职转型窗口）。 */
+export interface Position {
+  company: string;
+  role: string;
+  focus: string;
+  sinceLabel: string;
+  /** 离职月份；null = 仍在职 */
+  endLabel: string | null;
+  statusLabel: string;
+  note: string;
+  transitionWindowStart: string;
+  transitionWindowEnd: string;
+  transitionWindowLabel: string;
+}
+
+/** 第 3 区（上半）：硕士答辩。 */
+export interface DegreeProgress {
+  label: string;
+  deadline: string;
+  daysLeft: number;
+  status: CountdownStatus;
+  note: string;
+}
+
+/** 博士导师摘要（落地页只显示 Top N，明细去 /phd 页）。 */
+export interface AdvisorBrief {
+  id: string;
+  name: string;
+  institution: string | null;
+  tier: string | null;
+  contacted: boolean;
+  /** 六维匹配置信度缓存；未计算过为 null */
+  matchOverall: number | null;
+  matchGrade: string | null;
+  matchOverallMax: number | null;
+}
+
+/** 最近的博士申请截止日。 */
+export interface NearestDeadline {
+  institution: string;
+  deadline: string;
+  daysLeft: number;
+}
+
+/** 第 3 区（下半）：博士申请进度。 */
+export interface PhDProgress {
+  seasonLabel: string;
+  windowLabel: string;
+  windowDeadline: string;
+  windowDaysLeft: number;
+  windowStatus: CountdownStatus;
+  targetCount: number;
+  advisorCount: number;
+  contactedCount: number;
+  matchedCount: number;
+  nearestDeadline: NearestDeadline | null;
+  topAdvisors: AdvisorBrief[];
+}
+
+/** 第 3 区：学术（答辩 + 博士）。 */
+export interface AcademicProgress {
+  degree: DegreeProgress;
+  phd: PhDProgress;
+}
+
+/** GET /api/transition/dashboard 响应。
+ *
+ * 只含三区：职业进度 / 当前工作 / 学术（答辩 + 博士）。
+ * 第 4 区（ROI 任务）与第 5 区（风险雷达）不走这个端点 —— 它们与"今天"
+ * 强相关，仍在 `TodayView`（/api/plan/today）里，页面并行取两处后合成。
+ */
+export interface TransitionDashboard {
+  /** 计算基准日（服务端日期） */
+  asOf: string;
+  mode: CareerMode;
+  careerProgress: CareerProgress;
+  position: Position;
+  academic: AcademicProgress;
+}
+
+/* ───────────── Phase 3：技能雷达的两种形态（R1 岗位对齐 / R2 域聚合） ───────────── */
+
+/** 雷达缺口行 —— 两种 variant **共用**同一形状，卡片因此只有一套渲染分支。
+ *
+ * 差异靠三个已算好的字符串承载（比值文本 / 说明 / 提示），
+ * 卡片不做数值格式化，避免"同一数字两处格式化不一致"。
+ */
+export interface RadarGapRow {
+  name: string;
+  current: number;
+  target: number;
+  gap: number;
+  /** 比值显示文本：岗位轴 "1/4"；域轴 "1.7/4.0"（均值带一位小数） */
+  ratioLabel: string;
+  /** R2：未达标先修提示，如 "先修 Attention（L3）未达标"；R1 为 null */
+  hint: string | null;
+}
+
+/** SkillRadarCard 的完整数据（由 services/skillRadarService 适配好）。
+ *
+ * 组件是纯渲染器：不判断模式、不取数、不做格式化。
+ * 模式 → variant 的映射只发生在 `buildSkillRadar`。
+ */
+export interface SkillRadarData {
+  /** job = R1 岗位对齐（轴为岗位硬性要求技能）；domain = R2 域聚合（轴为能力六域） */
+  variant: "job" | "domain";
+  /** 卡片主标题与副标题（轴来源说明） */
+  title: string;
+  axisCaption: string;
+  /** 归一化雷达轴（current/required 同一量纲 0-5） */
+  axes: RadarAxis[];
+  /** 主指标数值（R1 推进度；R2 六域整体达成度） */
+  readiness: number;
+  readinessCaption: string;
+  /** 主指标下方补充说明（R1：严格达标率；R2：覆盖/未覆盖技能数） */
+  readinessNote: string | null;
+  /** 缺口行（已排序，卡片只取前 N） */
+  gaps: RadarGapRow[];
+  /** 无轴时的空态文案 */
+  emptyHint: string;
 }
