@@ -48,6 +48,9 @@ so101/xml
 # 注意：memory/ 是有意纳入版本库的（见下方），所以只忽略 tmp/ 而非整个 .workbuddy/。
 .workbuddy/tmp/
 
+# 私人草稿（家庭 / 财务反思），禁止纳入版本库
+a.md
+
 # ===== SSH 密钥（持久化在 /workspace/.ssh，禁止提交）=====
 /.ssh/
 .ssh/
