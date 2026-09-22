@@ -42,6 +42,7 @@
 - 待修：巨型组件（JobsBoard 996 行等 7 个 >400 行）；**硬编码色值**（09-22 实测口径：`frontend/src/**/*.ts(x)` 内 `#hex` 或 `rgb/rgba(` 共 **200 处 / 33 文件**，不含 globals.css；本批已从 QuestionBoard 删掉 4 个 RED/GREEN 常量）；ViewRole 死代码 + SubNav 把视角 trackKey 传给 Planner 写接口（待裁决）。
 - ✅ **题库三块已解除阻塞（09-22 用户裁决：不当 KPI，只按需自测）**——不再是待拍板项，不构成阻塞。留档备查：**D1** Project 错挂 **14 道** LLM 内容（脚本 10 道 + 历史 id 74 监控 / 75 A-B / 76 多轮对话 / 110 持续预训练，挪走会让 Project 掉到 26/40）；**D2 三组近重复题**（74↔140 / 75↔141 / 76↔139，与 D1 是同一动作的两面，宜先去重再挪）；**D3** `is_verified` 全库 0（**需闭卷答题，非代码可修**）。若哪天真要动，记住 D1 必须与 targets 同改才不会留缺口。
 - 已修（09-21）：job-postings 500（并发会话修）、SKILL_PROFILE 遍历 ×2、viewrole 护栏、dashboardService 边界注释。已修（09-22）：D2 题库脚本三连修（`3d567e8`，core_done 78→80、110→150 题）、`a.md` 入 .gitignore（`03e9ac4`）、**口径单一真源化（E1/E2）+ 文档纠错（E3/E4）+ 测试护栏与隔离修复（E5/E6/E7）→ pytest 首次全绿**、**题库去 KPI 化 + 接入自测学情（`4a3982f`，5 文件：PracticeStatsCard 新增 / QuestionBoard 覆盖率矩阵改中性分布 / questions 页并行拉 stats；含修 `practice/stats` 空库分支漏 `ok()` 包装的真实缺陷 + 新增 `test_practice_stats.py` 5 例）**，详见 docs/口径与题库问题清单-2026-09-22.md。
+- 🟡 **D4（09-22 新发现，待选方向）**：**小测验（quiz）子系统整体不可达**。`interviewService.ts` 17 个导出里 **4 个零调用方**：`startQuiz` / `getQuizResult` / `getQuestionSources` / `getRecommendations`（扫法：全库 `src/**/*.ts(x)` 除定义处外无引用）。后果：`api/practice.py` 的 `quiz_start`/`quiz_result`/`_generate_question_type` 约 **250 行**（含"用 LLM 把一道题改写成选择/判断/填空/开放"）**无 UI 入口、无测试覆盖**，是否还能跑属未知。三选项：**接上**（加小测验入口+补测试）/ **删除** / **标记冻结**。`postPractice` 是活的（`QuestionCard` 在用）。
 - 数据缺口：中科院地理所 2 年 5 个月仍不在 resume_facts（9 条）；JD#9 track='agent' 漂移任务。
 
 ## 文档索引
