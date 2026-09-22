@@ -9,14 +9,31 @@ import FillQuestion from "./questions/FillQuestion";
 import OpenQuestion from "./questions/OpenQuestion";
 import ResultCard from "./ResultCard";
 
+/**
+ * QuestionCard 真正用到的题库题字段。
+ *
+ * 刻意收窄成「结构子类型」而不是要求完整 InterviewQuestion：
+ * 小测验的题来自 /quiz/start（QuizQuestion），它没有 category / source / hitCount
+ * 等字段，也没必要为了塞进这个组件而伪造一整条 InterviewQuestion。
+ * 题库题（InterviewQuestion）天然满足本类型，无需转换。
+ */
+export type PracticeCardQuestion = Pick<
+  InterviewQuestion,
+  "id" | "question" | "questionType" | "options" | "skillName" | "answerOutline"
+>;
+
 interface Props {
-  question: InterviewQuestion;
+  question: PracticeCardQuestion;
   /** 覆盖题型（测验模式下使用 LLM 生成的题型） */
   overrideType?: QuestionType;
   /** 覆盖选项（测验模式下 LLM 生成的选项） */
   overrideOptions?: string[] | null;
   /** 答题后的回调 */
   onResult?: (result: PracticeResult) => void;
+  /** 「下一题」回调（小测验用；不传则结果卡不显示该按钮） */
+  onContinue?: () => void;
+  /** 「继续」按钮文案（小测验最后一题传「看成绩」） */
+  continueLabel?: string;
   /** 关闭回调 */
   onClose?: () => void;
   /** 小测验 session 信息 */
@@ -28,6 +45,8 @@ export default function QuestionCard({
   overrideType,
   overrideOptions,
   onResult,
+  onContinue,
+  continueLabel,
   onClose,
   sessionId,
 }: Props) {
@@ -93,7 +112,14 @@ export default function QuestionCard({
   }
 
   if (result) {
-    return <ResultCard result={result} onClose={onClose} />;
+    return (
+      <ResultCard
+        result={result}
+        onContinue={onContinue}
+        continueLabel={continueLabel}
+        onClose={onClose}
+      />
+    );
   }
 
   // 题型标签

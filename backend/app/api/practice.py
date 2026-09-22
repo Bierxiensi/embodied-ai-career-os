@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from datetime import datetime
 
@@ -21,6 +22,7 @@ from app.core.response import ok
 from app.db.base import get_db
 from app.models.interview_question import InterviewQuestion
 from app.models.practice_record import PracticeRecord
+from app.models.quiz_question import QuizSessionQuestion
 from app.schemas.practice import (
     PracticeIn,
     PracticeOut,
@@ -42,6 +44,31 @@ router = APIRouter(prefix="/interview", tags=["practice"])
 # ─── LLM 评分 ───────────────────────────────────────────────
 
 
+# 形如「A」「A.」「A、」「A)」的选项字母；用于 choice 题的容错比对
+_OPTION_LETTER = re.compile(r"^([a-d])(?:[.\u3001\uff0e)\uff09:]|\s|$)")
+
+
+def _same_answer(user_answer: str, correct_answer: str) -> bool:
+    """choice / judge 题的答案比对（全等 or 选项字母一致）。
+
+    为什么要容错：前端 ChoiceQuestion 回传的是**字母**（"A"），而 LLM 生成的
+    ``correct_answer`` 有时是字母、有时是完整选项文本（"B. xxx"）。只做全等会
+    把「同一个选项」判成错。仅在两边都形如选项字母时才退化到字母比对，
+    避免把普通文本误判（例如正确答案是 "a"，用户答 "attention"）。
+    """
+
+    u = user_answer.strip().lower()
+    c = correct_answer.strip().lower()
+    if u == c:
+        return True
+
+    m_u = _OPTION_LETTER.match(u)
+    m_c = _OPTION_LETTER.match(c)
+    if m_u and m_c:
+        return m_u.group(1) == m_c.group(1)
+    return False
+
+
 def _keyword_score(
     answer_outline: str | None,
     question_type: str,
@@ -51,9 +78,9 @@ def _keyword_score(
     """关键词匹配降级评分（LLM 不可用时）。"""
     user_lower = user_answer.strip().lower()
 
-    # 选择/判断题：精确匹配
+    # 选择/判断题：精确匹配（choice 容忍「字母 ↔ 完整选项」两种写法）
     if question_type in ("choice", "judge") and correct_answer:
-        is_correct = user_lower == correct_answer.strip().lower()
+        is_correct = _same_answer(user_answer, correct_answer)
         return {
             "correct": is_correct,
             "score": 100 if is_correct else 0,
@@ -78,7 +105,6 @@ def _keyword_score(
     # 开放题：按要点关键词覆盖率
     if answer_outline:
         # 按行/逗号/分号拆分要点
-        import re
         points = re.split(r'[\n;；]', answer_outline)
         points = [p.strip().lstrip("0123456789.、").strip() for p in points if p.strip()]
         covered = [p for p in points if any(kw in user_lower for kw in p.lower().split()[:3] if len(kw) > 1)]
@@ -200,14 +226,35 @@ def practice_answer(payload: PracticeIn, db: Session = Depends(get_db)):
     # 确定正确答案和选项
     correct_answer = _get_correct_answer_from_options(q)
     choices = _get_choices_from_options(q)
+    question_text = q.question
 
-    # 如果有 LLM 生成的选项（前端回传），优先用
+    # 测验模式：优先用「本次测验实际下发的那道题」。
+    # 生成题（choice/judge/fill 变体）的真实答案只存在于 quiz_session_questions，
+    # 不回查就只能拿到题库原题的 options（生成题恒为 NULL）→ 判分必错。
+    if payload.mode == "quiz" and payload.session_id:
+        quiz_q = (
+            db.query(QuizSessionQuestion)
+            .filter(
+                QuizSessionQuestion.session_id == payload.session_id,
+                QuizSessionQuestion.question_id == q.id,
+            )
+            .first()
+        )
+        if quiz_q is not None:
+            question_text = quiz_q.question
+            quiz_options = quiz_q.option_list()
+            if quiz_options:
+                choices = quiz_options
+            if quiz_q.correct_answer:
+                correct_answer = quiz_q.correct_answer
+
+    # 如果有 LLM 生成的选项（前端回传）而库里没有，兜底用前端那份
     if payload.generated_options and not choices:
         choices = payload.generated_options
 
     # 调用 LLM 评分
     score_result = _llm_score(
-        question=q.question,
+        question=question_text,
         answer_outline=q.answer_outline,
         question_type=payload.question_type,
         user_answer=payload.user_answer,
@@ -290,7 +337,29 @@ def _generate_question_type(
     try:
         llm = get_llm()
         messages = [ChatMessage(role="user", content=prompt)]
-        return llm.chat_json(messages)
+        result = llm.chat_json(messages)
+
+        # ⚠️ LLM 未配置/不可用时（默认 MockClient）chat_json 返回
+        # {"_parse_error": True, "raw": ...}。此前这里是 `return llm.chat_json(...)`，
+        # 把这个 dict 当成**成功结果**返回 → 调用方 `if generated:` 恒真 →
+        # 题目被打上 choice/judge/fill 标签却没有选项，前端标题写「单选题」
+        # 实际渲染成简答框。生成失败必须显式返回 None，让调用方降级为 open。
+        if not isinstance(result, dict) or result.get("_parse_error"):
+            return None
+        if not str(result.get("question") or "").strip():
+            return None
+
+        # judge 题的选项固定为「正确/错误」，模型偶尔会漏
+        if target_type == "judge" and not result.get("options"):
+            result["options"] = ["正确", "错误"]
+        # choice 题没有选项就无法作答 → 视为生成失败（宁可降级成 open，也不下发错配的题）
+        if target_type == "choice" and not result.get("options"):
+            return None
+        # fill 题拿不到答案就无法判分 → 同样降级
+        if target_type == "fill" and not str(result.get("correct_answer") or "").strip():
+            return None
+
+        return result
     except Exception:
         return None
 
@@ -343,75 +412,88 @@ def quiz_start(payload: QuizStartIn, db: Session = Depends(get_db)):
 
     # 题型分配：选择 30% + 判断 30% + 填空 20% + 开放 20%
     count = len(questions)
-    type分配 = (
+    type_plan = (
         ["choice"] * max(1, count * 3 // 10)
         + ["judge"] * max(1, count * 3 // 10)
         + ["fill"] * max(1, count * 2 // 10)
         + ["open"] * max(1, count * 2 // 10)
     )
     # 补齐或截断到实际数量
-    while len(type分配) < count:
-        type分配.append("choice")
-    type分配 = type分配[:count]
+    while len(type_plan) < count:
+        type_plan.append("choice")
+    type_plan = type_plan[:count]
 
-    quiz_questions = []
-    for q, qtype in zip(questions, type分配):
-        # 如果题目手动配了选项，直接用
+    quiz_questions: list[QuizQuestionOut] = []
+    persisted: list[QuizSessionQuestion] = []
+
+    def _emit(
+        position: int,
+        q: InterviewQuestion,
+        qtype: str,
+        text: str,
+        options: list[str] | None,
+        correct: str | None,
+    ) -> None:
+        """登记一道下发给用户的题：进响应体 + 进 quiz_session_questions。
+
+        真实答案只进库、不进响应体 —— 所以前端拿不到"哪个选项是对的"。
+        """
+        quiz_questions.append(
+            QuizQuestionOut(
+                id=q.id,
+                question=text,
+                question_type=qtype,
+                options=options,
+                skill_name=q.skill_name,
+                difficulty=q.difficulty,
+            )
+        )
+        persisted.append(
+            QuizSessionQuestion(
+                session_id=session_id,
+                question_id=q.id,
+                question_type=qtype,
+                question=text,
+                options=QuizSessionQuestion.dump_options(options),
+                correct_answer=correct,
+                skill_name=q.skill_name,
+                difficulty=q.difficulty,
+                position=position,
+            )
+        )
+
+    for position, (q, qtype) in enumerate(zip(questions, type_plan)):
         manual_choices = _get_choices_from_options(q)
         manual_correct = _get_correct_answer_from_options(q)
 
         if qtype == "open":
-            quiz_questions.append(
-                QuizQuestionOut(
-                    id=q.id,
-                    question=q.question,
-                    question_type="open",
-                    options=None,
-                    skill_name=q.skill_name,
-                    difficulty=q.difficulty,
-                )
-            )
+            # 开放题：判分时用题库原题的 answer_outline 做要点覆盖，无需另存答案
+            _emit(position, q, "open", q.question, None, None)
             continue
 
         if manual_choices and q.question_type == qtype:
-            # 手动配置的题目，直接用原版
-            quiz_questions.append(
-                QuizQuestionOut(
-                    id=q.id,
-                    question=q.question,
-                    question_type=qtype,
-                    options=manual_choices,
-                    skill_name=q.skill_name,
-                    difficulty=q.difficulty,
-                )
-            )
+            # 题库里已手动配好选项的题，直接用原版（正确答案也在原题里）
+            _emit(position, q, qtype, q.question, manual_choices, manual_correct)
             continue
 
-        # LLM 动态生成
+        # LLM 动态生成题型变体
         generated = _generate_question_type(q.question, q.answer_outline, qtype)
         if generated:
-            quiz_questions.append(
-                QuizQuestionOut(
-                    id=q.id,
-                    question=generated.get("question", q.question),
-                    question_type=qtype,
-                    options=generated.get("options"),
-                    skill_name=q.skill_name,
-                    difficulty=q.difficulty,
-                )
+            _emit(
+                position,
+                q,
+                qtype,
+                str(generated.get("question") or q.question),
+                generated.get("options"),
+                generated.get("correct_answer") or None,
             )
         else:
-            # 降级：LLM 生成失败，用原题
-            quiz_questions.append(
-                QuizQuestionOut(
-                    id=q.id,
-                    question=q.question,
-                    question_type="open",
-                    options=None,
-                    skill_name=q.skill_name,
-                    difficulty=q.difficulty,
-                )
-            )
+            # 降级：LLM 未配置/生成失败 → 退化成开放题。
+            # 刻意**不保留原 qtype**：留着就会出现「标题写单选题、实际是简答框」的错配。
+            _emit(position, q, "open", q.question, None, None)
+
+    db.add_all(persisted)
+    db.commit()
 
     return ok(QuizStartOut(
         session_id=session_id,

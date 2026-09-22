@@ -1,6 +1,7 @@
 "use client";
 
 import type { PracticeStats } from "@/types";
+import { questionTypeLabel } from "@/lib/questionType";
 
 /**
  * 练习学情卡。
@@ -54,14 +55,6 @@ const chipStyle: React.CSSProperties = {
   borderRadius: "var(--radius-pill)",
   fontSize: 12,
   fontWeight: 500,
-};
-
-/** 题型 key → 中文（后端按 question_type 聚合）。 */
-const TYPE_LABEL: Record<string, string> = {
-  open: "简答",
-  choice: "选择",
-  judge: "判断",
-  fill: "填空",
 };
 
 function Metric({ value, label }: { value: string | number; label: string }) {
@@ -136,7 +129,7 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
                       background: "var(--color-amber-soft)",
                     }}
                   >
-                    {TYPE_LABEL[t] ?? t} 题型
+                    {questionTypeLabel(t)} 题型
                   </span>
                 ))}
               </div>

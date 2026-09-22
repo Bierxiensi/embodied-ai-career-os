@@ -25,6 +25,7 @@ from app.models.phd import PhDAdvisor, PhDTarget, ResearchDirection
 from app.models.plan_day import PlanDay
 from app.models.practice_record import PracticeRecord
 from app.models.project import Project
+from app.models.quiz_question import QuizSessionQuestion
 from app.models.skill import Skill
 from app.models.skill_assessment import SkillAssessment
 from app.models.task import Task
@@ -58,6 +59,7 @@ __all__ = [
     "PlanDay",
     "PracticeRecord",
     "Project",
+    "QuizSessionQuestion",
     "Skill",
     "SkillAssessment",
     "Task",

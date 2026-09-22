@@ -20,6 +20,7 @@ import {
   updateQuestion,
 } from "@/services/interviewService";
 import PracticeStatsCard from "./PracticeStatsCard";
+import QuizRunner from "./QuizRunner";
 import QuestionCard from "./QuestionCard";
 
 /* ───────────────────────── 元数据 ───────────────────────── */
@@ -330,6 +331,8 @@ export default function QuestionBoard({
   const [pickedOutline, setPickedOutline] = useState<string | null>(null);
 
   const skillOptions = coverage.skills.map((s) => s.name);
+  // 分类下拉项：复用本文件的 CATEGORY_META，避免小测验里再写一份分类名
+  const categoryOptions = CATEGORIES.map((c) => ({ value: c, label: CATEGORY_META[c].label }));
 
   async function refresh(cat = filterCat, source = filterSource) {
     const [qs, cov] = await Promise.all([
@@ -457,6 +460,16 @@ export default function QuestionBoard({
 
       {/* 我的练习 · 学得怎么样 —— 题库已降级为「需要时自测」的存档，这块才是重点 */}
       <PracticeStatsCard stats={stats} />
+
+      {/* 小测验：真答、真判分、出本轮成绩单（此前整套后端有实现但前端无入口） */}
+      <QuizRunner
+        categoryOptions={categoryOptions}
+        skillOptions={skillOptions}
+        onQuizEnd={() => {
+          refresh();
+          refreshStats();
+        }}
+      />
 
       {/* 快速录题 */}
       <div style={cardStyle}>

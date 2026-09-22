@@ -5,10 +5,12 @@ import type { PracticeResult } from "@/types";
 interface Props {
   result: PracticeResult;
   onContinue?: () => void;
+  /** 「继续」按钮文案。小测验最后一题传「看成绩」，默认「下一题」。 */
+  continueLabel?: string;
   onClose?: () => void;
 }
 
-export default function ResultCard({ result, onContinue, onClose }: Props) {
+export default function ResultCard({ result, onContinue, continueLabel, onClose }: Props) {
   const isPass = result.score >= 80;
   return (
     <div
@@ -91,7 +93,7 @@ export default function ResultCard({ result, onContinue, onClose }: Props) {
               fontSize: 14,
             }}
           >
-            下一题
+            {continueLabel ?? "下一题"}
           </button>
         )}
         {onClose && (
