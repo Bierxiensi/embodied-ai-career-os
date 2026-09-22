@@ -504,7 +504,10 @@ def practice_stats(db: Session = Depends(get_db)):
     """练习总统计。"""
     records = db.query(PracticeRecord).all()
     if not records:
-        return PracticeStatsOut(
+        # ⚠️ 必须走 ok() 包装：apiClient 以 `if (!body.success) throw` 解包，
+        # 裸返回 Pydantic 模型会让「零练习记录」的新用户整页报错。
+        # （2026-09-22 自测统计接入前端时由 test_practice_stats.py 抓出）
+        return ok(PracticeStatsOut(
             total_practiced=0,
             total_correct=0,
             accuracy=0,
@@ -513,7 +516,7 @@ def practice_stats(db: Session = Depends(get_db)):
             weak_skills=[],
             weak_types=[],
             recent_sessions=[],
-        )
+        ).model_dump(), "暂无练习记录")
 
     total = len(records)
     correct = sum(1 for r in records if r.correct)

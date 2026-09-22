@@ -6,6 +6,7 @@ import type {
   Difficulty,
   InterviewQuestion,
   PracticeResult,
+  PracticeStats,
   QuestionCategory,
   QuestionCoverage,
 } from "@/types";
@@ -13,10 +14,12 @@ import {
   createQuestion,
   deleteQuestion,
   getQuestionCoverage,
+  getPracticeStats,
   listQuestions,
   simulate,
   updateQuestion,
 } from "@/services/interviewService";
+import PracticeStatsCard from "./PracticeStatsCard";
 import QuestionCard from "./QuestionCard";
 
 /* ───────────────────────── 元数据 ───────────────────────── */
@@ -134,25 +137,20 @@ function Bar({ pct, color }: { pct: number; color: string }) {
   );
 }
 
-/* ───────────────────────── 覆盖率矩阵 ───────────────────────── */
-
-const RED = "#F43F5E";
-const RED_SOFT = "rgba(244,63,94,0.10)";
-const GREEN = "#10B981";
-const GREEN_SOFT = "rgba(16,185,129,0.12)";
+/* ───────────────────────── 题库分布矩阵 ───────────────────────── */
 
 function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
   const cats = coverage.categories.map((c) => c.key);
-  const pct = coverage.cellsTotal
-    ? Math.round((coverage.cellsFilled / coverage.cellsTotal) * 100)
-    : 0;
+  // 每类题量的相对刻度：按题库里最多的一类归一 —— 只表达"分布"，不再隐含"离目标还差多少"。
+  const maxByCat = Math.max(1, ...coverage.categories.map((c) => c.done));
 
   return (
     <div style={cardStyle}>
       <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
-        <h2 style={sectionTitleStyle}>覆盖率矩阵 · 缺口在哪</h2>
+        <h2 style={sectionTitleStyle}>题库分布 · 我有哪些题</h2>
         <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
-          格子覆盖率 {coverage.cellsFilled}/{coverage.cellsTotal}（{pct}%）· 红格 = 该技能该分类一题为 0
+          {coverage.total} 题 · {coverage.skills.length} 个技能 · 覆盖 {coverage.cellsFilled}/
+          {coverage.cellsTotal} 格
         </span>
       </div>
 
@@ -170,10 +168,10 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
                 )}
               </span>
               <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
-                {c.done}/{c.target}
+                {c.done} 题
               </span>
             </div>
-            <Bar pct={(c.done / c.target) * 100} color={c.gap === 0 ? GREEN : CATEGORY_META[c.key].color} />
+            <Bar pct={(c.done / maxByCat) * 100} color={CATEGORY_META[c.key].color} />
           </div>
         ))}
       </div>
@@ -222,8 +220,9 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
                           borderRadius: "var(--radius-item-sm)",
                           fontVariantNumeric: "tabular-nums",
                           fontWeight: 600,
-                          color: n === 0 ? RED : GREEN,
-                          background: n === 0 ? RED_SOFT : GREEN_SOFT,
+                          // 中性呈现：0 只表示"这类还没录题"，不是"缺口"，所以不标红。
+                          color: n === 0 ? "var(--color-ink-48)" : "var(--color-ink-80)",
+                          background: n === 0 ? "transparent" : "var(--color-item-bg)",
                         }}
                       >
                         {n}
@@ -240,8 +239,8 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
         </table>
       </div>
       <p style={{ fontSize: 12, color: "var(--color-ink-48)", marginTop: 10, lineHeight: 1.7 }}>
-        累计目标 {coverage.targetTotal} 题（核心必达 {coverage.coreTarget}：LLM + 多模态），
-        当前 {coverage.total} 题 / 核心 {coverage.coreDone} 题。每格目标 ≥1，一行齐 4 格才算该技能"讲得全"。
+        共 {coverage.total} 题。题库自 2026-09-22 起不再按「目标题数」考核，只作存档与自测用
+        —— 所以这里只展示「有什么」，检验学习效果请看上方的「我的练习」。
       </p>
     </div>
   );
@@ -296,11 +295,18 @@ function PracticeModal({
 type Props = {
   initialQuestions: InterviewQuestion[];
   initialCoverage: QuestionCoverage;
+  initialStats: PracticeStats;
 };
 
-export default function QuestionBoard({ initialQuestions, initialCoverage }: Props) {
+export default function QuestionBoard({
+  initialQuestions,
+  initialCoverage,
+  initialStats,
+}: Props) {
   const [questions, setQuestions] = useState<InterviewQuestion[]>(initialQuestions);
   const [coverage, setCoverage] = useState<QuestionCoverage>(initialCoverage);
+  // 练手学情：题库已降级为"需要时自测"，所以这块才是页面的重点。
+  const [stats, setStats] = useState<PracticeStats>(initialStats);
   const [busy, setBusy] = useState(false);
   const [filterCat, setFilterCat] = useState<string>("");
   const [filterSource, setFilterSource] = useState<string>("");
@@ -335,6 +341,15 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
     ]);
     setQuestions(qs);
     setCoverage(cov);
+  }
+
+  /** 单独刷新学情（答题会改 practice_records，但不动题库列表）。 */
+  async function refreshStats() {
+    try {
+      setStats(await getPracticeStats());
+    } catch {
+      // 学情拉取失败不该阻断主流程：保持上一次的快照即可。
+    }
   }
 
   async function applyFilter(cat: string) {
@@ -404,12 +419,13 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
     }
   }
 
-  /** 练习回调：关闭弹窗 + 刷新列表。 */
-  function handlePracticeResult(_result: PracticeResult) {
+  /** 练习回调：关闭弹窗 + 刷新列表与学情。 */
+  function handlePracticeResult() {
     // 延迟关闭让用户看到结果
     setTimeout(() => {
       setPracticeQuestion(null);
       refresh();
+      refreshStats();
     }, 2000);
   }
 
@@ -438,6 +454,9 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
           onResult={handlePracticeResult}
         />
       )}
+
+      {/* 我的练习 · 学得怎么样 —— 题库已降级为「需要时自测」的存档，这块才是重点 */}
+      <PracticeStatsCard stats={stats} />
 
       {/* 快速录题 */}
       <div style={cardStyle}>
@@ -496,7 +515,7 @@ export default function QuestionBoard({ initialQuestions, initialCoverage }: Pro
         )}
       </div>
 
-      {/* 覆盖率矩阵 */}
+      {/* 题库分布矩阵 */}
       <CoverageMatrix coverage={coverage} />
 
       {/* 抽题 */}
