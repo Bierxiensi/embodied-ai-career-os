@@ -73,11 +73,13 @@ def weakness_stats(logs: list[dict]) -> list[WeakItem]:
 def _match_skill_name(topic: str) -> str | None:
     """尝试把弱项文本匹配到规范技能名（大小写不敏感）。"""
     try:
+        # SKILL_PROFILE 是 SkillProfile 对象列表（core/skill_profile.py），
+        # 匹配其 .name 字段，而不是把对象当字符串遍历。
         from app.core.skill_profile import SKILL_PROFILE
         topic_lower = topic.strip().lower()
-        for name in SKILL_PROFILE:
-            if name.lower() == topic_lower:
-                return name
+        for profile in SKILL_PROFILE:
+            if profile.name.lower() == topic_lower:
+                return profile.name
     except ImportError:
         pass
     return None

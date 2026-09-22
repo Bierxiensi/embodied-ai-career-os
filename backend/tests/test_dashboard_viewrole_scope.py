@@ -378,8 +378,10 @@ def test_dashboard_service_does_not_feed_view_role_into_task_query():
             f"dashboardService 又把 trackKey 传给了 getTasks：{call.strip()}"
         )
 
-    # 展示口径的解析函数仍然存在（它只服务雷达 / 标题 / 就绪度）
-    assert "function resolveTrack" in src
+    # 展示口径的解析函数仍然存在（它只服务雷达 / 标题 / 就绪度）。
+    # 2026-09-16 ActiveTrack 重构：resolveTrack 改名 resolvePrimaryTrack（types
+    # 注释记录了改名理由 —— 视角可切到非主攻赛道），护栏同步跟进，不回改业务代码。
+    assert "function resolvePrimaryTrack" in src
 
 
 def test_no_view_role_driven_task_query_anywhere_in_frontend():

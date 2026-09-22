@@ -236,11 +236,13 @@ def create_question(payload: InterviewQuestionCreate, db: Session = Depends(get_
     # 归一化 skill_name：尝试匹配规范名
     skill_name = payload.skill_name
     if skill_name:
+        # SKILL_PROFILE 是 SkillProfile 对象列表（core/skill_profile.py），
+        # 匹配其 .name 字段，而不是把对象当字符串遍历。
         from app.core.skill_profile import SKILL_PROFILE
         skill_lower = skill_name.strip().lower()
-        for canonical in SKILL_PROFILE:
-            if canonical.lower() == skill_lower:
-                skill_name = canonical
+        for profile in SKILL_PROFILE:
+            if profile.name.lower() == skill_lower:
+                skill_name = profile.name
                 break
 
     q = InterviewQuestion(
