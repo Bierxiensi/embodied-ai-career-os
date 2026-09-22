@@ -17,8 +17,8 @@
 - 🔴 **接死代码前必须实测其真实响应形状**（同上）：前后端各有一批"定义了但从未被调用"的函数/端点，其正确性从未被验证。接上前先 curl 一遍真实返回。
 - 🔴 测试隔离（09-22 血泪）：`/api/plan/today` **只返回当天**的 artifacts（按 plan_day_id 过滤）。任何"清空某天产出"的 helper **必须显式传 seq**，用不带参数的 `_today()`（=日历当天）去清别的 day 会**静默变成空操作**。当日就因此误报过 `completed_days`。
 - 用例**不得依赖墙钟**：`/api/plan/today` 不带参数走日历口径（`_resolve_day_index`），随日期推移会指向未种下的课程日 → fixture 必须动态补种"日历推导当天"（09-22 修好 4 个长期红用例）。
-- 🔴 测试不得写开发库（conftest 已指向临时库且会话级守卫拒绝 data/app.db）；pytest 后核对开发库指纹 md5（当前基线 `65f7158f438b37e730bcc3777edbca4d`——09-22 题库种子后；迁移 ADD COLUMN / 种子写入都会改指纹，属正常）。
-- 迁移：下一条 **0026**（0016-0025 已用：0021-0023=博士三表，0024-0025=advisor contacted 两列，见 Phase 2 任务包）；单语句；写 SQLite 写法；必跑 tests/test_migration_dialect_compat.py。
+- 🔴 测试不得写开发库（conftest 已指向临时库且会话级守卫拒绝 data/app.db）；pytest 后核对开发库指纹 md5（**当前基线 `42419914cfd1db900ef1abeb568963dc`**——09-22 迁移 0026 建 `quiz_session_questions` 后；迁移 ADD COLUMN / CREATE TABLE / 种子写入都会改指纹，属正常）。
+- 迁移：下一条 **0027**（0016-0026 已用：0021-0023=博士三表，0024-0025=advisor contacted 两列，0026=quiz_session_questions）；单语句；写 SQLite 写法；必跑 tests/test_migration_dialect_compat.py（该测试按 `list_migration_files()` 参数化，**新增一个迁移就会多 1 个用例**，改动测试总数属正常）。
 - SKILL_PROFILE 是 **SkillProfile 对象列表**——匹配 `.name`，勿当字符串遍历（09-21 修过 engine.py:79 与 interviews.py:242 两处）。
 - Pydantic v2 from_attributes + 未 flush ORM → `@field_validator(mode="before")` 回落处理 NULL。
 - service 层不透传 payload；apiClient 不做 key 转换，create/patch 显式列 snake_case。
@@ -29,7 +29,7 @@
 
 ## 环境 / 门禁
 - 后端启动（后台）：`backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000`；本地 SQLite backend/data/app.db。
-- pytest：chdir backend + venv python（python -c os.chdir 包一层）；**基线（09-22）= 326 passed / 0 failed / 2 skipped**（321 为口径修复后、326 含新 `test_practice_stats.py` 5 例）。此前长期恒 4 failed（test_plan_api 日期驱动「课程日 Day N 不存在」，N 随日历推进），已于 09-22 连根修掉（见硬规则"用例不得依赖墙钟"）。
+- pytest：chdir backend + venv python（python -c os.chdir 包一层）；**基线（09-22）= 336 passed / 0 failed / 2 skipped**（321 口径修复后 → 326 含 `test_practice_stats.py` 5 例 → 336 含 `test_quiz_api.py` 9 例 + 迁移参数化 1 例）。此前长期恒 4 failed（test_plan_api 日期驱动「课程日 Day N 不存在」，N 随日历推进），已于 09-22 连根修掉（见硬规则"用例不得依赖墙钟"）。
 - 跑 pytest 最稳姿势：`.workbuddy/tmp/run_pytest.py [目标...]`（managed python 调 venv python，落盘再读，顺带核对开发库指纹；不传目标跑全量）。**Git Bash 缺 mkdir/tail**，别用管道。
 - 写后端测试的两个可靠手法（09-22）：①需要"干净库"时用 `contextmanager` 覆盖 `get_db` 指向**临时文件库**并 `Base.metadata.create_all` —— **别用 `sqlite://` 内存库**，TestClient 把同步端点丢线程池，内存库连接不共享、表会"消失"；②在共享隔离库上只做**增量断言** + 自清理，免受同会话其他模块影响。
 - 前端门禁 node 直调（npm shim 进 WSL 黑名单）：`node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json` + `node node_modules/eslint/bin/eslint.js <files>`（cwd=frontend；managed node 绝对路径 + python os.chdir 包装）。**next build 本机跑不了（fonts.googleapis.com 不通）→ 验收以 tsc+eslint 双 RC0 为准**；eslint 的 `react-hooks/error-boundaries`（page 的 try/catch 内 JSX）是**全项目基线**（未改页同样报），非回归。
@@ -38,11 +38,12 @@
 
 ## 数据与缺陷
 - 单一源：skill_profile.py（技能等级/证据）+ target_roles.py（赛道，含 TECH_BLACKLIST/SPRINT 窗口）+ plan_30d.py（课程唯一源，seq 不绑日历）。
-- 开发库基线：skills **50** / plan_days 30 / **interview_questions 150（09-22 D2 三连修后：LLM 50 / MM 30 / Project 40 / Coding 30，四类 gap 全 0，覆盖率 core_done=80）** / tasks 23 / job_applications 3（JD#7 华夏泰科 + JD#8 电价预测均 rejected）/ **research_directions 6 / phd_targets 13 / phd_advisors 8（09-21 博士种子）** / practice_records 7（自测答题记录，源 `/api/interview/practice`）。
+- 开发库基线：skills **50** / plan_days 30 / **interview_questions 150（09-22 D2 三连修后：LLM 50 / MM 30 / Project 40 / Coding 30，四类 gap 全 0，覆盖率 core_done=80）** / tasks 23 / job_applications 3（JD#7 华夏泰科 + JD#8 电价预测均 rejected）/ **research_directions 6 / phd_targets 13 / phd_advisors 8（09-21 博士种子）** / practice_records 7（自测答题记录，源 `/api/interview/practice`）/ **quiz_session_questions 表已建（09-22 迁移 0026，空表；小测验每发一题落一行）**。
 - 待修：巨型组件（JobsBoard 996 行等 7 个 >400 行）；**硬编码色值**（09-22 实测口径：`frontend/src/**/*.ts(x)` 内 `#hex` 或 `rgb/rgba(` 共 **200 处 / 33 文件**，不含 globals.css；本批已从 QuestionBoard 删掉 4 个 RED/GREEN 常量）；ViewRole 死代码 + SubNav 把视角 trackKey 传给 Planner 写接口（待裁决）。
 - ✅ **题库三块已解除阻塞（09-22 用户裁决：不当 KPI，只按需自测）**——不再是待拍板项，不构成阻塞。留档备查：**D1** Project 错挂 **14 道** LLM 内容（脚本 10 道 + 历史 id 74 监控 / 75 A-B / 76 多轮对话 / 110 持续预训练，挪走会让 Project 掉到 26/40）；**D2 三组近重复题**（74↔140 / 75↔141 / 76↔139，与 D1 是同一动作的两面，宜先去重再挪）；**D3** `is_verified` 全库 0（**需闭卷答题，非代码可修**）。若哪天真要动，记住 D1 必须与 targets 同改才不会留缺口。
-- 已修（09-21）：job-postings 500（并发会话修）、SKILL_PROFILE 遍历 ×2、viewrole 护栏、dashboardService 边界注释。已修（09-22）：D2 题库脚本三连修（`3d567e8`，core_done 78→80、110→150 题）、`a.md` 入 .gitignore（`03e9ac4`）、**口径单一真源化（E1/E2）+ 文档纠错（E3/E4）+ 测试护栏与隔离修复（E5/E6/E7）→ pytest 首次全绿**、**题库去 KPI 化 + 接入自测学情（`4a3982f`，5 文件：PracticeStatsCard 新增 / QuestionBoard 覆盖率矩阵改中性分布 / questions 页并行拉 stats；含修 `practice/stats` 空库分支漏 `ok()` 包装的真实缺陷 + 新增 `test_practice_stats.py` 5 例）**，详见 docs/口径与题库问题清单-2026-09-22.md。
-- 🟡 **D4（09-22 新发现，待选方向）**：**小测验（quiz）子系统整体不可达**。`interviewService.ts` 17 个导出里 **4 个零调用方**：`startQuiz` / `getQuizResult` / `getQuestionSources` / `getRecommendations`（扫法：全库 `src/**/*.ts(x)` 除定义处外无引用）。后果：`api/practice.py` 的 `quiz_start`/`quiz_result`/`_generate_question_type` 约 **250 行**（含"用 LLM 把一道题改写成选择/判断/填空/开放"）**无 UI 入口、无测试覆盖**，是否还能跑属未知。三选项：**接上**（加小测验入口+补测试）/ **删除** / **标记冻结**。`postPractice` 是活的（`QuestionCard` 在用）。
+- 已修（09-21）：job-postings 500（并发会话修）、SKILL_PROFILE 遍历 ×2、viewrole 护栏、dashboardService 边界注释。已修（09-22）：D2 题库脚本三连修（`3d567e8`，core_done 78→80、110→150 题）、`a.md` 入 .gitignore（`03e9ac4`）、**口径单一真源化（E1/E2）+ 文档纠错（E3/E4）+ 测试护栏与隔离修复（E5/E6/E7）→ pytest 首次全绿**、**题库去 KPI 化 + 接入自测学情（`4a3982f`，5 文件：PracticeStatsCard 新增 / QuestionBoard 覆盖率矩阵改中性分布 / questions 页并行拉 stats；含修 `practice/stats` 空库分支漏 `ok()` 包装的真实缺陷 + 新增 `test_practice_stats.py` 5 例）**、**小测验接通（D4 选 A：迁移 0026 + `_emit` 落库 + 判分回查 + `_same_answer` 字母容忍 + 诚实降级；前端 QuizRunner/QuizResultView/lib/questionType.ts；`test_quiz_api.py` 9 例）**，详见 docs/口径与题库问题清单-2026-09-22.md。
+- ✅ **D4 已裁决并落地（09-22 用户选"A 接上"）**：小测验从死代码做成真功能。`startQuiz`/`getQuizResult` 已接前端（`QuizRunner` + `QuizResultView`），后端补 9 例测试（`test_quiz_api.py`）。**接的过程中挖出两处更深缺陷**：① `_generate_question_type` 把 `_parse_error` 当成功 → 发出"标题写单选题、实际无选项"的题；② 生成的 `correct_answer` 没落库 → 判分回落到题库原题（生成题 options 为 NULL）→ **生成的选择/判断题永远判不对**。修法：新增 `quiz_session_questions` 表（**迁移 0026**）把每道真正发出去的题（实际题型/选项/答案/位置）落库，`practice_answer` 按 `session_id+question_id` **回查**判分；`_same_answer()` 容忍选择题字母（`B` ≡ `B. xxx`）。无 LLM 时**诚实降级**为全 `open` 题。`getQuestionSources`/`getRecommendations` 仍 0 调用方（属另一件事）。
+- 🔴 **回查原则（09-22 新增）**：凡"题目在发给用户前被**改写/生成**"的流程，判分必须用**发出去的那一份**，不能用原始题库行；否则题型与答案都会漂移。等价规则：**任何对外声明的题型必须与实际渲染一致**（做不到就降级成 open，不要假称 choice/judge）。
 - 数据缺口：中科院地理所 2 年 5 个月仍不在 resume_facts（9 条）；JD#9 track='agent' 漂移任务。
 
 ## 文档索引
