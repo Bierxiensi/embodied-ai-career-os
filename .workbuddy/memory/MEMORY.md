@@ -11,7 +11,7 @@
 
 ## 硬规则
 - 口径同源：services/action_planning/task_scope.py 唯一权威（排除制，禁白名单/禁路由再拼 track_key）；summary 须与列表同源断言。
-- 🔴 测试不得写开发库（conftest 已指向临时库且会话级守卫拒绝 data/app.db）；pytest 后核对开发库指纹 md5（Phase 2 后基线 `700bce545a49a0525981a430f202e05d`；迁移 ALTER ADD COLUMN 会改指纹，属正常）。
+- 🔴 测试不得写开发库（conftest 已指向临时库且会话级守卫拒绝 data/app.db）；pytest 后核对开发库指纹 md5（当前基线 `65f7158f438b37e730bcc3777edbca4d`——09-22 题库种子后；迁移 ADD COLUMN / 种子写入都会改指纹，属正常）。
 - 迁移：下一条 **0026**（0016-0025 已用：0021-0023=博士三表，0024-0025=advisor contacted 两列，见 Phase 2 任务包）；单语句；写 SQLite 写法；必跑 tests/test_migration_dialect_compat.py。
 - SKILL_PROFILE 是 **SkillProfile 对象列表**——匹配 `.name`，勿当字符串遍历（09-21 修过 engine.py:79 与 interviews.py:242 两处）。
 - Pydantic v2 from_attributes + 未 flush ORM → `@field_validator(mode="before")` 回落处理 NULL。
@@ -30,9 +30,9 @@
 
 ## 数据与缺陷
 - 单一源：skill_profile.py（技能等级/证据）+ target_roles.py（赛道，含 TECH_BLACKLIST/SPRINT 窗口）+ plan_30d.py（课程唯一源，seq 不绑日历）。
-- 开发库基线：skills 49 / plan_days 30 / interview_questions 110 / tasks 23 / job_applications 3（JD#7 华夏泰科 + JD#8 电价预测均 rejected）/ **research_directions 6 / phd_targets 13 / phd_advisors 8（09-21 博士种子）**。
-- 待修：🔴 `backend/scripts/seed_questions_v2.py` 第 255 行 SyntaxError + LLM 0 题（core=78<80 硬指标）+ 20 个技能名不归一（覆盖率矩阵红格 20→100 假缺口）→ **低端模型热身任务包 3**；巨型组件（JobsBoard 996 行等 7 个 >400 行）；81 处硬编码色值；ViewRole 死代码 + SubNav 把视角 trackKey 传给 Planner 写接口（待裁决）。
-- 已修（09-21）：job-postings 500（并发会话修）、SKILL_PROFILE 遍历 ×2、viewrole 护栏、dashboardService 边界注释。
+- 开发库基线：skills **50** / plan_days 30 / **interview_questions 150（09-22 D2 三连修后：LLM 50 / MM 30 / Project 40 / Coding 30，四类 gap 全 0，覆盖率 core_done=80）** / tasks 23 / job_applications 3（JD#7 华夏泰科 + JD#8 电价预测均 rejected）/ **research_directions 6 / phd_targets 13 / phd_advisors 8（09-21 博士种子）**。
+- 待修：巨型组件（JobsBoard 996 行等 7 个 >400 行）；81 处硬编码色值；ViewRole 死代码 + SubNav 把视角 trackKey 传给 Planner 写接口（待裁决）。**🔴 D2 题库三连修已于 09-22 完成**（commit `3d567e8`）；其**第二批**（Project 重划分类：10 道 LLM 理论题→LLM，见 spec-review §1.4/§B4）仍待做——注意该步会把 core_done 推到 90 且 Project 落到 30/40，前置是先定 17 个新技能归属（现按 B 路线改挂已有 canonical 技能）。
+- 已修（09-21）：job-postings 500（并发会话修）、SKILL_PROFILE 遍历 ×2、viewrole 护栏、dashboardService 边界注释。已修（09-22）：D2 题库脚本三连修（`3d567e8`，core_done 78→80、110→150 题）、`a.md` 入 .gitignore（`03e9ac4`）。
 - 数据缺口：中科院地理所 2 年 5 个月仍不在 resume_facts（9 条）；JD#9 track='agent' 漂移任务。
 
 ## 文档索引
