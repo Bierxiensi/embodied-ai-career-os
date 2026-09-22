@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -252,7 +253,7 @@ QUESTIONS: list[dict] = [
         "question": "多轮对话管理有哪些挑战？如何维护对话状态？",
         "difficulty": "intermediate",
         "skill_name": "多轮对话",
-        "answer_outline": "1) 挑战：指代消解（"它"指什么）、话题切换、上下文窗口限制、一致性维护。2) 状态管理：全量历史（短对话）、摘要压缩（长对话）、槽位填充（任务型对话）。3) 架构：对话管理器维护状态机，context window 管理历史长度。4) 实践：system prompt 放长期记忆，对话历史滑动窗口 + 摘要。",
+        "answer_outline": "1) 挑战：指代消解（“它”指什么）、话题切换、上下文窗口限制、一致性维护。2) 状态管理：全量历史（短对话）、摘要压缩（长对话）、槽位填充（任务型对话）。3) 架构：对话管理器维护状态机，context window 管理历史长度。4) 实践：system prompt 放长期记忆，对话历史滑动窗口 + 摘要。",
         "source": "seed_v2",
     },
     {
@@ -328,14 +329,112 @@ QUESTIONS: list[dict] = [
         "answer_outline": "1) 原理：自回归生成时，每个新 token 只需计算自己的 Q，K/V 可以复用之前 token 的结果。2) 实现：维护 cache tensor，每生成一个 token 追加 K/V 到 cache，attention 时用完整 cache 的 K/V。3) 显存占用：cache 大小 = 2 × num_layers × num_heads × seq_len × head_dim × dtype。4) 优化：GQA/MQA 减少 KV 头数、PagedAttention 动态分配显存、量化 KV cache。",
         "source": "seed_v2",
     },
+    # ═══════════════════════ LLM（2 题）═══════════════════════
+    # 补 LLM 缺口的 2 题（09-08 面试失分点：KV Cache 显存估算 / FlashAttention 原理）。
+    # 目标：core_done 78 → 80（LLM 48 → 50）。依据 docs/superpowers/specs/
+    # 2026-09-18-spec-review.md §B2（核心必达 80 才是硬指标）与 §1.4 第一批。
+    {
+        "category": "LLM",
+        "question": "KV Cache 的显存占用怎么估算？拿一个 7B 模型、4K 上下文算一遍。",
+        "difficulty": "advanced",
+        "skill_name": "KV Cache",
+        "answer_outline": "1) 公式：KV cache 字节数 = 2（K+V）× num_layers × num_kv_heads × head_dim × seq_len × batch × dtype_bytes。2) 7B 量级示例（LLaMA-7B 型：32 层、32 个 KV 头、head_dim=128、FP16 每元素 2B）：单 token 单序列 = 2×32×32×128×2 ≈ 524KB；4K 上下文 ≈ 2.1GB/序列。3) 关键结论：KV cache 随「上下文长度 × batch」线性增长，长上下文 / 高并发下往往比权重更吃显存（7B FP16 权重 14GB，100 并发 × 4K 的 cache 就已超过它）。4) 优化：MQA/GQA 把 num_kv_heads 从 32 降到 1~8（显存降 4~32 倍）；KV 量化（INT8/INT4）再降 2~4 倍；PagedAttention 消除碎片、提高有效利用率。",
+        "source": "seed_v2",
+    },
+    {
+        "category": "LLM",
+        "question": "FlashAttention 为什么能省显存又提速？IO 感知分块的核心思想是什么？",
+        "difficulty": "advanced",
+        "skill_name": "FlashAttention",
+        "answer_outline": "1) 问题：标准 attention 要把 seq_len×seq_len 的注意力矩阵写回 HBM，显存 O(n²)、HBM 读写量 O(n²)。2) 核心思想（IO 感知）：把 Q/K/V 分块（tile）载入片上 SRAM，在片上完成 softmax 与加权求和，不物化完整注意力矩阵，HBM 访问降到 O(n²/M)。3) 两个关键技巧：在线 softmax（维护 running max / sum，边算边归一，避免二次遍历）、重计算反向（backward 时用保存的统计量重算注意力，省下 O(n²) 存储）。4) 收益：注意力显存从 O(n²) 降到 O(n)，实测 2~4x 提速；代价是 kernel 复杂、需融合实现（Triton/CUDA）。5) 关联：与 KV Cache 互补——前者优化 attention 计算的访存，后者优化自回归解码的重复计算。",
+        "source": "seed_v2",
+    },
 ]
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 技能名归一（B 路线：改挂已有 canonical 技能）
+# ---------------------------------------------------------------------------
+# 依据：docs/superpowers/specs/2026-09-18-spec-review.md §B3。
+#
+# 背景：coverage_matrix 的行 = 主攻赛道 required_skills ∪ 题库里出现过的
+# skill_name（代码注释明写"会自动补到行尾"）。脚本里 20 个 skill_name 不在
+# SKILL_PROFILE 的 canonical 名单里，直接入库会让矩阵多出 20 行、约 80 个
+# "词表不统一造成的假缺口"，把"缺口在哪"的信号淹掉。
+#
+# 处理（spec-review §B3 的 B 路线）：
+#   - 3 个是同一个技能被写成了中文 → 直接换成 canonical 英文名；
+#   - 17 个是题库里的新概念 → 改挂到语义最近的 canonical 技能，不新增画像行。
+# 代价：部分新概念被并到较粗的 canonical 技能上（语义略粗），换取矩阵不被灌红。
+#
+# 已知的语义压缩（SKILL_PROFILE 里确实没有对应项）：
+#   评估体系 / 评估指标 → Deep Learning（ML 工程方法论的伞）；
+#   A/B 测试            → Agent Application（LLM 应用侧的工程实践）。
+# ═══════════════════════════════════════════════════════════════════════════
+SKILL_NAME_MAP: dict[str, str] = {
+    # —— 同一技能的中文写法 → canonical 英文名（spec-review §B3 点名的 3 个）——
+    "多模态对齐": "Multimodal Alignment",
+    "推理优化": "Inference Optimization",
+    "分布式训练": "Distributed Training",
+    # —— 多模态：改挂到 C 级 VLM 相关 canonical 技能 ——
+    "视觉编码器": "ViT",
+    "图文检索": "CLIP",
+    "视频理解": "VLM",
+    "OCR": "VLM",
+    "多模态 Agent": "Agent Application",
+    # —— LLM 应用 / 工程：改挂到强项 canonical 技能 ——
+    "Agent": "Agent Application",
+    "Prompt Engineering": "Agent Application",
+    "多轮对话": "Agent Application",
+    "A/B 测试": "Agent Application",
+    "幻觉检测": "RAG",
+    "安全对齐": "RLHF",
+    "数据工程": "Pretraining",
+    "部署优化": "vLLM",
+    "模型监控": "Inference Optimization",
+    "长上下文": "RoPE",
+    # —— 无 canonical 对应，挂到最近的 ML 工程能力（见上方"已知的语义压缩"）——
+    "评估体系": "Deep Learning",
+    "评估指标": "Deep Learning",
+}
+
+
+def normalize_skill_names(questions: list[dict]) -> int:
+    """就地归一 skill_name（不改 main() 逻辑），返回被改写的条数。
+
+    纯数据变换：只看 QUESTIONS 这一份数据，不碰数据库，便于 --dry-run 预演。
+    幂等：映射后的名字不在 SKILL_NAME_MAP 的键里，重复调用无副作用。
+    """
+    changed = 0
+    for q in questions:
+        name = q.get("skill_name")
+        mapped = SKILL_NAME_MAP.get(name) if name else None
+        if mapped and mapped != name:
+            q["skill_name"] = mapped
+            changed += 1
+    return changed
+
+
+# 导入即归一：main() 与 --dry-run 拿到的都是已归一的数据。
+NORMALIZED_COUNT = normalize_skill_names(QUESTIONS)
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="题库补充脚本 v2（幂等，按 question 文本去重）"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="只统计将新增的题数与分类分布，不写库（项目既有惯例，见 spec-review §S2）",
+    )
+    args = parser.parse_args()
+
     init_db()
     db = SessionLocal()
     added = 0
     skipped = 0
+    by_cat: dict[str, int] = {}
     try:
         existing = {
             q.question
@@ -344,6 +443,10 @@ def main() -> None:
         for item in QUESTIONS:
             if item["question"] in existing:
                 skipped += 1
+                continue
+            by_cat[item["category"]] = by_cat.get(item["category"], 0) + 1
+            added += 1
+            if args.dry_run:
                 continue
             db.add(InterviewQuestion(
                 category=item["category"],
@@ -356,7 +459,17 @@ def main() -> None:
                 hit_count=0,
                 is_verified=False,
             ))
-            added += 1
+
+        if args.dry_run:
+            print(
+                f"[dry-run] 将新增 {added} 题，跳过 {skipped} 题（已存在）；"
+                f"技能名归一 {NORMALIZED_COUNT} 条"
+            )
+            print("[dry-run] 新增分类分布：")
+            for cat in ("LLM", "Multimodal", "Project", "Coding"):
+                print(f"  {cat}: +{by_cat.get(cat, 0)}")
+            return
+
         db.commit()
         print(f"完成：新增 {added} 题，跳过 {skipped} 题（已存在）")
 
