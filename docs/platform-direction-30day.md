@@ -694,6 +694,15 @@ P3 改为显式 snake_case 映射（含 `source_day_seq` / `skill_name` / `is_ve
 - **偏离**：分类目标里 Project/Coding 的 40/30 无原文依据（计划只给了 LLM 50 + VLM 30），
   是按"补满 150"倒推的。若日后有更明确的分配，只改 `QUESTION_CATEGORY_TARGETS` 一处。
 
+> 🔴 **2026-09-22 更正**：上面这句"只改一处"**当时是错的**。实测当时 150 硬编码在**两处** ——
+> `agents/interview/engine.py` 的 `QUESTION_CATEGORY_TARGETS`，以及 **`api/plan.py` 的
+> `TARGET_QUESTIONS = 150`**（30 天计划总账的「面试题」KPI，是独立的一份）；`CORE_TARGET = 80`
+> 也是独立字面量、不从分类目标派生。现已改为**单一真源 + 派生**：只改
+> `QUESTION_CATEGORY_TARGETS`，`CORE_TARGET` 与 `api/plan.py` 的 `TARGET_QUESTIONS`
+> 自动跟随；回归护栏见 `backend/tests/test_p3_question_coverage.py`。
+> 仍保留的字面量只剩**展示文案**（`core/plan_30d.py` Day30 验收、前端
+> `QuestionBoard.tsx` 空态提示），不参与任何判定。
+
 ---
 
 ## 十五、P4 实施记录（2026-09-11）
