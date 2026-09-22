@@ -21,6 +21,7 @@ from app.models.milestone import Milestone
 from app.models.paper import Paper
 from app.models.paper_chunk import PaperChunk
 from app.models.paper_chunk_embedding import PaperChunkEmbedding
+from app.models.phd import PhDAdvisor, PhDTarget, ResearchDirection
 from app.models.plan_day import PlanDay
 from app.models.practice_record import PracticeRecord
 from app.models.project import Project
@@ -51,6 +52,9 @@ __all__ = [
     "Paper",
     "PaperChunk",
     "PaperChunkEmbedding",
+    "PhDAdvisor",
+    "PhDTarget",
+    "ResearchDirection",
     "PlanDay",
     "PracticeRecord",
     "Project",

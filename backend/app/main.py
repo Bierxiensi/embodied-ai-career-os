@@ -30,6 +30,7 @@ from app.api.learning_logs import router as learning_logs_router
 from app.api.dashboard import router as dashboard_router
 from app.api.milestones import router as milestones_router
 from app.api.paper import router as paper_router
+from app.api.phd import router as phd_router
 from app.api.experiments import router as experiments_router
 from app.api.plan import router as plan_router
 from app.api.planner import router as planner_router
@@ -95,6 +96,7 @@ app.include_router(reviewer_router, prefix=api_prefix)
 app.include_router(agent_router, prefix=api_prefix)
 app.include_router(github_router, prefix=api_prefix)
 app.include_router(paper_router, prefix=api_prefix)
+app.include_router(phd_router, prefix=api_prefix)
 app.include_router(projects_router, prefix=api_prefix)
 app.include_router(milestones_router, prefix=api_prefix)
 app.include_router(dashboard_router, prefix=api_prefix)

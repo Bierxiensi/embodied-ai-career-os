@@ -28,6 +28,7 @@ export default function GlobalNav() {
     { href: "/today", label: "今日" },
     ...(isJobHunt ? [{ href: "/jobs", label: "求职" }] : []),
     { href: "/plan", label: "学习" },
+    { href: "/phd", label: "博士" },
     { href: "/dashboard", label: "概览" },
   ];
 
