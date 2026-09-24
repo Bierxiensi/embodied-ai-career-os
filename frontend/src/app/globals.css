@@ -256,6 +256,19 @@
   }
 }
 
+@keyframes drawer-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes drawer-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes drawer-bottom {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 body {
   background: var(--surface-canvas);
   color: var(--text-primary);
