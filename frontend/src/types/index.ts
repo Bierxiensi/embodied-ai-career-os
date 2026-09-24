@@ -1542,3 +1542,61 @@ export interface SkillRadarData {
   /** 无轴时的空态文案 */
   emptyHint: string;
 }
+
+// ============================================================
+// 知识库（论文 RAG）—— /knowledge 页
+// ============================================================
+
+/** 知识库统计（/api/paper/stats）。口径以后端为准，前端不做二次加工。 */
+export interface KnowledgeStats {
+  paperCount: number;
+  chunkCount: number;
+  indexedChunkCount: number;
+  /** 当前嵌入模型名。若为 hash-384 说明退化到伪嵌入（检索会不准） */
+  modelName: string;
+  /** 索引覆盖率 0-1 */
+  coverage: number;
+}
+
+/** 单条检索命中（/api/paper/search 与 ask 的 citations 同构）。 */
+export interface KnowledgeCitation {
+  chunkId: string;
+  paperId: string;
+  paperTitle: string;
+  section: string;
+  page: number;
+  score: number;
+  text: string;
+}
+
+/** 问答结果（/api/paper/ask）。 */
+export interface KnowledgeAnswer {
+  question: string;
+  answer: string;
+  citations: KnowledgeCitation[];
+  /** high / medium / low —— 恒基于检索质量，与组答方式无关 */
+  confidence: "high" | "medium" | "low" | string;
+  /** 嵌入模型名（标识检索来源） */
+  modelName: string;
+  hitCount: number;
+  /** llm = 成句回答；rule = LLM 不可用时的片段拼接兜底 */
+  answerMode: "llm" | "rule" | string;
+}
+
+// ============================================================
+// 学习日志（"今天学到什么"）—— 今日施工单的内容位
+// ============================================================
+
+/** 一条学习日志。`content` 是必填的实质内容（含反思），不是勾选状态。 */
+export interface LearningLog {
+  id: string;
+  taskId: string | null;
+  /** 学习内容/产出（纯文本，含反思总结）。后端限 1-2000 字 */
+  content: string;
+  /** 学习时长（分钟）。后端限 1-480 */
+  durationMinutes: number | null;
+  /** 学习证明链接（GitHub/视频/博客）。Reviewer 据此加分，未来作为 Portfolio 证据 */
+  artifactUrl: string | null;
+  /** ISO 8601 UTC（service 层已补 Z，可直接 new Date()） */
+  createdAt: string;
+}

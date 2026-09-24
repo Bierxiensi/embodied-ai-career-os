@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type CSSProperties, type ReactNode } from "react";
+import LearningLogCard from "@/components/LearningLogCard";
+import ResourceList from "@/components/ResourceList";
 import { createArtifact, deleteArtifact } from "@/services/planService";
 import { updateTaskStatus } from "@/services/taskService";
 import { syncCommits } from "@/services/experimentService";
 import { ARTIFACT_META } from "@/types";
-import type { ArtifactKind, Task, TodayView } from "@/types";
+import type { ArtifactKind, LearningLog, Task, TodayView } from "@/types";
 
 type Props = {
   today: TodayView;
+  /** 学习日志（"今天学到什么"的内容位）。由 today/page.tsx 取好下发 */
+  learningLogs?: LearningLog[];
 };
 
 const TRACK_LABEL: Record<string, string> = {
@@ -60,7 +64,7 @@ function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }
  * 所以"完成"没有约束力；四件套（代码/笔记/面试题/commit）是可核验的。
  * P0 为手工一键勾选；P2 起 commit 由 GitHub 自动归集、面试题由题库条数判定。
  */
-export default function TodayBoard({ today }: Props) {
+export default function TodayBoard({ today, learningLogs = [] }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -351,6 +355,10 @@ export default function TodayBoard({ today }: Props) {
         )}
       </div>
 
+      {/* ═══════ 今天学到什么（内容位）═══════
+          四件套只记"勾没勾"，这里记"到底做了什么" —— 记录系统与成长系统的分界。 */}
+      <LearningLogCard logs={learningLogs} />
+
       {/* ═══════ 今天干什么 ═══════ */}
       <div className="flex flex-wrap" style={{ gap: 18 }}>
         <div
@@ -423,18 +431,10 @@ export default function TodayBoard({ today }: Props) {
           </div>
 
           <div style={{ height: 1, background: "var(--color-hairline-soft)" }} />
-          <SectionTitle hint="只允许这 5 类来源">指定资源</SectionTitle>
-          <div className="flex flex-col" style={{ gap: 8 }}>
-            {day.resources.map((r, i) => (
-              <span
-                key={i}
-                className="text-xs"
-                style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}
-              >
-                · {r}
-              </span>
-            ))}
-          </div>
+          {/* 口径：不写死数字 —— 资源锁曾从 5 类扩到 8 类，而这里一度仍写着"这 5 类"。
+              写死的数字是负债，下次还会变。 */}
+          <SectionTitle hint="均来自资源锁，不得自选">指定资源</SectionTitle>
+          <ResourceList names={day.resources} />
         </div>
       </div>
 

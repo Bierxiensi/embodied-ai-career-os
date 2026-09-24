@@ -9,7 +9,15 @@ import { useCareerMode } from "@/lib/careerModeContext";
 /** 求职模式下的二级路由（用于 isActive 前缀匹配）。 */
 const JOB_HUNT_ROUTES = ["/jobs", "/jd", "/resume", "/interview", "/reports"];
 /** 学习模式下的二级路由。 */
-const LEARN_ROUTES = ["/plan", "/projects", "/questions", "/experiments", "/evidence", "/agents"];
+const LEARN_ROUTES = [
+  "/plan",
+  "/knowledge",
+  "/projects",
+  "/questions",
+  "/experiments",
+  "/evidence",
+  "/agents",
+];
 
 /** 全局导航栏 — 顶栏 4 个一级入口，随 CareerMode 动态调整。
  *

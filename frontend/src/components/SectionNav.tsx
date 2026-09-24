@@ -33,6 +33,7 @@ const SECTIONS: Section[] = [
     label: "学习",
     links: [
       { href: "/plan", label: "施工计划" },
+      { href: "/knowledge", label: "知识库" },
       { href: "/projects", label: "项目" },
       { href: "/questions", label: "题库" },
       { href: "/experiments", label: "实验" },

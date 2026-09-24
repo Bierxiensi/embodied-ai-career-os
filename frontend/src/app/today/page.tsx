@@ -38,6 +38,7 @@ import RiskRadar from "@/components/RiskRadar";
 import RoiTaskList from "@/components/RoiTaskList";
 import { ApiError } from "@/lib/apiClient";
 import { getJobHuntBoard } from "@/services/jobHuntService";
+import { listLearningLogs } from "@/services/learningLogService";
 import { getToday } from "@/services/planService";
 import { getSkillDomains } from "@/services/skillService";
 import { buildSkillRadar } from "@/services/skillRadarService";
@@ -64,11 +65,13 @@ export default async function TodayPage({ searchParams }: PageProps) {
   try {
     // getToday 不兜底：它失败意味着后端整体不可用，直接走错误页。
     // 其余三处各自兜底 —— 任一辅助端点抽风时页面仍应给出能给的区。
-    const [today, transition, domains, board] = await Promise.all([
+    const [today, transition, domains, board, learningLogs] = await Promise.all([
       getToday(day),
       getTransitionDashboard().catch(() => null),
       getSkillDomains().catch(() => null),
       getJobHuntBoard().catch(() => null),
+      // 学习日志：与其它辅助端点同样兜底为空数组 —— 它挂了不该让整页进错误页
+      listLearningLogs().catch(() => []),
     ]);
 
     // 雷达形态由**当前模式**决定（long_term_transition → 六域；job_hunt → 岗位对齐）。
@@ -91,8 +94,8 @@ export default async function TodayPage({ searchParams }: PageProps) {
             subtitle="一屏五区：职业进度 · 当前工作 · 学术与博士 · 今日 ROI · 风险雷达。"
           />
 
-          {/* 今日施工单：四件套 + 今日任务（今天干什么、做完没有） */}
-          <TodayBoard today={today} />
+          {/* 今日施工单：四件套 + 今天学到什么 + 今日任务（今天干什么、做完没有） */}
+          <TodayBoard today={today} learningLogs={learningLogs} />
 
           {/* ═══ 五区 ═══ */}
           <div style={ZONE_GRID}>
