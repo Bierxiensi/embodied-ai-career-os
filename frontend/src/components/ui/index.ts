@@ -21,3 +21,5 @@ export { default as Popover } from "./Popover";
 export { default as CommandPalette } from "./CommandPalette";
 export { default as Drawer } from "./Drawer";
 export { default as Sidebar } from "./Sidebar";
+export { default as Timeline } from "./Timeline";
+export { default as BarChart } from "./BarChart";
