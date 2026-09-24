@@ -16,3 +16,5 @@ export { default as StepIndicator } from "./StepIndicator";
 export { default as Accordion } from "./Accordion";
 export { default as Breadcrumb } from "./Breadcrumb";
 export { default as Tabs } from "./Tabs";
+export { default as Modal } from "./Modal";
+export { default as Popover } from "./Popover";
