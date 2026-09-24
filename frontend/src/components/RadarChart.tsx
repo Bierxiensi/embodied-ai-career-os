@@ -128,7 +128,7 @@ export default function RadarChart({
           y={cy}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="var(--color-ink-28)"
+          fill="var(--text-muted)"
           style={{ fontSize: 13 }}
         >
           {emptyHint}
@@ -140,7 +140,7 @@ export default function RadarChart({
           key={i}
           points={points}
           fill="none"
-          stroke="var(--color-hairline-soft)"
+          stroke="var(--border-subtle)"
           strokeWidth={1}
         />
       ))}
@@ -153,7 +153,7 @@ export default function RadarChart({
           y1={cy}
           x2={end.x}
           y2={end.y}
-          stroke="var(--color-hairline-soft)"
+          stroke="var(--border-subtle)"
           strokeWidth={1}
         />
       ))}
@@ -161,8 +161,8 @@ export default function RadarChart({
       {/* 目标能力多边形 */}
       <polygon
         points={targetPoints}
-        fill="#E0F2FE"
-        stroke="#38BDF8"
+        fill="var(--accent-primary-soft)"
+        stroke="var(--accent-primary)"
         strokeWidth={2}
         strokeLinejoin="round"
       />
@@ -170,8 +170,8 @@ export default function RadarChart({
       {/* 当前能力多边形（实线填充） */}
       <polygon
         points={currentPoints}
-        fill="#DDF4EA"
-        stroke="var(--color-emerald)"
+        fill="var(--accent-success-soft)"
+        stroke="var(--accent-success)"
         strokeWidth={2}
         strokeLinejoin="round"
       />
@@ -192,7 +192,7 @@ export default function RadarChart({
               y={labelPos.y}
               textAnchor="middle"
               dominantBaseline="middle"
-              fill="var(--color-ink-28)"
+              fill="var(--text-muted)"
               style={{ fontSize: 11, fontWeight: isHover ? 700 : 500 }}
             >
               {skill.name}
@@ -203,7 +203,7 @@ export default function RadarChart({
               cx={x}
               cy={y}
               r={isHover ? 5 : 4}
-              fill="var(--color-emerald)"
+              fill="var(--accent-success)"
             />
 
             {/* 透明热区，便于 hover */}
@@ -231,7 +231,7 @@ export default function RadarChart({
                 <text
                   x={x + 14}
                   y={y - 8}
-                  fill="var(--color-on-primary)"
+                  fill="var(--text-inverse)"
                   style={{ fontSize: 11 }}
                 >
                   {skill.name} {levelOf(skill.current)}/{levelOf(skill.target)}
@@ -239,7 +239,7 @@ export default function RadarChart({
                 <text
                   x={x + 14}
                   y={y + 6}
-                  fill="#9ca3af"
+                  fill="var(--text-muted)"
                   style={{ fontSize: 10 }}
                 >
                   gap {gapOf(skill)}
