@@ -26,15 +26,15 @@ export default function SubNav({ skills, title = "概览" }: Props) {
       style={{
         height: 52,
         paddingInline: 24,
-        background: "var(--color-canvas)",
-        borderBottom: "1px solid var(--color-hairline)",
+        background: "var(--surface-canvas)",
+        borderBottom: "1px solid var(--border-default)",
       }}
     >
-      <span className="text-xl font-semibold" style={{ color: "var(--color-ink)" }}>
+      <span className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
         {title}
       </span>
       <div className="flex items-center" style={{ gap: 16 }}>
-        <span className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-sm" style={{ color: "var(--text-muted)" }}>
           {dateStr}
         </span>
         <GenerateTaskButton skills={skills} variant="pill" />

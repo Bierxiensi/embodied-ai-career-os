@@ -19,16 +19,16 @@ import {
 /* ───────────────────────── 元数据 ───────────────────────── */
 
 const GRADE_META: Record<MatchGrade, { label: string; color: string; soft: string }> = {
-  A: { label: "A · 强匹配", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
+  A: { label: "A · 强匹配", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
   B: { label: "B · 正常投", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
-  C: { label: "C · 练手", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
-  D: { label: "D · 不推荐", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
+  C: { label: "C · 练手", color: "var(--accent-warning)", soft: "var(--accent-warning-soft)" },
+  D: { label: "D · 不推荐", color: "var(--accent-danger)", soft: "rgba(244,63,94,0.12)" },
 };
 
 const TIER_META: Record<number, { label: string; color: string; soft: string }> = {
-  1: { label: "主攻", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
+  1: { label: "主攻", color: "var(--accent-danger)", soft: "rgba(244,63,94,0.12)" },
   2: { label: "卡位", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
-  3: { label: "保底", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
+  3: { label: "保底", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
 };
 
 const TRACK_LABEL: Record<string, string> = {
@@ -55,25 +55,25 @@ const DIMENSION_META: Array<{ key: keyof DimensionScores; label: string; weight:
 
 const cardStyle: React.CSSProperties = {
   padding: 24,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 15,
   fontWeight: 600,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   letterSpacing: "-0.01em",
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderRadius: "var(--radius-item-sm)",
-  border: "1px solid var(--color-hairline)",
-  background: "var(--color-card)",
+  borderRadius: "var(--radius-sm)",
+  border: "1px solid var(--border-default)",
+  background: "var(--surface-card)",
   fontSize: 13,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   outline: "none",
   minWidth: 140,
 };
@@ -127,7 +127,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
       style={{
         padding: 14,
         background: "var(--color-zinc-100)",
-        borderRadius: "var(--radius-item-md)",
+        borderRadius: "var(--radius-md)",
         display: "flex",
         flexDirection: "column",
         gap: 4,
@@ -136,7 +136,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
       }}
     >
       <span style={{ fontSize: 22, fontWeight: 700, color }}>{value}</span>
-      <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{label}</span>
     </div>
   );
 }
@@ -237,17 +237,17 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
         <div className="flex flex-col" style={{ gap: 8 }}>
           <span
             className="text-xs font-semibold uppercase"
-            style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+            style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
           >
             JOB POOL · JD MATCH
           </span>
           <h1
             className="font-semibold"
-            style={{ fontSize: 40, color: "var(--color-ink)", letterSpacing: "-0.02em" }}
+            style={{ fontSize: 40, color: "var(--text-primary)", letterSpacing: "-0.02em" }}
           >
             岗位池 · JD 匹配
           </h1>
-          <p className="text-[17px]" style={{ color: "var(--color-ink-48)" }}>
+          <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
             录 JD 即得 A/B/C/D 评级与差距 · 纯规则评分（技术栈40 / 项目25 / 学历年限15 / 科研10 / 行业10），可解释不盲投
           </p>
         </div>
@@ -258,9 +258,9 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
             岗位池概览
           </h2>
           <div className="grid" style={{ gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))", marginTop: 14 }}>
-            <StatCard label="岗位总数" value={stats.total} color="var(--color-ink)" />
-            <StatCard label="可优先投 (A+B)" value={stats.recommended} color="var(--color-emerald)" />
-            <StatCard label="未匹配" value={stats.unmatched} color="var(--color-ink-48)" />
+            <StatCard label="岗位总数" value={stats.total} color="var(--text-primary)" />
+            <StatCard label="可优先投 (A+B)" value={stats.recommended} color="var(--accent-success)" />
+            <StatCard label="未匹配" value={stats.unmatched} color="var(--text-muted)" />
             {GRADE_ORDER.map((g) => (
               <StatCard
                 key={g}
@@ -281,9 +281,9 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
               style={{
                 padding: "6px 14px",
                 borderRadius: "var(--radius-pill)",
-                border: "1px solid var(--color-primary)",
-                background: showForm ? "var(--color-primary)" : "transparent",
-                color: showForm ? "var(--color-on-primary)" : "var(--color-primary)",
+                border: "1px solid var(--accent-primary)",
+                background: showForm ? "var(--accent-primary)" : "transparent",
+                color: showForm ? "var(--text-inverse)" : "var(--accent-primary)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -360,7 +360,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                   onChange={(e) => setForm({ ...form, minYears: e.target.value })}
                   style={{ ...inputStyle, width: 120 }}
                 />
-                <label className="flex items-center" style={{ gap: 6, fontSize: 13, color: "var(--color-ink-80)" }}>
+                <label className="flex items-center" style={{ gap: 6, fontSize: 13, color: "var(--text-secondary)" }}>
                   <input
                     type="checkbox"
                     checked={form.paperRequired}
@@ -383,8 +383,8 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                     padding: "8px 20px",
                     borderRadius: "var(--radius-pill)",
                     border: "none",
-                    background: "var(--color-primary)",
-                    color: "var(--color-on-primary)",
+                    background: "var(--accent-primary)",
+                    color: "var(--text-inverse)",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: busy ? "not-allowed" : "pointer",
@@ -402,7 +402,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
         <div style={cardStyle}>
           <h2 style={{ ...sectionTitleStyle, marginBottom: 14 }}>岗位列表（按匹配分降序）</h2>
           {postings.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
               岗位池为空，点击「＋ 新增 JD」录入第一条。
             </p>
           ) : (
@@ -410,14 +410,14 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
               {postings.map((p) => {
                 const grade = p.grade ? GRADE_META[p.grade] : null;
                 const tier = TIER_META[p.tier] ?? TIER_META[2];
-                const matchColor = grade ? grade.color : "var(--color-ink-48)";
+                const matchColor = grade ? grade.color : "var(--text-muted)";
                 const expanded = expandId === p.id;
                 return (
                   <div
                     key={p.id}
                     style={{
-                      border: "1px solid var(--color-hairline-soft)",
-                      borderRadius: "var(--radius-item-md)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "var(--radius-md)",
                       overflow: "hidden",
                     }}
                   >
@@ -427,15 +427,15 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                       onClick={() => setExpandId(expanded ? null : p.id)}
                     >
                       <div className="flex flex-col" style={{ gap: 2, minWidth: 180, flex: 1 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
                           {p.company}
                         </span>
-                        <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+                        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                           {p.title}
                           {p.salaryRange ? ` · ${p.salaryRange}` : ""}
                         </span>
                       </div>
-                      <Pill label={TRACK_LABEL[p.track] || p.track} color="var(--color-ink-48)" soft="var(--color-zinc-100)" />
+                      <Pill label={TRACK_LABEL[p.track] || p.track} color="var(--text-muted)" soft="var(--color-zinc-100)" />
                       <Pill label={tier.label} color={tier.color} soft={tier.soft} />
                       {p.matchScore != null ? (
                         <div className="flex items-center" style={{ gap: 10, minWidth: 150 }}>
@@ -448,7 +448,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                           {grade ? <Pill label={grade.label} color={grade.color} soft={grade.soft} /> : null}
                         </div>
                       ) : (
-                        <Pill label="未匹配" color="var(--color-ink-48)" soft="var(--color-zinc-100)" />
+                        <Pill label="未匹配" color="var(--text-muted)" soft="var(--color-zinc-100)" />
                       )}
                       <div className="flex items-center" style={{ gap: 6 }}>
                         <button
@@ -474,7 +474,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                         style={{
                           padding: "14px 16px",
                           background: "var(--color-zinc-100)",
-                          borderTop: "1px solid var(--color-hairline-soft)",
+                          borderTop: "1px solid var(--border-subtle)",
                         }}
                       >
                         <MatchDetail posting={p} />
@@ -487,7 +487,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
           )}
         </div>
 
-        <footer style={{ fontSize: 12, color: "var(--color-ink-48)", textAlign: "center", paddingTop: 8 }}>
+        <footer style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", paddingTop: 8 }}>
           Career OS · 岗位池 · 数据来自 /api/job-postings（纯规则匹配，不依赖 LLM）
         </footer>
       </div>
@@ -500,7 +500,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
 const iconBtn: React.CSSProperties = {
   border: "none",
   background: "transparent",
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
   cursor: "pointer",
   fontSize: 16,
   lineHeight: 1,
@@ -513,17 +513,17 @@ function MatchDetail({ posting }: { posting: JobPosting }) {
     <div className="flex flex-col" style={{ gap: 16 }}>
       {/* 维度分 */}
       <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-ink)", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 10 }}>
           匹配维度（v2.0 §22 权重）
         </div>
         <div className="flex flex-col" style={{ gap: 10 }}>
           {DIMENSION_META.map((d) => {
             const v = dims ? dims[d.key] : 0;
-            const color = v >= 80 ? "var(--color-emerald)" : v >= 50 ? "var(--color-amber)" : "var(--color-rose)";
+            const color = v >= 80 ? "var(--accent-success)" : v >= 50 ? "var(--accent-warning)" : "var(--accent-danger)";
             return (
               <div key={d.key} className="flex items-center" style={{ gap: 12 }}>
-                <span style={{ fontSize: 13, width: 96, color: "var(--color-ink-80)" }}>{d.label}</span>
-                <span style={{ fontSize: 11, color: "var(--color-ink-48)", width: 36 }}>{d.weight}</span>
+                <span style={{ fontSize: 13, width: 96, color: "var(--text-secondary)" }}>{d.label}</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", width: 36 }}>{d.weight}</span>
                 <div style={{ flex: 1 }}>
                   <MatchBar pct={v} color={color} />
                 </div>
@@ -536,7 +536,7 @@ function MatchDetail({ posting }: { posting: JobPosting }) {
 
       {/* 差距 */}
       <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-ink)", marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
           能力差距（按缺口降序）
         </div>
         {posting.gaps && posting.gaps.length > 0 ? (
@@ -548,7 +548,7 @@ function MatchDetail({ posting }: { posting: JobPosting }) {
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
                   fontSize: 12,
-                  color: "var(--color-rose-deep)",
+                  color: "var(--accent-danger)",
                   background: "rgba(244,63,94,0.10)",
                 }}
               >
@@ -557,7 +557,7 @@ function MatchDetail({ posting }: { posting: JobPosting }) {
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
             无显著技能缺口（JD 要求的技能均已达标）。
           </p>
         )}
@@ -566,7 +566,7 @@ function MatchDetail({ posting }: { posting: JobPosting }) {
       {/* JD 原文 */}
       {posting.jdText ? (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-ink)", marginBottom: 6 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
             JD 原文
           </div>
           <pre
@@ -575,7 +575,7 @@ function MatchDetail({ posting }: { posting: JobPosting }) {
               wordBreak: "break-word",
               fontSize: 12,
               lineHeight: 1.6,
-              color: "var(--color-ink-80)",
+              color: "var(--text-secondary)",
               margin: 0,
               maxHeight: 240,
               overflow: "auto",
@@ -595,9 +595,9 @@ function MatchDetail({ posting }: { posting: JobPosting }) {
                 padding: "2px 8px",
                 borderRadius: "var(--radius-pill)",
                 fontSize: 11,
-                color: "var(--color-ink-48)",
-                background: "var(--color-card)",
-                border: "1px solid var(--color-hairline)",
+                color: "var(--text-muted)",
+                background: "var(--surface-card)",
+                border: "1px solid var(--border-default)",
               }}
             >
               {s}

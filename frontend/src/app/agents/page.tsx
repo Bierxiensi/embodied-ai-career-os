@@ -34,17 +34,17 @@ export default async function AgentsPage() {
           <div className="flex flex-col" style={{ gap: 8 }}>
             <span
               className="text-xs font-semibold uppercase"
-              style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+              style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
             >
               MULTI-AGENT SYSTEM
             </span>
             <h1
               className="font-semibold"
-              style={{ fontSize: 40, color: "var(--color-ink)", letterSpacing: "-0.02em" }}
+              style={{ fontSize: 40, color: "var(--text-primary)", letterSpacing: "-0.02em" }}
             >
               Agent 工作台
             </h1>
-            <p className="text-[17px]" style={{ color: "var(--color-ink-48)" }}>
+            <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
               多智能体执行总览与可观测性 · Planner / Reviewer / Career / Research / Supervisor
             </p>
           </div>
@@ -62,24 +62,24 @@ export default async function AgentsPage() {
     return (
       <main
         className="flex flex-1 items-center justify-center"
-        style={{ background: "var(--color-canvas)" }}
+        style={{ background: "var(--surface-canvas)" }}
       >
         <div
           className="max-w-md text-center"
           style={{
             padding: 32,
-            background: "var(--color-card)",
-            border: "1px solid var(--color-rose)",
-            borderRadius: "var(--radius-card-lg)",
+            background: "var(--surface-card)",
+            border: "1px solid var(--accent-danger)",
+            borderRadius: "var(--radius-lg)",
           }}
         >
-          <h1 className="text-lg font-semibold" style={{ color: "var(--color-rose-deep)" }}>
+          <h1 className="text-lg font-semibold" style={{ color: "var(--accent-danger)" }}>
             后端连接失败
           </h1>
-          <p className="mt-2 text-sm" style={{ color: "var(--color-ink-48)" }}>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
             {message}
           </p>
-          <p className="mt-4 text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <p className="mt-4 text-xs" style={{ color: "var(--text-muted)" }}>
             请执行：cd backend &amp;&amp; uvicorn app.main:app --reload --port 8000
           </p>
         </div>

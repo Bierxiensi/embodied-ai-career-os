@@ -42,7 +42,7 @@ export default function TopActionCard({ daysLeft, activeTrack, tasks }: Props) {
               style={{
                 fontSize: 36,
                 lineHeight: 1,
-                color: daysLeft <= 7 ? "var(--color-rose-deep)" : "var(--color-ink)",
+                color: daysLeft <= 7 ? "var(--accent-danger)" : "var(--text-primary)",
                 letterSpacing: "-0.02em",
               }}
             >
@@ -51,7 +51,7 @@ export default function TopActionCard({ daysLeft, activeTrack, tasks }: Props) {
                 style={{
                   fontSize: 16,
                   fontWeight: 500,
-                  color: "var(--color-ink-48)",
+                  color: "var(--text-muted)",
                   marginLeft: 4,
                 }}
               >
@@ -67,15 +67,15 @@ export default function TopActionCard({ daysLeft, activeTrack, tasks }: Props) {
                 borderRadius: "var(--radius-pill)",
                 fontSize: 12,
                 fontWeight: 600,
-                background: "var(--color-primary-soft)",
-                color: "var(--color-primary)",
+                background: "var(--accent-primary-soft)",
+                color: "var(--accent-primary)",
               }}
             >
               {activeTrack.name}
             </span>
           )}
         </div>
-        <span className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-sm" style={{ color: "var(--text-muted)" }}>
           {daysLeft !== null
             ? `距 offer 目标截止 · 已完成 ${doneCount}/${totalCount} 项任务`
             : `长期模式 · 已完成 ${doneCount}/${totalCount} 项任务`}
@@ -91,18 +91,18 @@ export default function TopActionCard({ daysLeft, activeTrack, tasks }: Props) {
           minWidth: 0,
           padding: "16px 20px",
           background: topTask ? "var(--color-item-bg)" : "transparent",
-          borderRadius: "var(--radius-item-md)",
-          border: topTask ? "1px solid var(--color-hairline)" : "none",
+          borderRadius: "var(--radius-md)",
+          border: topTask ? "1px solid var(--border-default)" : "none",
         }}
       >
-        <span className="text-xs font-semibold" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
           {topTask ? "首要行动" : "暂无待办任务"}
         </span>
         {topTask && (
           <>
             <span
               className="text-[15px] font-semibold"
-              style={{ color: "var(--color-ink)" }}
+              style={{ color: "var(--text-primary)" }}
             >
               {topTask.title}
             </span>
@@ -114,8 +114,8 @@ export default function TopActionCard({ daysLeft, activeTrack, tasks }: Props) {
                   borderRadius: "var(--radius-pill)",
                   fontSize: 11,
                   fontWeight: 600,
-                  background: "var(--color-primary-soft)",
-                  color: "var(--color-primary)",
+                  background: "var(--accent-primary-soft)",
+                  color: "var(--accent-primary)",
                 }}
               >
                 {topTask.skill}

@@ -12,24 +12,24 @@ export default function GlobalError({
   return (
     <main
       className="flex flex-1 items-center justify-center"
-      style={{ background: "var(--color-canvas)" }}
+      style={{ background: "var(--surface-canvas)" }}
     >
       <div
         className="max-w-md text-center"
         style={{
           padding: 32,
-          background: "var(--color-card)",
-          border: "1px solid var(--color-rose)",
-          borderRadius: "var(--radius-card-lg)",
+          background: "var(--surface-card)",
+          border: "1px solid var(--accent-danger)",
+          borderRadius: "var(--radius-lg)",
         }}
       >
         <h1
           className="text-lg font-semibold"
-          style={{ color: "var(--color-rose-deep)" }}
+          style={{ color: "var(--accent-danger)" }}
         >
           页面出错了
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "var(--color-ink-48)" }}>
+        <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
           {error.message || "发生了未知错误"}
         </p>
         <button
@@ -38,8 +38,8 @@ export default function GlobalError({
           style={{
             padding: "8px 20px",
             borderRadius: "var(--radius-pill)",
-            background: "var(--color-primary-soft)",
-            color: "var(--color-primary)",
+            background: "var(--accent-primary-soft)",
+            color: "var(--accent-primary)",
             cursor: "pointer",
           }}
         >

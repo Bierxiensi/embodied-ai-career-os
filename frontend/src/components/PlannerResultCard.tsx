@@ -35,9 +35,9 @@ export default function PlannerResultCard({ result, onClose }: Props) {
         maxHeight: "calc(100vh - 120px)",
         overflowY: "auto",
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
         boxShadow: "0 12px 32px rgba(0,0,0,0.16)",
       }}
     >
@@ -51,8 +51,8 @@ export default function PlannerResultCard({ result, onClose }: Props) {
               borderRadius: "var(--radius-pill)",
               fontSize: 11,
               fontWeight: 700,
-              background: "var(--color-emerald-soft)",
-              color: "var(--color-emerald-deep)",
+              background: "var(--accent-success-soft)",
+              color: "var(--accent-success)",
             }}
           >
             ✓ 已生成
@@ -65,10 +65,10 @@ export default function PlannerResultCard({ result, onClose }: Props) {
               borderRadius: "var(--radius-pill)",
               fontSize: 11,
               fontWeight: 600,
-              background: result.reused ? "var(--color-amber-soft)" : "#F5F5F5",
+              background: result.reused ? "var(--accent-warning-soft)" : "#F5F5F5",
               color: result.reused
-                ? "var(--color-amber-deep)"
-                : "var(--color-ink-32)",
+                ? "var(--accent-warning)"
+                : "var(--text-muted)",
             }}
           >
             {result.reused ? "复用今日已有" : "新建入库"}
@@ -84,7 +84,7 @@ export default function PlannerResultCard({ result, onClose }: Props) {
             height: 22,
             borderRadius: "var(--radius-pill)",
             background: "transparent",
-            color: "var(--color-ink-48)",
+            color: "var(--text-muted)",
             fontSize: 14,
             lineHeight: 1,
             cursor: "pointer",
@@ -98,12 +98,12 @@ export default function PlannerResultCard({ result, onClose }: Props) {
       <div className="flex flex-col" style={{ gap: 6, marginTop: 14 }}>
         <span
           className="text-[17px] font-semibold"
-          style={{ color: "var(--color-ink)", letterSpacing: "-0.01em" }}
+          style={{ color: "var(--text-primary)", letterSpacing: "-0.01em" }}
         >
           {result.title}
         </span>
         {result.objective && (
-          <span className="text-[13px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[13px]" style={{ color: "var(--text-muted)" }}>
             {result.objective}
           </span>
         )}
@@ -116,25 +116,25 @@ export default function PlannerResultCard({ result, onClose }: Props) {
           gap: 8,
           marginTop: 14,
           padding: "12px 14px",
-          background: "var(--color-primary-soft)",
-          borderRadius: "var(--radius-item-md)",
+          background: "var(--accent-primary-soft)",
+          borderRadius: "var(--radius-md)",
         }}
       >
         <span
           className="text-[11px] font-semibold uppercase"
-          style={{ color: "var(--color-primary)", letterSpacing: "0.04em" }}
+          style={{ color: "var(--accent-primary)", letterSpacing: "0.04em" }}
         >
           为什么是这条
         </span>
         {result.trackName && (
-          <span className="text-xs" style={{ color: "var(--color-ink-80)" }}>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
             视角赛道 · <strong>{result.trackName}</strong>
             {isFrozen && " （已冻结，仅低强度巩固）"}
           </span>
         )}
         {result.skillLevel !== null && result.skillTarget !== null && (
           <div className="flex items-center" style={{ gap: 8, flexWrap: "wrap" }}>
-            <span className="text-xs" style={{ color: "var(--color-ink-80)" }}>
+            <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
               技能 <strong>{result.skill}</strong>
             </span>
             <span
@@ -144,8 +144,8 @@ export default function PlannerResultCard({ result, onClose }: Props) {
                 borderRadius: "var(--radius-pill)",
                 fontSize: 11,
                 fontWeight: 600,
-                background: "var(--color-card)",
-                color: "var(--color-ink-80)",
+                background: "var(--surface-card)",
+                color: "var(--text-secondary)",
               }}
             >
               {result.skillLevel} → {result.skillTarget}
@@ -158,8 +158,8 @@ export default function PlannerResultCard({ result, onClose }: Props) {
                   borderRadius: "var(--radius-pill)",
                   fontSize: 11,
                   fontWeight: 700,
-                  background: "var(--color-amber-soft)",
-                  color: "var(--color-amber-deep)",
+                  background: "var(--accent-warning-soft)",
+                  color: "var(--accent-warning)",
                 }}
               >
                 差 {result.gap} 级
@@ -170,7 +170,7 @@ export default function PlannerResultCard({ result, onClose }: Props) {
         {result.reason && (
           <span
             className="text-[11px]"
-            style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}
+            style={{ color: "var(--text-muted)", lineHeight: 1.6 }}
           >
             {result.reason}
           </span>
@@ -192,7 +192,7 @@ export default function PlannerResultCard({ result, onClose }: Props) {
         <div className="flex flex-col" style={{ gap: 6, marginTop: 14 }}>
           <span
             className="text-[11px] font-semibold uppercase"
-            style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+            style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
           >
             验收标准
           </span>
@@ -204,7 +204,7 @@ export default function PlannerResultCard({ result, onClose }: Props) {
               <li
                 key={`${a}-${i}`}
                 className="text-xs"
-                style={{ color: "var(--color-ink-80)", lineHeight: 1.6 }}
+                style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}
               >
                 {a}
               </li>
@@ -226,7 +226,7 @@ function Meta({ label }: { label: string }) {
         fontSize: 11,
         fontWeight: 600,
         background: "#F5F5F5",
-        color: "var(--color-ink-32)",
+        color: "var(--text-muted)",
       }}
     >
       {label}

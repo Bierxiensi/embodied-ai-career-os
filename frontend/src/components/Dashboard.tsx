@@ -110,7 +110,7 @@ export default function Dashboard({
 
         {/* Footer */}
         <div className="flex justify-center" style={{ paddingTop: 8 }}>
-          <span className="text-xs font-medium" style={{ color: "var(--color-ink-32)" }}>
+          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
             Keep simple · Build fast · Use AI agents
           </span>
         </div>

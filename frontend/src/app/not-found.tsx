@@ -5,24 +5,24 @@ export default function NotFound() {
   return (
     <main
       className="flex flex-1 items-center justify-center"
-      style={{ background: "var(--color-canvas)" }}
+      style={{ background: "var(--surface-canvas)" }}
     >
       <div
         className="max-w-md text-center"
         style={{
           padding: 32,
-          background: "var(--color-card)",
-          border: "1px solid var(--color-hairline)",
-          borderRadius: "var(--radius-card-lg)",
+          background: "var(--surface-card)",
+          border: "1px solid var(--border-default)",
+          borderRadius: "var(--radius-lg)",
         }}
       >
         <h1
           className="font-semibold"
-          style={{ fontSize: 48, color: "var(--color-ink)", letterSpacing: "-0.02em" }}
+          style={{ fontSize: 48, color: "var(--text-primary)", letterSpacing: "-0.02em" }}
         >
           404
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "var(--color-ink-48)" }}>
+        <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
           页面不存在
         </p>
         <Link
@@ -31,8 +31,8 @@ export default function NotFound() {
           style={{
             padding: "8px 20px",
             borderRadius: "var(--radius-pill)",
-            background: "var(--color-primary-soft)",
-            color: "var(--color-primary)",
+            background: "var(--accent-primary-soft)",
+            color: "var(--accent-primary)",
           }}
         >
           回到今日

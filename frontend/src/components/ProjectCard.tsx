@@ -4,15 +4,15 @@ import Link from "next/link";
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
   active: {
     label: "进行中",
-    bg: "var(--color-emerald-soft)",
-    color: "var(--color-emerald-deep)",
+    bg: "var(--accent-success-soft)",
+    color: "var(--accent-success)",
   },
   paused: {
     label: "已暂停",
-    bg: "var(--color-amber-soft)",
-    color: "var(--color-amber-deep)",
+    bg: "var(--accent-warning-soft)",
+    color: "var(--accent-warning)",
   },
-  completed: { label: "已完成", bg: "#F5F5F5", color: "var(--color-ink-32)" },
+  completed: { label: "已完成", bg: "#F5F5F5", color: "var(--text-muted)" },
 };
 
 /** 里程碑状态 → 徽章配色（与 ProjectProgressCard / MilestoneTimeline 同一套口径）。 */
@@ -22,13 +22,13 @@ export function milestoneBadge(status: Milestone["status"]): {
 } {
   switch (status) {
     case "completed":
-      return { bg: "var(--color-emerald-soft)", color: "var(--color-emerald-deep)" };
+      return { bg: "var(--accent-success-soft)", color: "var(--accent-success)" };
     case "in_progress":
-      return { bg: "var(--color-primary-soft)", color: "var(--color-primary)" };
+      return { bg: "var(--accent-primary-soft)", color: "var(--accent-primary)" };
     case "needs_baseline":
-      return { bg: "var(--color-amber-soft)", color: "var(--color-amber-deep)" };
+      return { bg: "var(--accent-warning-soft)", color: "var(--accent-warning)" };
     default:
-      return { bg: "#F5F5F5", color: "var(--color-ink-32)" };
+      return { bg: "#F5F5F5", color: "var(--text-muted)" };
   }
 }
 
@@ -83,9 +83,9 @@ export default function ProjectCard({ project }: { project: Project }) {
       style={{
         gap: 14,
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       {/* 标题行 */}
@@ -93,11 +93,11 @@ export default function ProjectCard({ project }: { project: Project }) {
         <div className="flex flex-col" style={{ gap: 6, minWidth: 0 }}>
           <span
             className="text-[17px] font-semibold"
-            style={{ color: "var(--color-ink)" }}
+            style={{ color: "var(--text-primary)" }}
           >
             {project.name}
           </span>
-          <span className="text-[13px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[13px]" style={{ color: "var(--text-muted)" }}>
             {project.goal}
           </span>
         </div>
@@ -122,7 +122,7 @@ export default function ProjectCard({ project }: { project: Project }) {
           className="w-full overflow-hidden"
           style={{
             height: 6,
-            background: "var(--color-hairline-soft)",
+            background: "var(--border-subtle)",
             borderRadius: 3,
           }}
         >
@@ -132,19 +132,19 @@ export default function ProjectCard({ project }: { project: Project }) {
               width: `${pct}%`,
               background:
                 project.status === "paused"
-                  ? "var(--color-amber)"
-                  : "var(--color-emerald)",
+                  ? "var(--accent-warning)"
+                  : "var(--accent-success)",
               borderRadius: 3,
             }}
           />
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             {currentLabel}
           </span>
           <span
             className="text-xs font-medium"
-            style={{ color: "var(--color-ink-48)" }}
+            style={{ color: "var(--text-muted)" }}
           >
             {done}/{total} · {pct}%
           </span>
@@ -177,7 +177,7 @@ export default function ProjectCard({ project }: { project: Project }) {
           {project.milestones.length > 8 && (
             <span
               className="inline-flex items-center"
-              style={{ fontSize: 11, color: "var(--color-ink-48)" }}
+              style={{ fontSize: 11, color: "var(--text-muted)" }}
             >
               +{project.milestones.length - 8}
             </span>

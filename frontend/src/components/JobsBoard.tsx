@@ -17,19 +17,19 @@ const APP_STATUS_META: Record<
   JobAppStatus,
   { label: string; color: string; soft: string }
 > = {
-  applied: { label: "已投递", color: "var(--color-ink-48)", soft: "var(--color-zinc-100)" },
+  applied: { label: "已投递", color: "var(--text-muted)", soft: "var(--color-zinc-100)" },
   screening: { label: "筛选中", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
   interview: { label: "面试中", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
-  offer: { label: "已拿offer", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  rejected: { label: "已挂", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
+  offer: { label: "已拿offer", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
+  rejected: { label: "已挂", color: "var(--accent-danger)", soft: "rgba(244,63,94,0.12)" },
 };
 
 const PRIORITY_META: Record<string, { label: string; color: string; soft: string }> = {
-  主攻: { label: "主攻", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
+  主攻: { label: "主攻", color: "var(--accent-danger)", soft: "rgba(244,63,94,0.12)" },
   卡位: { label: "卡位", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
   折中: { label: "折中", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
-  保底: { label: "保底", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  暂缓: { label: "暂缓 · 不投入", color: "var(--color-ink-48)", soft: "rgba(0,0,0,0.05)" },
+  保底: { label: "保底", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
+  暂缓: { label: "暂缓 · 不投入", color: "var(--text-muted)", soft: "rgba(0,0,0,0.05)" },
 };
 
 const TRACK_LABEL: Record<string, string> = {
@@ -43,25 +43,25 @@ const TRACK_LABEL: Record<string, string> = {
 };
 
 const GRADE_META: Record<string, { label: string; color: string; soft: string }> = {
-  A: { label: "A · 强匹配", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
+  A: { label: "A · 强匹配", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
   B: { label: "B · 正常投", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
-  C: { label: "C · 练手", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
-  D: { label: "D · 不推荐", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
+  C: { label: "C · 练手", color: "var(--accent-warning)", soft: "var(--accent-warning-soft)" },
+  D: { label: "D · 不推荐", color: "var(--accent-danger)", soft: "rgba(244,63,94,0.12)" },
 };
 
 /* ───────────────────────── 复用样式 ───────────────────────── */
 
 const cardStyle: React.CSSProperties = {
   padding: 24,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 15,
   fontWeight: 600,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   letterSpacing: "-0.01em",
 };
 
@@ -98,7 +98,7 @@ function SectionHeader({ title, hint }: { title: string; hint?: string }) {
     <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
       <h2 style={sectionTitleStyle}>{title}</h2>
       {hint ? (
-        <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{hint}</span>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{hint}</span>
       ) : null}
     </div>
   );
@@ -129,16 +129,16 @@ function MatchBar({ pct, color }: { pct: number; color: string }) {
 
 function MilestoneStatusBadge({ status }: { status: string }) {
   let label = "待启动";
-  let color = "var(--color-ink-48)";
+  let color = "var(--text-muted)";
   let soft = "var(--color-zinc-100)";
   if (status === "completed") {
     label = "已完成";
-    color = "var(--color-emerald)";
-    soft = "var(--color-emerald-soft)";
+    color = "var(--accent-success)";
+    soft = "var(--accent-success-soft)";
   } else if (status === "doing" || status === "in_progress") {
     label = "进行中";
-    color = "var(--color-amber)";
-    soft = "var(--color-amber-soft)";
+    color = "var(--accent-warning)";
+    soft = "var(--accent-warning-soft)";
   }
   return <Pill label={label} color={color} soft={soft} />;
 }
@@ -153,10 +153,10 @@ export default function JobsBoard({ board }: Props) {
   const daysLeft = board.daysLeft;
   const urgency =
     daysLeft > 21
-      ? "var(--color-emerald)"
+      ? "var(--accent-success)"
       : daysLeft > 7
-        ? "var(--color-amber)"
-        : "var(--color-rose)";
+        ? "var(--accent-warning)"
+        : "var(--accent-danger)";
   const usedPct = Math.max(
     0,
     Math.min(100, Math.round(((90 - daysLeft) / 90) * 100))
@@ -185,7 +185,7 @@ export default function JobsBoard({ board }: Props) {
         <div className="flex flex-col" style={{ gap: 8 }}>
           <span
             className="text-xs font-semibold uppercase"
-            style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+            style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
           >
             JOB HUNT · 2026 Q4
           </span>
@@ -193,13 +193,13 @@ export default function JobsBoard({ board }: Props) {
             className="font-semibold"
             style={{
               fontSize: 40,
-              color: "var(--color-ink)",
+              color: "var(--text-primary)",
               letterSpacing: "-0.02em",
             }}
           >
             求职作战看板
           </h1>
-          <p className="text-[17px]" style={{ color: "var(--color-ink-48)" }}>
+          <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
             从学习记录切换到投递作战 · 主攻 LLM 大模型，卡位多模态/VLM，保底 AI 算法
           </p>
         </div>
@@ -221,22 +221,22 @@ export default function JobsBoard({ board }: Props) {
             >
               {daysLeft}
             </span>
-            <span style={{ fontSize: 13, color: "var(--color-ink-48)" }}>天 · 距签约截止</span>
+            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>天 · 距签约截止</span>
           </div>
           <div className="flex flex-1 flex-col" style={{ gap: 10 }}>
             <div className="flex items-center" style={{ gap: 12, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 14, color: "var(--color-ink-80)" }}>
-                截止日 <b style={{ color: "var(--color-ink)" }}>{board.offerDeadline}</b>
+              <span style={{ fontSize: 14, color: "var(--text-secondary)" }}>
+                截止日 <b style={{ color: "var(--text-primary)" }}>{board.offerDeadline}</b>
               </span>
               {career?.salaryTarget ? (
                 <Pill
                   label={`目标薪资 ¥${career.salaryTarget / 1000}K`}
-                  color="var(--color-primary)"
-                  soft="var(--color-primary-soft)"
+                  color="var(--accent-primary)"
+                  soft="var(--accent-primary-soft)"
                 />
               ) : null}
               {career?.targetRole ? (
-                <span style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+                <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
                   {career.targetRole}
                 </span>
               ) : null}
@@ -259,7 +259,7 @@ export default function JobsBoard({ board }: Props) {
                 }}
               />
             </div>
-            <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
               冲刺进度约 {usedPct}% · 10月底前落定以防社保中断
             </span>
           </div>
@@ -286,14 +286,14 @@ export default function JobsBoard({ board }: Props) {
               <Link
                 href="/jobs/pool"
                 className="text-xs font-semibold no-underline"
-                style={{ color: "var(--color-primary)" }}
+                style={{ color: "var(--accent-primary)" }}
               >
                 去岗位池 →
               </Link>
             </div>
             <div className="flex items-center" style={{ gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
-              <FunnelStat label="岗位总数" value={board.jobPool.total} color="var(--color-ink)" />
-              <FunnelStat label="可优先投 A+B" value={board.jobPool.recommended} color="var(--color-emerald)" />
+              <FunnelStat label="岗位总数" value={board.jobPool.total} color="var(--text-primary)" />
+              <FunnelStat label="可优先投 A+B" value={board.jobPool.recommended} color="var(--accent-success)" />
             </div>
             <div className="flex flex-col" style={{ gap: 8 }}>
               {board.jobPool.top.map((t) => (
@@ -304,13 +304,13 @@ export default function JobsBoard({ board }: Props) {
                   style={{
                     gap: 12,
                     padding: "10px 14px",
-                    border: "1px solid var(--color-hairline-soft)",
-                    borderRadius: "var(--radius-item-md)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-md)",
                   }}
                 >
                   <div className="flex flex-col" style={{ gap: 2, flex: 1, minWidth: 160 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>{t.company}</span>
-                    <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{t.company}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                       {t.title} · {TRACK_LABEL[t.track] || t.track}
                     </span>
                   </div>
@@ -320,7 +320,7 @@ export default function JobsBoard({ board }: Props) {
                       borderRadius: "var(--radius-pill)",
                       fontSize: 12,
                       fontWeight: 700,
-                      color: GRADE_META[t.grade]?.color || "var(--color-ink-48)",
+                      color: GRADE_META[t.grade]?.color || "var(--text-muted)",
                       background: GRADE_META[t.grade]?.soft || "var(--color-zinc-100)",
                     }}
                   >
@@ -337,27 +337,27 @@ export default function JobsBoard({ board }: Props) {
           <div style={cardStyle}>
             <SectionHeader title="技能缺口" hint="按差距降序 · 优先补强" />
             {topGaps.length === 0 ? (
-              <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>暂无缺口数据。</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>暂无缺口数据。</p>
             ) : (
               <div className="flex flex-col" style={{ gap: 12 }}>
                 {topGaps.map((g) => (
                   <div key={g.name} className="flex items-center" style={{ gap: 14 }}>
                     <div style={{ width: 130, flexShrink: 0 }}>
-                      <span style={{ fontSize: 14, color: "var(--color-ink)", fontWeight: 500 }}>
+                      <span style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 500 }}>
                         {g.name}
                       </span>
-                      <span style={{ fontSize: 12, color: "var(--color-ink-48)", marginLeft: 6 }}>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 6 }}>
                         {g.level}→{g.targetLevel}
                       </span>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <MatchBar pct={(g.gap / 5) * 100} color="var(--color-rose)" />
+                      <MatchBar pct={(g.gap / 5) * 100} color="var(--accent-danger)" />
                     </div>
                     <span
                       style={{
                         fontSize: 13,
                         fontWeight: 600,
-                        color: "var(--color-rose-deep)",
+                        color: "var(--accent-danger)",
                         width: 28,
                         textAlign: "right",
                       }}
@@ -391,14 +391,14 @@ export default function JobsBoard({ board }: Props) {
                           borderRadius: "var(--radius-pill)",
                           background:
                             m.status === "completed"
-                              ? "var(--color-emerald)"
+                              ? "var(--accent-success)"
                               : m.status === "doing" || m.status === "in_progress"
-                                ? "var(--color-amber)"
+                                ? "var(--accent-warning)"
                                 : "var(--color-zinc-100)",
                           color:
                             m.status === "completed" || m.status === "doing" || m.status === "in_progress"
-                              ? "var(--color-on-primary)"
-                              : "var(--color-ink-48)",
+                              ? "var(--text-inverse)"
+                              : "var(--text-muted)",
                           fontSize: 11,
                           fontWeight: 700,
                           display: "flex",
@@ -410,17 +410,17 @@ export default function JobsBoard({ board }: Props) {
                         {m.version}
                       </span>
                       {i < arr.length - 1 ? (
-                        <div style={{ flex: 1, width: 2, background: "var(--color-hairline)" }} />
+                        <div style={{ flex: 1, width: 2, background: "var(--border-default)" }} />
                       ) : null}
                     </div>
                     <div className="flex flex-col" style={{ gap: 4, paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
                       <div className="flex items-center" style={{ gap: 10 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
                           {m.title}
                         </span>
                         <MilestoneStatusBadge status={m.status} />
                       </div>
-                      <span style={{ fontSize: 12, color: "var(--color-ink-48)", lineHeight: 1.5 }}>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
                         {m.goal}
                       </span>
                     </div>
@@ -428,7 +428,7 @@ export default function JobsBoard({ board }: Props) {
                 ))}
               </div>
             ) : (
-              <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
                 尚未创建求职项目，运行 seed_job_hunt.py 初始化。
               </p>
             )}
@@ -467,32 +467,32 @@ export default function JobsBoard({ board }: Props) {
                       borderRadius: "var(--radius-pill)",
                       background:
                         t.status === "done"
-                          ? "var(--color-emerald)"
+                          ? "var(--accent-success)"
                           : t.status === "doing"
-                            ? "var(--color-amber)"
+                            ? "var(--accent-warning)"
                             : "var(--color-zinc-100)",
                     }}
                   />
-                  <span style={{ fontSize: 14, color: "var(--color-ink)" }}>{t.title}</span>
+                  <span style={{ fontSize: 14, color: "var(--text-primary)" }}>{t.title}</span>
                 </div>
                 <div className="flex items-center" style={{ gap: 8 }}>
                   {t.skillName ? (
-                    <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{t.skillName}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{t.skillName}</span>
                   ) : null}
                   <Pill
                     label={t.status === "done" ? "已完成" : t.status === "doing" ? "进行中" : "待办"}
                     color={
                       t.status === "done"
-                        ? "var(--color-emerald)"
+                        ? "var(--accent-success)"
                         : t.status === "doing"
-                          ? "var(--color-amber)"
-                          : "var(--color-ink-48)"
+                          ? "var(--accent-warning)"
+                          : "var(--text-muted)"
                     }
                     soft={
                       t.status === "done"
-                        ? "var(--color-emerald-soft)"
+                        ? "var(--accent-success-soft)"
                         : t.status === "doing"
-                          ? "var(--color-amber-soft)"
+                          ? "var(--accent-warning-soft)"
                           : "var(--color-zinc-100)"
                     }
                   />
@@ -509,7 +509,7 @@ export default function JobsBoard({ board }: Props) {
             <Link
               href="/jobs/applications"
               className="text-xs font-semibold no-underline"
-              style={{ color: "var(--color-primary)" }}
+              style={{ color: "var(--accent-primary)" }}
             >
               管理投递 →
             </Link>
@@ -518,16 +518,16 @@ export default function JobsBoard({ board }: Props) {
             className="grid"
             style={{ gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(96px, 1fr))" }}
           >
-            <FunnelStat label="已投递" value={funnel.byStatus.applied ?? 0} color="var(--color-ink-48)" />
+            <FunnelStat label="已投递" value={funnel.byStatus.applied ?? 0} color="var(--text-muted)" />
             <FunnelStat label="筛选中" value={funnel.byStatus.screening ?? 0} color="var(--color-sky)" />
             <FunnelStat label="面试中" value={funnel.byStatus.interview ?? 0} color="var(--color-violet)" />
-            <FunnelStat label="已拿offer" value={funnel.byStatus.offer ?? 0} color="var(--color-emerald)" />
-            <FunnelStat label="已挂" value={funnel.byStatus.rejected ?? 0} color="var(--color-rose)" />
-            <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--color-primary)" />
+            <FunnelStat label="已拿offer" value={funnel.byStatus.offer ?? 0} color="var(--accent-success)" />
+            <FunnelStat label="已挂" value={funnel.byStatus.rejected ?? 0} color="var(--accent-danger)" />
+            <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--accent-primary)" />
           </div>
         </div>
 
-        <footer style={{ fontSize: 12, color: "var(--color-ink-48)", textAlign: "center", paddingTop: 8 }}>
+        <footer style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", paddingTop: 8 }}>
           Career OS · 求职作战看板 · 数据来自 /api/job-hunt
         </footer>
       </div>
@@ -556,13 +556,13 @@ function TaskScopeNote({
   return (
     <div className="flex flex-col" style={{ gap: 8, marginBottom: 12 }}>
       {scope.scopeReason ? (
-        <p style={{ fontSize: 12, color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
           {scope.scopeReason}
         </p>
       ) : null}
 
       {unclassified > 0 ? (
-        <p style={{ fontSize: 12, color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
           另有 {unclassified} 条任务未归类赛道（历史 / 手写任务），仍列在下方。
         </p>
       ) : null}
@@ -577,9 +577,9 @@ function TaskScopeNote({
               alignSelf: "flex-start",
               padding: "5px 12px",
               borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--color-hairline)",
+              border: "1px solid var(--border-default)",
               background: "transparent",
-              color: "var(--color-ink-48)",
+              color: "var(--text-muted)",
               fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",
@@ -596,17 +596,17 @@ function TaskScopeNote({
                   className="flex items-center"
                   style={{ gap: 10, justifyContent: "space-between" }}
                 >
-                  <span style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+                  <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
                     {task.title}
                   </span>
                   <Pill
                     label="冻结 · 不计入"
-                    color="var(--color-ink-48)"
+                    color="var(--text-muted)"
                     soft="var(--color-zinc-100)"
                   />
                 </div>
               ))}
-              <span style={{ fontSize: 11, color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
                 这些任务只是不进默认统计与今日推荐，记录本身完整保留，随时可在任务页查看。
               </span>
             </div>
@@ -620,12 +620,12 @@ function TaskScopeNote({
 function TargetRoleCard({ role }: { role: TargetRole }) {
   const pri = PRIORITY_META[role.priority] ?? PRIORITY_META["保底"];
   const matchColor =
-    role.matchPct >= 60 ? "var(--color-emerald)" : role.matchPct >= 35 ? "var(--color-amber)" : "var(--color-rose)";
+    role.matchPct >= 60 ? "var(--accent-success)" : role.matchPct >= 35 ? "var(--accent-warning)" : "var(--accent-danger)";
   return (
     <div
       style={{
         ...cardStyle,
-        border: "1px solid var(--color-hairline)",
+        border: "1px solid var(--border-default)",
         display: "flex",
         flexDirection: "column",
         gap: 12,
@@ -634,9 +634,9 @@ function TargetRoleCard({ role }: { role: TargetRole }) {
     >
       <div className="flex items-center justify-between">
         <Pill label={pri.label} color={pri.color} soft={pri.soft} />
-        <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{role.salaryRange}</span>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{role.salaryRange}</span>
       </div>
-      <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}>{role.name}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{role.name}</span>
 
       <div className="flex items-center" style={{ gap: 10 }}>
         <span style={{ fontSize: 28, fontWeight: 700, color: matchColor, letterSpacing: "-0.02em" }}>
@@ -652,13 +652,13 @@ function TargetRoleCard({ role }: { role: TargetRole }) {
         <span
           style={{
             fontSize: 11,
-            color: role.strictPct >= 50 ? "var(--color-emerald)" : "var(--color-amber)",
+            color: role.strictPct >= 50 ? "var(--accent-success)" : "var(--accent-warning)",
             fontWeight: 600,
           }}
         >
           严格达标 {role.strictPct}%（{role.qualifiedCount}/{role.requiredCount} 项 level≥4）
         </span>
-        <span style={{ fontSize: 11, color: "var(--color-ink-48)" }}>
+        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
           上方百分比为向目标推进的进度，非达标判定
         </span>
       </div>
@@ -666,24 +666,24 @@ function TargetRoleCard({ role }: { role: TargetRole }) {
       <div className="flex flex-col" style={{ gap: 6 }}>
         {role.skills.map((s) => (
           <div key={s.name} className="flex items-center" style={{ gap: 8 }}>
-            <span style={{ fontSize: 12, width: 96, color: s.missing ? "var(--color-rose-deep)" : "var(--color-ink-80)" }}>
+            <span style={{ fontSize: 12, width: 96, color: s.missing ? "var(--accent-danger)" : "var(--text-secondary)" }}>
               {s.name}
               {s.missing ? " · 缺" : ""}
             </span>
             <div style={{ flex: 1 }}>
               <MatchBar
                 pct={(s.level / Math.max(1, s.required)) * 100}
-                color={s.gap > 0 ? "var(--color-amber)" : "var(--color-emerald)"}
+                color={s.gap > 0 ? "var(--accent-warning)" : "var(--accent-success)"}
               />
             </div>
-            <span style={{ fontSize: 11, color: "var(--color-ink-48)", width: 30, textAlign: "right" }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", width: 30, textAlign: "right" }}>
               {s.level}/{s.required}
             </span>
           </div>
         ))}
       </div>
 
-      <span style={{ fontSize: 11, color: "var(--color-ink-48)", lineHeight: 1.5 }}>{role.note}</span>
+      <span style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>{role.note}</span>
     </div>
   );
 }
@@ -694,7 +694,7 @@ function FunnelStat({ label, value, color }: { label: string; value: number | st
       style={{
         padding: 14,
         background: "var(--color-zinc-100)",
-        borderRadius: "var(--radius-item-md)",
+        borderRadius: "var(--radius-md)",
         display: "flex",
         flexDirection: "column",
         gap: 4,
@@ -702,7 +702,7 @@ function FunnelStat({ label, value, color }: { label: string; value: number | st
       }}
     >
       <span style={{ fontSize: 22, fontWeight: 700, color }}>{value}</span>
-      <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{label}</span>
     </div>
   );
 }

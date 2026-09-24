@@ -25,20 +25,20 @@ export default function PositionCard({ position }: Props) {
         minWidth: 0,
         gap: "var(--spacing-md)",
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex items-center justify-between" style={{ gap: 10 }}>
-        <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
           当前工作
         </span>
         <span
           className="text-[11px] font-semibold shrink-0"
           style={{
-            color: "var(--color-emerald-deep)",
-            background: "var(--color-emerald-soft)",
+            color: "var(--accent-success)",
+            background: "var(--accent-success-soft)",
             borderRadius: "var(--radius-pill)",
             padding: "2px 10px",
           }}
@@ -48,13 +48,13 @@ export default function PositionCard({ position }: Props) {
       </div>
 
       <div className="flex flex-col" style={{ gap: 4 }}>
-        <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
           {position.company}
         </span>
-        <span className="text-[13px]" style={{ color: "var(--color-ink-80)" }}>
+        <span className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
           {position.role}
         </span>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {position.focus}
         </span>
       </div>
@@ -64,32 +64,32 @@ export default function PositionCard({ position }: Props) {
         style={{
           gap: 6,
           padding: 12,
-          background: "var(--color-canvas)",
-          border: "1px solid var(--color-hairline)",
-          borderRadius: "var(--radius-item-md)",
+          background: "var(--surface-canvas)",
+          border: "1px solid var(--border-default)",
+          borderRadius: "var(--radius-md)",
         }}
       >
         <span
           className="text-[11px] font-semibold uppercase"
-          style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+          style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
         >
           在岗区间
         </span>
-        <span className="text-[13px]" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[13px]" style={{ color: "var(--text-primary)" }}>
           {position.sinceLabel} – {position.endLabel ?? "在职中"}
         </span>
         <span
           className="text-[11px] font-semibold uppercase"
-          style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em", marginTop: 4 }}
+          style={{ color: "var(--text-muted)", letterSpacing: "0.04em", marginTop: 4 }}
         >
           {position.transitionWindowLabel}
         </span>
-        <span className="text-[13px]" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[13px]" style={{ color: "var(--text-primary)" }}>
           {position.transitionWindowStart} – {position.transitionWindowEnd}
         </span>
       </div>
 
-      <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>
+      <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
         {position.note}
       </span>
     </div>

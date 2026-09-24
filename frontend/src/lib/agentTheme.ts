@@ -20,9 +20,9 @@ export type AgentName = "planner" | "reviewer" | "career" | "research" | "superv
 export const AGENT_COLOR_TOKEN: Record<AgentName, string> = {
   planner: "var(--color-sky)",
   reviewer: "var(--color-violet)",
-  career: "var(--color-amber)",
-  research: "var(--color-rose)",
-  supervisor: "var(--color-ink-48)",
+  career: "var(--accent-warning)",
+  research: "var(--accent-danger)",
+  supervisor: "var(--text-muted)",
 };
 
 /** 左侧色条颜色（Tailwind 类名，便于迁移 dark: 体系）。 */
@@ -45,8 +45,8 @@ export const AGENT_LABEL: Record<AgentName, string> = {
 
 /** 状态徽章：token 体系（背景 + 文字 CSS 变量）。 */
 export const STATUS_TOKEN: Record<string, { bg: string; color: string }> = {
-  success: { bg: "var(--color-emerald-soft)", color: "var(--color-emerald-deep)" },
-  failed: { bg: "var(--color-rose-soft)", color: "var(--color-rose-deep)" },
+  success: { bg: "var(--accent-success-soft)", color: "var(--accent-success)" },
+  failed: { bg: "var(--accent-danger-soft)", color: "var(--accent-danger)" },
 };
 
 /** 状态徽章：Tailwind 类名。 */
@@ -57,7 +57,7 @@ export const STATUS_CLASS: Record<string, string> = {
 
 /** 取色条 token（带兜底）。 */
 export function agentColorToken(name: string): string {
-  return AGENT_COLOR_TOKEN[name as AgentName] ?? "var(--color-ink-48)";
+  return AGENT_COLOR_TOKEN[name as AgentName] ?? "var(--text-muted)";
 }
 
 /** 取中文显示名（带兜底）。 */

@@ -115,8 +115,8 @@ export default function GenerateTaskButton({
           style={{
             gap: 8,
             padding: "var(--spacing-md)",
-            borderRadius: "var(--radius-item-md)",
-            background: "var(--color-primary)",
+            borderRadius: "var(--radius-md)",
+            background: "var(--accent-primary)",
             height: 110,
             cursor: isLoading ? "not-allowed" : "pointer",
             opacity: isLoading ? 0.7 : 1,
@@ -128,12 +128,12 @@ export default function GenerateTaskButton({
             style={{
               width: 30,
               height: 30,
-              borderRadius: "var(--radius-item-sm)",
+              borderRadius: "var(--radius-sm)",
               background: "rgba(255,255,255,0.18)",
             }}
           >
             <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15 4L18 12L26 13L20 18L22 26L15 22L8 26L10 18L4 13L12 12L15 4Z" fill="var(--color-on-primary)" />
+              <path d="M15 4L18 12L26 13L20 18L22 26L15 22L8 26L10 18L4 13L12 12L15 4Z" fill="var(--text-inverse)" />
             </svg>
           </div>
           <span className="text-sm font-semibold text-white">{label}</span>
@@ -142,7 +142,7 @@ export default function GenerateTaskButton({
           </span>
         </button>
         {state.kind === "error" && (
-          <p className="text-xs" style={{ color: "var(--color-rose-deep)" }}>
+          <p className="text-xs" style={{ color: "var(--accent-danger)" }}>
             ✗ {state.message}
           </p>
         )}
@@ -152,7 +152,7 @@ export default function GenerateTaskButton({
             onClick={() => setShowCard(true)}
             className="self-start border-none text-xs font-medium"
             style={{
-              color: "var(--color-primary)",
+              color: "var(--accent-primary)",
               background: "transparent",
               cursor: "pointer",
             }}
@@ -176,8 +176,8 @@ export default function GenerateTaskButton({
         style={{
           height: 34,
           paddingInline: 18,
-          background: "var(--color-primary)",
-          color: "var(--color-on-primary)",
+          background: "var(--accent-primary)",
+          color: "var(--text-inverse)",
           fontSize: 14,
           fontWeight: 500,
           borderRadius: "var(--radius-pill)",
@@ -188,7 +188,7 @@ export default function GenerateTaskButton({
         {label}
       </button>
       {state.kind === "error" && (
-        <p className="text-xs" style={{ color: "var(--color-rose-deep)" }}>
+        <p className="text-xs" style={{ color: "var(--accent-danger)" }}>
           ✗ {state.message}
         </p>
       )}

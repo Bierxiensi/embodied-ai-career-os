@@ -18,11 +18,11 @@ const TRACK_LABEL: Record<string, string> = {
 };
 
 const STATUS_META: Record<DayProgressStatus, { label: string; bg: string; fg: string }> = {
-  pending: { label: "未开始", bg: "#F5F5F5", fg: "var(--color-ink-32)" },
-  done: { label: "完成", bg: "var(--color-emerald-soft)", fg: "var(--color-emerald-deep)" },
-  compressed: { label: "压缩通过", bg: "var(--color-primary-soft)", fg: "var(--color-primary)" },
-  deferred: { label: "已顺延", bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-  skipped: { label: "已放弃", bg: "var(--color-rose-soft)", fg: "var(--color-rose-deep)" },
+  pending: { label: "未开始", bg: "#F5F5F5", fg: "var(--text-muted)" },
+  done: { label: "完成", bg: "var(--accent-success-soft)", fg: "var(--accent-success)" },
+  compressed: { label: "压缩通过", bg: "var(--accent-primary-soft)", fg: "var(--accent-primary)" },
+  deferred: { label: "已顺延", bg: "var(--accent-warning-soft)", fg: "var(--accent-warning)" },
+  skipped: { label: "已放弃", bg: "var(--accent-danger-soft)", fg: "var(--accent-danger)" },
 };
 
 /** 三个滑期决策：状态 + 默认偏离说明（落 deviation_note）。 */
@@ -45,9 +45,9 @@ const DECISIONS: { status: DayProgressStatus; label: string; note: string }[] = 
 ];
 
 const cardStyle: CSSProperties = {
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
   padding: "var(--spacing-lg)",
 };
 
@@ -55,11 +55,11 @@ const cardStyle: CSSProperties = {
 function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="flex items-baseline justify-between" style={{ gap: 12 }}>
-      <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+      <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
         {children}
       </span>
       {hint && (
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {hint}
         </span>
       )}
@@ -138,26 +138,26 @@ function SlipBanner({ overview }: { overview: PlanOverview }) {
       style={{
         ...cardStyle,
         gap: 16,
-        background: behind > 0 ? "var(--color-amber-soft)" : "var(--color-emerald-soft)",
-        border: `1px solid ${behind > 0 ? "var(--color-amber)" : "var(--color-emerald)"}`,
+        background: behind > 0 ? "var(--accent-warning-soft)" : "var(--accent-success-soft)",
+        border: `1px solid ${behind > 0 ? "var(--accent-warning)" : "var(--accent-success)"}`,
       }}
     >
       <div className="flex flex-col" style={{ gap: 6, minWidth: 0 }}>
         <span
           className="text-[15px] font-semibold"
-          style={{ color: behind > 0 ? "var(--color-amber-deep)" : "var(--color-emerald-deep)" }}
+          style={{ color: behind > 0 ? "var(--accent-warning)" : "var(--accent-success)" }}
         >
           {behind > 0
             ? `落后 ${behind} 天 · 需要决策`
             : `进度正常 · 已通过 ${completedDays} / ${totalDays} 天`}
         </span>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
           课程进度 Day {completedDays} / {totalDays}　·　日历已过 {calendarDaysElapsed} 天
           （今天算 Day {dayIndex}）
         </span>
       </div>
       {behind > 0 ? (
-        <span className="text-xs" style={{ color: "var(--color-amber-deep)", lineHeight: 1.6 }}>
+        <span className="text-xs" style={{ color: "var(--accent-warning)", lineHeight: 1.6 }}>
           落后只提示、不自动顺延：对下方标红日期手动选「压缩 / 顺延 / 放弃」，
           选择会记入偏离说明。
         </span>
@@ -165,7 +165,7 @@ function SlipBanner({ overview }: { overview: PlanOverview }) {
         <Link
           href="/today"
           className="text-xs font-medium no-underline"
-          style={{ color: "var(--color-emerald-deep)" }}
+          style={{ color: "var(--accent-success)" }}
         >
           去今日施工单 →
         </Link>
@@ -222,16 +222,16 @@ function DayCard({ day }: { day: PlanDayStatus }) {
         padding: "12px 14px",
         background: day.isMissed ? "#FEF7F2" : "var(--color-item-bg)",
         border: day.isMissed
-          ? "1px solid var(--color-amber)"
-          : "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-item-md)",
+          ? "1px solid var(--accent-warning)"
+          : "1px solid var(--border-default)",
+        borderRadius: "var(--radius-md)",
       }}
     >
       <div className="flex flex-col" style={{ gap: 4, minWidth: 0 }}>
         <span className="flex items-center" style={{ gap: 8 }}>
           <span
             className="text-[13px] font-semibold"
-            style={{ color: "var(--color-ink)" }}
+            style={{ color: "var(--text-primary)" }}
           >
             Day {day.seq}
           </span>
@@ -255,23 +255,23 @@ function DayCard({ day }: { day: PlanDayStatus }) {
               borderRadius: "var(--radius-pill)",
               fontSize: 11,
               fontWeight: 600,
-              background: "var(--color-primary-soft)",
-              color: "var(--color-primary)",
+              background: "var(--accent-primary-soft)",
+              color: "var(--accent-primary)",
             }}
           >
             {TRACK_LABEL[day.trackKey] ?? day.trackKey}
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             约 {Math.round(day.estMinutes / 60)}h
           </span>
         </span>
-        <span className="text-[14px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[14px] font-semibold" style={{ color: "var(--text-primary)" }}>
           {day.title}
         </span>
         {day.deviationNote && (
           <span
             className="text-[11px]"
-            style={{ color: "var(--color-ink-48)", lineHeight: 1.5 }}
+            style={{ color: "var(--text-muted)", lineHeight: 1.5 }}
           >
             偏离说明：{day.deviationNote}
           </span>
@@ -294,12 +294,12 @@ function DayCard({ day }: { day: PlanDayStatus }) {
                     borderRadius: "var(--radius-pill)",
                     cursor: pending ? "wait" : "pointer",
                     background:
-                      choice === dec.status ? "var(--color-primary)" : "var(--color-card)",
-                    color: choice === dec.status ? "var(--color-on-primary)" : "var(--color-ink-48)",
+                      choice === dec.status ? "var(--accent-primary)" : "var(--surface-card)",
+                    color: choice === dec.status ? "var(--text-inverse)" : "var(--text-muted)",
                     border:
                       choice === dec.status
                         ? "none"
-                        : "1px solid var(--color-hairline)",
+                        : "1px solid var(--border-default)",
                   }}
                 >
                   {dec.label}
@@ -315,9 +315,9 @@ function DayCard({ day }: { day: PlanDayStatus }) {
               style={{
                 width: "100%",
                 padding: "8px 10px",
-                borderRadius: "var(--radius-item-md)",
-                border: "1px solid var(--color-hairline)",
-                color: "var(--color-ink)",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border-default)",
+                color: "var(--text-primary)",
                 resize: "vertical",
                 fontFamily: "inherit",
               }}
@@ -330,8 +330,8 @@ function DayCard({ day }: { day: PlanDayStatus }) {
                 style={{
                   padding: "6px 14px",
                   borderRadius: "var(--radius-pill)",
-                  background: "var(--color-primary)",
-                  color: "var(--color-on-primary)",
+                  background: "var(--accent-primary)",
+                  color: "var(--text-inverse)",
                   cursor: pending || choice === null ? "wait" : "pointer",
                   opacity: pending || choice === null ? 0.6 : 1,
                 }}
@@ -350,7 +350,7 @@ function DayCard({ day }: { day: PlanDayStatus }) {
                   padding: "6px 14px",
                   borderRadius: "var(--radius-pill)",
                   background: "transparent",
-                  color: "var(--color-ink-48)",
+                  color: "var(--text-muted)",
                   cursor: "pointer",
                 }}
               >
@@ -365,8 +365,8 @@ function DayCard({ day }: { day: PlanDayStatus }) {
             style={{
               padding: "6px 12px",
               borderRadius: "var(--radius-pill)",
-              background: "var(--color-amber-soft)",
-              color: "var(--color-amber-deep)",
+              background: "var(--accent-warning-soft)",
+              color: "var(--accent-warning)",
               cursor: "pointer",
             }}
           >
@@ -380,7 +380,7 @@ function DayCard({ day }: { day: PlanDayStatus }) {
               padding: "6px 12px",
               borderRadius: "var(--radius-pill)",
               background: "transparent",
-              color: "var(--color-ink-48)",
+              color: "var(--text-muted)",
               cursor: "pointer",
             }}
           >
@@ -392,7 +392,7 @@ function DayCard({ day }: { day: PlanDayStatus }) {
       {error && (
         <span
           className="text-xs"
-          style={{ color: "var(--color-rose-deep)", width: "100%" }}
+          style={{ color: "var(--accent-danger)", width: "100%" }}
         >
           {error}
         </span>
@@ -404,8 +404,8 @@ function DayCard({ day }: { day: PlanDayStatus }) {
 /** 提示条。 */
 function Notice({ tone, children }: { tone: "amber" | "rose"; children: ReactNode }) {
   const map = {
-    amber: { bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-    rose: { bg: "var(--color-rose-soft)", fg: "var(--color-rose-deep)" },
+    amber: { bg: "var(--accent-warning-soft)", fg: "var(--accent-warning)" },
+    rose: { bg: "var(--accent-danger-soft)", fg: "var(--accent-danger)" },
   } as const;
   const c = map[tone];
   return (
@@ -413,7 +413,7 @@ function Notice({ tone, children }: { tone: "amber" | "rose"; children: ReactNod
       className="text-xs"
       style={{
         padding: "10px 14px",
-        borderRadius: "var(--radius-item-md)",
+        borderRadius: "var(--radius-md)",
         background: c.bg,
         color: c.fg,
         lineHeight: 1.6,

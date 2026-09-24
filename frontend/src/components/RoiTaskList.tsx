@@ -7,9 +7,9 @@ type Props = {
 
 /** ROI 颜色：高回报（>=1.0）emerald，中（>=0.5）amber，低 rose。 */
 function roiColor(roi: number): string {
-  if (roi >= 1.0) return "var(--color-emerald)";
-  if (roi >= 0.5) return "var(--color-amber)";
-  return "var(--color-rose)";
+  if (roi >= 1.0) return "var(--accent-success)";
+  if (roi >= 0.5) return "var(--accent-warning)";
+  return "var(--accent-danger)";
 }
 
 /** Phase 2 Career ROI 排名卡片 — Top5 任务列表。
@@ -27,22 +27,22 @@ export default function RoiTaskList({ tasks }: Props) {
         minWidth: 0,
         gap: "var(--spacing-md)",
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
           今日 ROI 排名
         </span>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           高回报任务优先做
         </span>
       </div>
 
       {tasks.length === 0 ? (
-        <span className="text-[13px]" style={{ color: "var(--color-ink-48)", paddingBlock: 16 }}>
+        <span className="text-[13px]" style={{ color: "var(--text-muted)", paddingBlock: 16 }}>
           今日暂无带 ROI 评分的任务
         </span>
       ) : (
@@ -54,9 +54,9 @@ export default function RoiTaskList({ tasks }: Props) {
               style={{
                 gap: 6,
                 padding: 12,
-                background: "var(--color-canvas)",
-                border: "1px solid var(--color-hairline)",
-                borderRadius: "var(--radius-item-md)",
+                background: "var(--surface-canvas)",
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)",
               }}
             >
               <div className="flex items-center justify-between" style={{ gap: 10 }}>
@@ -64,7 +64,7 @@ export default function RoiTaskList({ tasks }: Props) {
                   <span
                     className="text-xs font-semibold shrink-0"
                     style={{
-                      color: "var(--color-ink-48)",
+                      color: "var(--text-muted)",
                       width: 18,
                     }}
                   >
@@ -72,7 +72,7 @@ export default function RoiTaskList({ tasks }: Props) {
                   </span>
                   <span
                     className="text-[14px] font-medium"
-                    style={{ color: "var(--color-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    style={{ color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                   >
                     {t.title}
                   </span>
@@ -90,9 +90,9 @@ export default function RoiTaskList({ tasks }: Props) {
                   <span
                     className="text-[11px]"
                     style={{
-                      color: "var(--color-ink-80)",
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-hairline)",
+                      color: "var(--text-secondary)",
+                      background: "var(--surface-card)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: "var(--radius-pill)",
                       padding: "1px 8px",
                     }}
@@ -105,9 +105,9 @@ export default function RoiTaskList({ tasks }: Props) {
                     key={j}
                     className="text-[11px]"
                     style={{
-                      color: "var(--color-ink-48)",
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-hairline)",
+                      color: "var(--text-muted)",
+                      background: "var(--surface-card)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: "var(--radius-pill)",
                       padding: "1px 8px",
                     }}

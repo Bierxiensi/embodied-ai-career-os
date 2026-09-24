@@ -16,35 +16,35 @@ import { questionTypeLabel } from "@/lib/questionType";
 
 const cardStyle: React.CSSProperties = {
   padding: 24,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 15,
   fontWeight: 600,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   letterSpacing: "-0.01em",
 };
 
 const metricValueStyle: React.CSSProperties = {
   fontSize: 24,
   fontWeight: 600,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   fontVariantNumeric: "tabular-nums",
   lineHeight: 1.2,
 };
 
 const metricLabelStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
   marginTop: 2,
 };
 
 const hintStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
   lineHeight: 1.7,
 };
 
@@ -99,7 +99,7 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
           </div>
 
           <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, color: "var(--color-ink-48)", marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
               需要再练
             </div>
             {stats.weakSkills.length === 0 && stats.weakTypes.length === 0 ? (
@@ -113,8 +113,8 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
                     key={s}
                     style={{
                       ...chipStyle,
-                      color: "var(--color-rose-deep)",
-                      background: "var(--color-rose-soft)",
+                      color: "var(--accent-danger)",
+                      background: "var(--accent-danger-soft)",
                     }}
                   >
                     {s}
@@ -125,8 +125,8 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
                     key={`type-${t}`}
                     style={{
                       ...chipStyle,
-                      color: "var(--color-amber-deep)",
-                      background: "var(--color-amber-soft)",
+                      color: "var(--accent-warning)",
+                      background: "var(--accent-warning-soft)",
                     }}
                   >
                     {questionTypeLabel(t)} 题型
@@ -138,7 +138,7 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
 
           {stats.bySkill.length > 0 && (
             <div style={{ marginTop: 18 }}>
-              <div style={{ fontSize: 12, color: "var(--color-ink-48)", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
                 按技能（正确率从低到高）
               </div>
               <div className="flex flex-col" style={{ gap: 4 }}>
@@ -146,12 +146,12 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
                   <div
                     key={s.skill}
                     className="flex items-center justify-between"
-                    style={{ fontSize: 12, color: "var(--color-ink-80)" }}
+                    style={{ fontSize: 12, color: "var(--text-secondary)" }}
                   >
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {s.skill}
                     </span>
-                    <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--color-ink-48)" }}>
+                    <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--text-muted)" }}>
                       {s.correct}/{s.practiced} · {s.accuracy}%
                     </span>
                   </div>
@@ -162,7 +162,7 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
 
           {stats.recentSessions.length > 0 && (
             <div style={{ marginTop: 18 }}>
-              <div style={{ fontSize: 12, color: "var(--color-ink-48)", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
                 最近测验
               </div>
               <div className="flex flex-col" style={{ gap: 4 }}>
@@ -170,10 +170,10 @@ export default function PracticeStatsCard({ stats }: { stats: PracticeStats }) {
                   <div
                     key={s.sessionId}
                     className="flex items-center justify-between"
-                    style={{ fontSize: 12, color: "var(--color-ink-80)" }}
+                    style={{ fontSize: 12, color: "var(--text-secondary)" }}
                   >
                     <span>{s.date}</span>
-                    <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--color-ink-48)" }}>
+                    <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--text-muted)" }}>
                       {s.count} 题 · 均分 {s.score}
                     </span>
                   </div>

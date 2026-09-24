@@ -31,26 +31,26 @@ type Phase = "setup" | "running" | "result";
 
 const cardStyle: React.CSSProperties = {
   padding: 24,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "7px 10px",
-  borderRadius: "var(--radius-item-sm)",
-  border: "1px solid var(--color-hairline)",
-  background: "var(--color-card)",
-  color: "var(--color-ink)",
+  borderRadius: "var(--radius-sm)",
+  border: "1px solid var(--border-default)",
+  background: "var(--surface-card)",
+  color: "var(--text-primary)",
   fontSize: 13,
 };
 
 const primaryBtn: React.CSSProperties = {
   padding: "8px 18px",
-  borderRadius: "var(--radius-item-sm)",
+  borderRadius: "var(--radius-sm)",
   border: "none",
-  background: "var(--color-primary)",
-  color: "var(--color-on-primary)",
+  background: "var(--accent-primary)",
+  color: "var(--text-inverse)",
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
@@ -60,7 +60,7 @@ const linkBtn: React.CSSProperties = {
   padding: 0,
   border: "none",
   background: "transparent",
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
   fontSize: 12,
   cursor: "pointer",
 };
@@ -162,7 +162,7 @@ export default function QuizRunner({ categoryOptions, skillOptions, onQuizEnd }:
     return (
       <div style={cardStyle}>
         <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
             小测验 · 第 {index + 1}/{total} 题
           </h2>
           <button onClick={handleAbort} style={linkBtn}>
@@ -184,7 +184,7 @@ export default function QuizRunner({ categoryOptions, skillOptions, onQuizEnd }:
             style={{
               width: `${((index + 1) / Math.max(1, total)) * 100}%`,
               height: "100%",
-              background: "var(--color-primary)",
+              background: "var(--accent-primary)",
               transition: "width .2s ease",
             }}
           />
@@ -203,12 +203,12 @@ export default function QuizRunner({ categoryOptions, skillOptions, onQuizEnd }:
         </div>
 
         {busy && (
-          <div style={{ marginTop: 12, fontSize: 12, color: "var(--color-ink-48)" }}>
+          <div style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
             正在生成本轮成绩单…
           </div>
         )}
         {error && (
-          <div style={{ marginTop: 12, fontSize: 12, color: "var(--color-rose-deep)" }}>{error}</div>
+          <div style={{ marginTop: 12, fontSize: 12, color: "var(--accent-danger)" }}>{error}</div>
         )}
       </div>
     );
@@ -218,8 +218,8 @@ export default function QuizRunner({ categoryOptions, skillOptions, onQuizEnd }:
   return (
     <div style={cardStyle}>
       <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}>小测验 · 抽几道答一答</h2>
-        <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>小测验 · 抽几道答一答</h2>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
           逐题作答 → 出本轮成绩单，并计入上面那张学情卡
         </span>
       </div>
@@ -248,13 +248,13 @@ export default function QuizRunner({ categoryOptions, skillOptions, onQuizEnd }:
         </button>
       </div>
 
-      <p style={{ fontSize: 12, lineHeight: 1.7, color: "var(--color-ink-48)", marginTop: 10 }}>
+      <p style={{ fontSize: 12, lineHeight: 1.7, color: "var(--text-muted)", marginTop: 10 }}>
         题型：配置了真实 LLM（<code>LLM_PROVIDER</code>）时会把题目改写成选择 / 判断 / 填空题；
         未配置时统一出简答题，按答题要点的关键词覆盖率评分 —— 没接模型也不会让判分失效。
       </p>
 
       {error && (
-        <div style={{ marginTop: 10, fontSize: 12, color: "var(--color-rose-deep)" }}>{error}</div>
+        <div style={{ marginTop: 10, fontSize: 12, color: "var(--accent-danger)" }}>{error}</div>
       )}
     </div>
   );

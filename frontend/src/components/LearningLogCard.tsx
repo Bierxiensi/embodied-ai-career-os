@@ -21,18 +21,18 @@ import type { LearningLog } from "@/types";
  */
 
 const cardStyle: CSSProperties = {
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
   padding: "var(--spacing-lg)",
 };
 
 const INPUT: CSSProperties = {
   padding: "8px 11px",
-  borderRadius: "var(--radius-item-md)",
-  border: "1px solid var(--color-hairline)",
+  borderRadius: "var(--radius-md)",
+  border: "1px solid var(--border-default)",
   background: "var(--color-item-bg)",
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   fontSize: 13,
   fontFamily: "inherit",
 };
@@ -87,17 +87,17 @@ export default function LearningLogCard({ logs }: { logs: LearningLog[] }) {
   return (
     <div className="flex flex-col" style={{ ...cardStyle, gap: 14 }}>
       <div className="flex items-baseline justify-between" style={{ gap: 12 }}>
-        <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
           今天学到什么
         </span>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {todays.length === 0
             ? "今天还没有记录"
             : `今天 ${todays.length} 条 · 累计 ${totalMinutes} 分钟`}
         </span>
       </div>
 
-      <span className="text-[11px]" style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+      <span className="text-[11px]" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
         写具体做了什么、卡在哪、产出在哪。这条记录会进入 Reviewer 评审，也作为能力证据留档。
       </span>
 
@@ -129,23 +129,23 @@ export default function LearningLogCard({ logs }: { logs: LearningLog[] }) {
           className="text-[13px] font-medium"
           style={{
             padding: "9px 18px",
-            borderRadius: "var(--radius-item-md)",
+            borderRadius: "var(--radius-md)",
             border: "none",
-            background: "var(--color-primary)",
-            color: "var(--color-on-primary)",
+            background: "var(--accent-primary)",
+            color: "var(--text-inverse)",
             cursor: pending ? "wait" : "pointer",
             opacity: pending || !content.trim() ? 0.6 : 1,
           }}
         >
           {pending ? "保存中…" : "记录"}
         </button>
-        <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
           {content.length}/{MAX_CONTENT}
         </span>
       </div>
 
       {error && (
-        <span className="text-xs" style={{ color: "var(--color-rose-deep)" }}>
+        <span className="text-xs" style={{ color: "var(--accent-danger)" }}>
           {error}
         </span>
       )}
@@ -159,13 +159,13 @@ export default function LearningLogCard({ logs }: { logs: LearningLog[] }) {
               style={{
                 gap: 5,
                 padding: "10px 12px",
-                borderRadius: "var(--radius-item-md)",
+                borderRadius: "var(--radius-md)",
                 background: "var(--color-item-bg)",
-                border: "1px solid var(--color-hairline)",
+                border: "1px solid var(--border-default)",
               }}
             >
               <div className="flex flex-wrap items-center" style={{ gap: 8 }}>
-                <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                   {new Date(l.createdAt).toLocaleTimeString("zh-CN", {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -177,8 +177,8 @@ export default function LearningLogCard({ logs }: { logs: LearningLog[] }) {
                     style={{
                       padding: "2px 8px",
                       borderRadius: "var(--radius-pill)",
-                      background: "var(--color-primary-soft)",
-                      color: "var(--color-primary)",
+                      background: "var(--accent-primary-soft)",
+                      color: "var(--accent-primary)",
                     }}
                   >
                     {l.durationMinutes} 分钟
@@ -190,7 +190,7 @@ export default function LearningLogCard({ logs }: { logs: LearningLog[] }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[11px] no-underline"
-                    style={{ color: "var(--color-primary)" }}
+                    style={{ color: "var(--accent-primary)" }}
                   >
                     证据 ↗
                   </a>
@@ -198,7 +198,7 @@ export default function LearningLogCard({ logs }: { logs: LearningLog[] }) {
               </div>
               <span
                 className="text-[13px]"
-                style={{ color: "var(--color-ink-80)", lineHeight: 1.65, whiteSpace: "pre-wrap" }}
+                style={{ color: "var(--text-secondary)", lineHeight: 1.65, whiteSpace: "pre-wrap" }}
               >
                 {l.content}
               </span>

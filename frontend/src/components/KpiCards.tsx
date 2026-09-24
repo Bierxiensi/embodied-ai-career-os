@@ -19,10 +19,10 @@ type Props = {
 };
 
 const FUNNEL_STAGES: { key: JobAppStatus; label: string; color: string }[] = [
-  { key: "applied", label: "已投", color: "var(--color-ink-48)" },
+  { key: "applied", label: "已投", color: "var(--text-muted)" },
   { key: "screening", label: "筛选", color: "var(--color-sky)" },
   { key: "interview", label: "面试", color: "var(--color-violet)" },
-  { key: "offer", label: "Offer", color: "var(--color-emerald)" },
+  { key: "offer", label: "Offer", color: "var(--accent-success)" },
 ];
 
 /** KPI 指标卡片行 — 4 个核心指标：
@@ -61,14 +61,14 @@ export default function KpiCards({
       label: readinessLabel,
       value: `${readiness}%`,
       fillPct: readiness,
-      fillColor: "var(--color-primary)",
+      fillColor: "var(--accent-primary)",
       sub: readinessSub,
-      subColor: "var(--color-primary)",
+      subColor: "var(--accent-primary)",
       icon: (
         <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4.5 21A11 11 0 0 1 25.5 21" stroke="var(--color-primary)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-          <path d="M18 17L21 20" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round" />
-          <circle cx="15" cy="20" r="2" fill="var(--color-primary)" />
+          <path d="M4.5 21A11 11 0 0 1 25.5 21" stroke="var(--accent-primary)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+          <path d="M18 17L21 20" stroke="var(--accent-primary)" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="15" cy="20" r="2" fill="var(--accent-primary)" />
         </svg>
       ),
     },
@@ -76,13 +76,13 @@ export default function KpiCards({
       label: "任务进度",
       value: `${doneCount}/${totalCount}`,
       fillPct: totalCount > 0 ? (doneCount / totalCount) * 100 : 0,
-      fillColor: "var(--color-amber)",
+      fillColor: "var(--accent-warning)",
       sub: taskProgressSub,
-      subColor: "var(--color-amber-deep)",
+      subColor: "var(--accent-warning)",
       icon: (
         <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="6" y="6" width="18" height="18" rx="3" stroke="var(--color-amber)" strokeWidth="1.5" fill="none" />
-          <path d="M11 15L14 18L20 12" stroke="var(--color-amber)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="6" y="6" width="18" height="18" rx="3" stroke="var(--accent-warning)" strokeWidth="1.5" fill="none" />
+          <path d="M11 15L14 18L20 12" stroke="var(--accent-warning)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
@@ -94,7 +94,7 @@ export default function KpiCards({
       sub: applicationCounts
         ? FUNNEL_STAGES.map((s) => `${s.label} ${applicationCounts[s.key] ?? 0}`).join(" · ")
         : "暂无投递数据",
-      subColor: "var(--color-ink-80)",
+      subColor: "var(--text-secondary)",
       icon: (
         <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M5 8H25L20 15H10L5 8Z" stroke="var(--color-violet)" strokeWidth="1.5" fill="none" />
@@ -106,18 +106,18 @@ export default function KpiCards({
       label: "Agent 运行",
       value: `${agentRuns.length}`,
       fillPct: successRate,
-      fillColor: "var(--color-emerald)",
+      fillColor: "var(--accent-success)",
       sub:
         agentRuns.length > 0
           ? `最近 ${agentRuns.length} 次 · 成功率 ${successRate}%`
           : "暂无运行记录",
-      subColor: "var(--color-emerald-deep)",
+      subColor: "var(--accent-success)",
       icon: (
         <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="7" y="10" width="16" height="12" rx="2" stroke="var(--color-emerald)" strokeWidth="1.5" fill="none" />
-          <circle cx="12" cy="16" r="1.5" fill="var(--color-emerald)" />
-          <circle cx="18" cy="16" r="1.5" fill="var(--color-emerald)" />
-          <path d="M12 7L15 10L18 7" stroke="var(--color-emerald)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="7" y="10" width="16" height="12" rx="2" stroke="var(--accent-success)" strokeWidth="1.5" fill="none" />
+          <circle cx="12" cy="16" r="1.5" fill="var(--accent-success)" />
+          <circle cx="18" cy="16" r="1.5" fill="var(--accent-success)" />
+          <path d="M12 7L15 10L18 7" stroke="var(--accent-success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
     },
@@ -132,9 +132,9 @@ export default function KpiCards({
           style={{
             gap: "var(--spacing-sm)",
             padding: 22,
-            background: "var(--color-card)",
-            border: "1px solid var(--color-hairline)",
-            borderRadius: "var(--radius-card-lg)",
+            background: "var(--surface-card)",
+            border: "1px solid var(--border-default)",
+            borderRadius: "var(--radius-lg)",
           }}
         >
           <div className="flex items-center" style={{ gap: 10 }}>
@@ -143,19 +143,19 @@ export default function KpiCards({
               style={{
                 width: 30,
                 height: 30,
-                borderRadius: "var(--radius-item-sm)",
-                background: "var(--color-primary-soft)",
+                borderRadius: "var(--radius-sm)",
+                background: "var(--accent-primary-soft)",
               }}
             >
               {kpi.icon}
             </div>
-            <span className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-sm" style={{ color: "var(--text-muted)" }}>
               {kpi.label}
             </span>
           </div>
           <span
             className="font-semibold"
-            style={{ fontSize: 34, color: "var(--color-ink)", letterSpacing: "-0.01em" }}
+            style={{ fontSize: 34, color: "var(--text-primary)", letterSpacing: "-0.01em" }}
           >
             {kpi.value}
           </span>

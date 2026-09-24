@@ -83,7 +83,7 @@ export default async function TodayPage({ searchParams }: PageProps) {
     });
 
     return (
-      <main className="flex flex-1 flex-col" style={{ background: "var(--color-canvas)" }}>
+      <main className="flex flex-1 flex-col" style={{ background: "var(--surface-canvas)" }}>
         <div
           className="mx-auto flex w-full max-w-[1180px] flex-col"
           style={{ padding: "32px 32px 56px", gap: 24 }}
@@ -130,10 +130,10 @@ export default async function TodayPage({ searchParams }: PageProps) {
               className="text-xs"
               style={{
                 padding: 12,
-                color: "var(--color-rose-deep)",
-                background: "var(--color-rose-soft)",
-                border: "1px solid var(--color-rose)",
-                borderRadius: "var(--radius-item-md)",
+                color: "var(--accent-danger)",
+                background: "var(--accent-danger-soft)",
+                border: "1px solid var(--accent-danger)",
+                borderRadius: "var(--radius-md)",
               }}
             >
               职业进度 / 当前工作 / 学术与博士三区未加载：/api/transition/dashboard 不可用。
@@ -152,24 +152,24 @@ export default async function TodayPage({ searchParams }: PageProps) {
     return (
       <main
         className="flex flex-1 items-center justify-center"
-        style={{ background: "var(--color-canvas)" }}
+        style={{ background: "var(--surface-canvas)" }}
       >
         <div
           className="max-w-md text-center"
           style={{
             padding: 32,
-            background: "var(--color-card)",
-            border: "1px solid var(--color-rose)",
-            borderRadius: "var(--radius-card-lg)",
+            background: "var(--surface-card)",
+            border: "1px solid var(--accent-danger)",
+            borderRadius: "var(--radius-lg)",
           }}
         >
-          <h1 className="text-lg font-semibold" style={{ color: "var(--color-rose-deep)" }}>
+          <h1 className="text-lg font-semibold" style={{ color: "var(--accent-danger)" }}>
             今日施工单加载失败
           </h1>
-          <p className="mt-2 text-sm" style={{ color: "var(--color-ink-48)" }}>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
             {message}
           </p>
-          <p className="mt-4 text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>
+          <p className="mt-4 text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
             若提示课程日不存在，请先初始化课程脊梁：
             <br />
             cd backend &amp;&amp; python scripts/seed_plan_30d.py

@@ -34,9 +34,9 @@ const RESOURCE_URL: Record<string, string> = {
 const ARXIV_ID = /\b(\d{4}\.\d{4,5})\b/g;
 
 const LINK: CSSProperties = {
-  color: "var(--color-primary)",
+  color: "var(--accent-primary)",
   textDecoration: "none",
-  borderBottom: "1px solid var(--color-primary-soft)",
+  borderBottom: "1px solid var(--accent-primary-soft)",
 };
 
 /** 把一段文本里的 arXiv 编号变成链接，其余原样保留。 */
@@ -70,7 +70,7 @@ function withArxivLinks(text: string): ReactNode {
 export default function ResourceList({ names }: { names: string[] }) {
   if (names.length === 0) {
     return (
-      <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
         今日未指定资源
       </span>
     );
@@ -84,7 +84,7 @@ export default function ResourceList({ names }: { names: string[] }) {
           <span
             key={name}
             className="text-xs"
-            style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}
+            style={{ color: "var(--text-muted)", lineHeight: 1.6 }}
           >
             ·{" "}
             {mapped ? (

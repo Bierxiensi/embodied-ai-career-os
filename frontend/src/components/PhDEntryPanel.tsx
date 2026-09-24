@@ -28,16 +28,16 @@ const TITLE_OPTIONS = ["教授", "副教授", "研究员", "助理教授", "讲�
 const inputStyle: React.CSSProperties = {
   padding: "7px 10px",
   fontSize: 13,
-  border: "1px solid var(--color-hairline)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
-  background: "var(--color-card)",
-  color: "var(--color-ink)",
+  background: "var(--surface-card)",
+  color: "var(--text-primary)",
   width: "100%",
 };
 
 const labelStyle: React.CSSProperties = {
   fontSize: 11,
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
   display: "flex",
   flexDirection: "column",
   gap: 4,
@@ -47,8 +47,8 @@ const btnStyle: React.CSSProperties = {
   padding: "8px 16px",
   borderRadius: 10,
   border: "none",
-  background: "var(--color-primary)",
-  color: "var(--color-on-primary)",
+  background: "var(--accent-primary)",
+  color: "var(--text-inverse)",
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
@@ -162,9 +162,9 @@ export default function PhDEntryPanel({
   return (
     <div
       style={{
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg, 16px)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg, 16px)",
         padding: 16,
         margin: "0 24px 16px",
       }}
@@ -176,7 +176,7 @@ export default function PhDEntryPanel({
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: "var(--color-primary)",
+          color: "var(--accent-primary)",
           padding: 0,
         }}
       >
@@ -194,10 +194,10 @@ export default function PhDEntryPanel({
                 style={{
                   padding: "5px 12px",
                   borderRadius: "var(--radius-pill)",
-                  border: "1px solid var(--color-hairline)",
+                  border: "1px solid var(--border-default)",
                   cursor: "pointer",
-                  background: tab === k ? "var(--color-primary-soft)" : "transparent",
-                  color: tab === k ? "var(--color-primary)" : "var(--color-ink-48)",
+                  background: tab === k ? "var(--accent-primary-soft)" : "transparent",
+                  color: tab === k ? "var(--accent-primary)" : "var(--text-muted)",
                 }}
               >
                 {k === "advisor" ? "新增导师" : "新增院校/机会"}
@@ -238,7 +238,7 @@ export default function PhDEntryPanel({
               <Field label="备注">
                 <input style={inputStyle} value={t.notes} onChange={(e) => setT({ ...t, notes: e.target.value })} placeholder="申请-考核制 / 非全名额等" />
               </Field>
-              <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--color-ink-80)", alignSelf: "end" }}>
+              <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--text-secondary)", alignSelf: "end" }}>
                 <input type="checkbox" checked={t.in_service_friendly} onChange={(e) => setT({ ...t, in_service_friendly: e.target.checked })} />
                 在职/非全友好
               </label>
@@ -277,15 +277,15 @@ export default function PhDEntryPanel({
                 <input style={inputStyle} value={a.notes} onChange={(e) => setA({ ...a, notes: e.target.value })} />
               </Field>
               <div className="flex items-center" style={{ gap: 14, gridColumn: "1 / -1" }}>
-                <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--color-ink-80)" }}>
+                <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
                   <input type="checkbox" checked={a.recruiting} onChange={(e) => setA({ ...a, recruiting: e.target.checked })} />
                   在招
                 </label>
-                <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--color-ink-80)" }}>
+                <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
                   <input type="checkbox" checked={a.in_service_friendly} onChange={(e) => setA({ ...a, in_service_friendly: e.target.checked })} />
                   在职友好
                 </label>
-                <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--color-ink-80)" }}>
+                <label className="flex items-center" style={{ gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
                   <input type="checkbox" checked={a.contacted} onChange={(e) => setA({ ...a, contacted: e.target.checked })} />
                   已联系
                 </label>
@@ -299,7 +299,7 @@ export default function PhDEntryPanel({
           )}
 
           {message && (
-            <span className="text-xs" style={{ color: message.startsWith("录入失败") ? "var(--color-rose-deep)" : "var(--color-emerald-deep)" }}>
+            <span className="text-xs" style={{ color: message.startsWith("录入失败") ? "var(--accent-danger)" : "var(--accent-success)" }}>
               {message}
             </span>
           )}

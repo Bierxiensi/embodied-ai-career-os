@@ -44,7 +44,7 @@ export default function AgentOverview({ runs }: Props) {
           active={filter === null}
           label="全部"
           onClick={() => setFilter(null)}
-          color="var(--color-ink-48)"
+          color="var(--text-muted)"
         />
         {KNOWN_AGENTS.map((name) => {
           const count = runs.filter((r) => r.agentName === name).length;
@@ -83,12 +83,12 @@ function StatCard({
         flex: "1 1 140px",
         gap: 6,
         padding: 18,
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
-      <span className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-sm" style={{ color: "var(--text-muted)" }}>
         {label}
       </span>
       <span
@@ -97,10 +97,10 @@ function StatCard({
           fontSize: 28,
           color:
             tone === "emerald"
-              ? "var(--color-emerald-deep)"
+              ? "var(--accent-success)"
               : tone === "rose"
-                ? "var(--color-rose-deep)"
-                : "var(--color-ink)",
+                ? "var(--accent-danger)"
+                : "var(--text-primary)",
           letterSpacing: "-0.01em",
         }}
       >
@@ -132,9 +132,9 @@ function FilterChip({
         paddingInline: 14,
         borderRadius: "var(--radius-pill)",
         cursor: "pointer",
-        background: active ? "var(--color-ink)" : "var(--color-card)",
-        border: `1px solid ${active ? "var(--color-ink)" : "var(--color-hairline)"}`,
-        color: active ? "var(--color-card)" : "var(--color-ink-80)",
+        background: active ? "var(--text-primary)" : "var(--surface-card)",
+        border: `1px solid ${active ? "var(--text-primary)" : "var(--border-default)"}`,
+        color: active ? "var(--surface-card)" : "var(--text-secondary)",
         fontSize: 13,
         fontWeight: 500,
       }}

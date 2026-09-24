@@ -22,7 +22,7 @@ type Props = {
  */
 export default function PageShell({ eyebrow, title, subtitle, children }: Props) {
   return (
-    <main className="flex flex-1 flex-col" style={{ background: "var(--color-canvas)" }}>
+    <main className="flex flex-1 flex-col" style={{ background: "var(--surface-canvas)" }}>
       <div
         className="mx-auto flex w-full max-w-[1180px] flex-col"
         style={{ padding: "36px clamp(20px, 8vw, 120px) 56px", gap: "var(--spacing-lg)" }}
@@ -30,7 +30,7 @@ export default function PageShell({ eyebrow, title, subtitle, children }: Props)
         {eyebrow && (
           <span
             className="text-xs font-semibold uppercase"
-            style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+            style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
           >
             {eyebrow}
           </span>
@@ -39,14 +39,14 @@ export default function PageShell({ eyebrow, title, subtitle, children }: Props)
           className="font-semibold"
           style={{
             fontSize: "var(--font-size-hero)",
-            color: "var(--color-ink)",
+            color: "var(--text-primary)",
             letterSpacing: "-0.02em",
           }}
         >
           {title}
         </h1>
         {subtitle && (
-          <p className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             {subtitle}
           </p>
         )}

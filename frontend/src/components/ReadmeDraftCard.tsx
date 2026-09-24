@@ -82,37 +82,37 @@ export default function ReadmeDraftCard({ projectId, initial }: Props) {
       style={{
         gap: 16,
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex items-center justify-between" style={{ gap: 12 }}>
         <div className="flex flex-col" style={{ gap: 4 }}>
           <span
             className="text-[17px] font-semibold"
-            style={{ color: "var(--color-ink)" }}
+            style={{ color: "var(--text-primary)" }}
           >
             README 骨架（从证据链生成）
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             里程碑 {counts.milestones} · 技能 {counts.skills}（有证据{" "}
             {counts.skillsWithEvidence}） · 实验 {counts.experiments} · {counts.chars} 字符
           </span>
         </div>
         {saved === null ? (
-          <Badge label="尚未保存" bg="#F5F5F5" color="var(--color-ink-48)" />
+          <Badge label="尚未保存" bg="#F5F5F5" color="var(--text-muted)" />
         ) : dirty ? (
           <Badge
             label="草稿已改动"
-            bg="var(--color-amber-soft)"
-            color="var(--color-amber-deep)"
+            bg="var(--accent-warning-soft)"
+            color="var(--accent-warning)"
           />
         ) : (
           <Badge
             label="与已保存一致"
-            bg="var(--color-emerald-soft)"
-            color="var(--color-emerald-deep)"
+            bg="var(--accent-success-soft)"
+            color="var(--accent-success)"
           />
         )}
       </div>
@@ -130,7 +130,7 @@ export default function ReadmeDraftCard({ projectId, initial }: Props) {
       </div>
 
       {msg && (
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {msg}
         </span>
       )}
@@ -142,11 +142,11 @@ export default function ReadmeDraftCard({ projectId, initial }: Props) {
           maxHeight: 460,
           padding: "14px 16px",
           background: "var(--color-item-bg)",
-          border: "1px solid var(--color-hairline-soft)",
-          borderRadius: "var(--radius-item-md)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)",
           fontSize: 12,
           lineHeight: 1.65,
-          color: "var(--color-ink-80)",
+          color: "var(--text-secondary)",
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
           fontFamily:
@@ -156,7 +156,7 @@ export default function ReadmeDraftCard({ projectId, initial }: Props) {
         {draft}
       </pre>
 
-      <p className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
         带 📝 的段落需要你补写，其余已由证据链自动填好 —— 导出后在本地润色，不要从空白开始。
       </p>
     </section>
@@ -199,10 +199,10 @@ function Action({
       disabled={disabled}
       style={{
         padding: "7px 14px",
-        borderRadius: "var(--radius-item-sm)",
-        border: primary ? "1px solid transparent" : "1px solid var(--color-hairline)",
-        background: primary ? "var(--color-ink)" : "var(--color-card)",
-        color: primary ? "var(--color-on-primary)" : "var(--color-ink-80)",
+        borderRadius: "var(--radius-sm)",
+        border: primary ? "1px solid transparent" : "1px solid var(--border-default)",
+        background: primary ? "var(--text-primary)" : "var(--surface-card)",
+        color: primary ? "var(--text-inverse)" : "var(--text-secondary)",
         fontSize: 12,
         fontWeight: 600,
         cursor: disabled ? "not-allowed" : "pointer",

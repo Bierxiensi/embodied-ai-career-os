@@ -5,8 +5,8 @@ export function SkeletonLine({ width = "100%", height = 14 }: { width?: string |
       style={{
         width,
         height,
-        borderRadius: "var(--radius-item-sm)",
-        background: "var(--color-hairline-soft)",
+        borderRadius: "var(--radius-sm)",
+        background: "var(--border-subtle)",
         animation: "pulse 1.5s ease-in-out infinite",
       }}
     />
@@ -19,9 +19,9 @@ export function SkeletonCard({ height = 120 }: { height?: number }) {
     <div
       style={{
         height,
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
         padding: "var(--spacing-lg)",
         display: "flex",
         flexDirection: "column",

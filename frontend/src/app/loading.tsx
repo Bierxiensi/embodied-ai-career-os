@@ -5,7 +5,7 @@ export default function Loading() {
   return (
     <main
       className="flex flex-1 flex-col"
-      style={{ background: "var(--color-canvas)", padding: "36px clamp(20px, 8vw, 120px) 48px", gap: 16 }}
+      style={{ background: "var(--surface-canvas)", padding: "36px clamp(20px, 8vw, 120px) 48px", gap: 16 }}
     >
       <SkeletonCard height={80} />
       <div className="flex" style={{ gap: 16 }}>

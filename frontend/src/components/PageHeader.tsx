@@ -41,7 +41,7 @@ export default function PageHeader({
         <Link
           href={backHref}
           className="self-start text-xs font-medium no-underline"
-          style={{ color: "var(--color-primary)" }}
+          style={{ color: "var(--accent-primary)" }}
         >
           ← {backLabel ?? "返回"}
         </Link>
@@ -51,7 +51,7 @@ export default function PageHeader({
         <div className="flex flex-col" style={{ gap: 10, minWidth: 0 }}>
           <span
             className="text-xs font-semibold uppercase"
-            style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+            style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
           >
             {eyebrow}
           </span>
@@ -60,14 +60,14 @@ export default function PageHeader({
             style={{
               fontSize: 40,
               lineHeight: 1.15,
-              color: "var(--color-ink)",
+              color: "var(--text-primary)",
               letterSpacing: "-0.02em",
             }}
           >
             {title}
           </h1>
           {subtitle && (
-            <p className="text-[17px]" style={{ color: "var(--color-ink-48)" }}>
+            <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
               {subtitle}
             </p>
           )}

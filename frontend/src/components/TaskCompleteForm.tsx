@@ -78,10 +78,10 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
     marginTop: 4,
     padding: "7px 10px",
     fontSize: 13,
-    color: "var(--color-ink)",
-    background: "var(--color-card)",
-    border: "1px solid var(--color-hairline)",
-    borderRadius: "var(--radius-item-sm)",
+    color: "var(--text-primary)",
+    background: "var(--surface-card)",
+    border: "1px solid var(--border-default)",
+    borderRadius: "var(--radius-sm)",
     outline: "none",
     resize: "none",
   };
@@ -89,7 +89,7 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
   const labelStyle: React.CSSProperties = {
     fontSize: 12,
     fontWeight: 500,
-    color: "var(--color-ink-48)",
+    color: "var(--text-muted)",
   };
 
   return (
@@ -100,15 +100,15 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
         gap: 12,
         marginTop: 8,
         padding: 14,
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-item-md)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-md)",
       }}
     >
       {/* 学习日志 */}
       <div className="flex flex-col">
         <label style={labelStyle}>
-          学习日志 <span style={{ color: "var(--color-rose)" }}>*</span>
+          学习日志 <span style={{ color: "var(--accent-danger)" }}>*</span>
         </label>
         <textarea
           value={content}
@@ -119,7 +119,7 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
           style={fieldStyle}
         />
         <span
-          style={{ marginTop: 4, fontSize: 10, color: "var(--color-ink-48)" }}
+          style={{ marginTop: 4, fontSize: 10, color: "var(--text-muted)" }}
         >
           {content.length} / 2000 字（≥20 字得分）
         </span>
@@ -164,8 +164,8 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
             padding: "7px 14px",
             fontSize: 12,
             fontWeight: 600,
-            background: "var(--color-primary)",
-            color: "var(--color-on-primary)",
+            background: "var(--accent-primary)",
+            color: "var(--text-inverse)",
             borderRadius: "var(--radius-pill)",
             border: "none",
             cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -183,7 +183,7 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
             padding: "7px 14px",
             fontSize: 12,
             background: "transparent",
-            color: "var(--color-ink-48)",
+            color: "var(--text-muted)",
             border: "none",
             cursor: isSubmitting ? "not-allowed" : "pointer",
             opacity: isSubmitting ? 0.6 : 1,
@@ -195,12 +195,12 @@ export default function TaskCompleteForm({ task, onCancel }: Props) {
 
       {/* 状态提示 */}
       {state.kind === "success" && (
-        <p style={{ fontSize: 12, color: "var(--color-emerald-deep)" }}>
+        <p style={{ fontSize: 12, color: "var(--accent-success)" }}>
           {state.message}
         </p>
       )}
       {state.kind === "error" && (
-        <p style={{ fontSize: 12, color: "var(--color-rose-deep)" }}>
+        <p style={{ fontSize: 12, color: "var(--accent-danger)" }}>
           {state.message}
         </p>
       )}

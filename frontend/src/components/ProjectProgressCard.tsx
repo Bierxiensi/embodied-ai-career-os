@@ -7,9 +7,9 @@ type Props = {
 };
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  active: { label: "进行中", bg: "var(--color-emerald-soft)", color: "var(--color-emerald-deep)" },
-  paused: { label: "已暂停", bg: "var(--color-amber-soft)", color: "var(--color-amber-deep)" },
-  completed: { label: "已完成", bg: "#F5F5F5", color: "var(--color-ink-32)" },
+  active: { label: "进行中", bg: "var(--accent-success-soft)", color: "var(--accent-success)" },
+  paused: { label: "已暂停", bg: "var(--accent-warning-soft)", color: "var(--accent-warning)" },
+  completed: { label: "已完成", bg: "#F5F5F5", color: "var(--text-muted)" },
 };
 
 /** 项目进度卡片 — 显示项目列表及当前里程碑进度。 */
@@ -25,16 +25,16 @@ export default function ProjectProgressCard({ projects }: Props) {
       style={{
         gap: 18,
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
           项目进度
         </span>
-        <span className="text-xs font-medium" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
           {activeCount} 个进行中{pausedCount > 0 ? ` · ${pausedCount} 个暂停` : ""}
         </span>
       </div>
@@ -52,11 +52,11 @@ export default function ProjectProgressCard({ projects }: Props) {
               gap: 10,
               padding: "14px 16px",
               background: "var(--color-item-bg)",
-              borderRadius: "var(--radius-item-md)",
+              borderRadius: "var(--radius-md)",
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+              <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
                 {project.name}
               </span>
               <span
@@ -77,7 +77,7 @@ export default function ProjectProgressCard({ projects }: Props) {
               className="w-full overflow-hidden"
               style={{
                 height: 6,
-                background: "var(--color-hairline-soft)",
+                background: "var(--border-subtle)",
                 borderRadius: 3,
               }}
             >
@@ -85,12 +85,12 @@ export default function ProjectProgressCard({ projects }: Props) {
                 className="h-full"
                 style={{
                   width: `${pct}%`,
-                  background: project.status === "paused" ? "var(--color-amber)" : "var(--color-emerald)",
+                  background: project.status === "paused" ? "var(--accent-warning)" : "var(--accent-success)",
                   borderRadius: 3,
                 }}
               />
             </div>
-            <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               {describeCurrentMilestone(project)} · {pct}%
             </span>
           </Link>

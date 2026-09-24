@@ -29,15 +29,15 @@ const STATUS_LABEL: Record<string, string> = {
 const TASK_STATUS: Record<string, { label: string; bg: string; color: string }> = {
   done: {
     label: "已完成",
-    bg: "var(--color-emerald-soft)",
-    color: "var(--color-emerald-deep)",
+    bg: "var(--accent-success-soft)",
+    color: "var(--accent-success)",
   },
   doing: {
     label: "进行中",
-    bg: "var(--color-amber-soft)",
-    color: "var(--color-amber-deep)",
+    bg: "var(--accent-warning-soft)",
+    color: "var(--accent-warning)",
   },
-  todo: { label: "待办", bg: "var(--color-zinc-100)", color: "var(--color-ink-32)" },
+  todo: { label: "待办", bg: "var(--color-zinc-100)", color: "var(--text-muted)" },
 };
 
 export default async function ProjectDetailPage({
@@ -83,16 +83,16 @@ export default async function ProjectDetailPage({
                 fontWeight: 600,
                 background:
                   project.status === "active"
-                    ? "var(--color-emerald-soft)"
+                    ? "var(--accent-success-soft)"
                     : project.status === "paused"
-                      ? "var(--color-amber-soft)"
+                      ? "var(--accent-warning-soft)"
                       : "var(--color-zinc-100)",
                 color:
                   project.status === "active"
-                    ? "var(--color-emerald-deep)"
+                    ? "var(--accent-success)"
                     : project.status === "paused"
-                      ? "var(--color-amber-deep)"
-                      : "var(--color-ink-32)",
+                      ? "var(--accent-warning)"
+                      : "var(--text-muted)",
               }}
             >
               {STATUS_LABEL[project.status] ?? project.status}
@@ -108,7 +108,7 @@ export default async function ProjectDetailPage({
               className="flex-1 overflow-hidden"
               style={{
                 height: 6,
-                background: "var(--color-hairline-soft)",
+                background: "var(--border-subtle)",
                 borderRadius: 3,
               }}
             >
@@ -118,15 +118,15 @@ export default async function ProjectDetailPage({
                   width: `${pct}%`,
                   background:
                     project.status === "paused"
-                      ? "var(--color-amber)"
-                      : "var(--color-emerald)",
+                      ? "var(--accent-warning)"
+                      : "var(--accent-success)",
                   borderRadius: 3,
                 }}
               />
             </div>
             <span
               className="text-xs font-medium"
-              style={{ color: "var(--color-ink-48)" }}
+              style={{ color: "var(--text-muted)" }}
             >
               {project.milestoneCompleted}/{project.milestoneTotal} 里程碑 · {pct}%
             </span>
@@ -136,14 +136,14 @@ export default async function ProjectDetailPage({
         {/* 项目说明 */}
         {project.description && (
           <Card title="说明">
-            <p className="text-sm" style={{ color: "var(--color-ink-80)" }}>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
               {project.description}
             </p>
             {project.githubUrl && (
               <a
                 href={project.githubUrl}
                 className="mt-3 self-start text-xs font-medium no-underline"
-                style={{ color: "var(--color-primary)" }}
+                style={{ color: "var(--accent-primary)" }}
               >
                 {project.githubUrl} ↗
               </a>
@@ -208,7 +208,7 @@ export default async function ProjectDetailPage({
                       gap: 12,
                       padding: "12px 14px",
                       background: "var(--color-item-bg)",
-                      borderRadius: "var(--radius-item-md)",
+                      borderRadius: "var(--radius-md)",
                     }}
                   >
                     <span
@@ -226,14 +226,14 @@ export default async function ProjectDetailPage({
                     </span>
                     <span
                       className="text-sm font-medium"
-                      style={{ color: "var(--color-ink)" }}
+                      style={{ color: "var(--text-primary)" }}
                     >
                       {t.title}
                     </span>
                     {t.duration > 0 && (
                       <span
                         className="ml-auto shrink-0 text-xs"
-                        style={{ color: "var(--color-ink-48)" }}
+                        style={{ color: "var(--text-muted)" }}
                       >
                         {t.duration} min
                       </span>
@@ -268,20 +268,20 @@ function Card({
       style={{
         gap: 16,
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex items-center justify-between">
         <span
           className="text-[17px] font-semibold"
-          style={{ color: "var(--color-ink)" }}
+          style={{ color: "var(--text-primary)" }}
         >
           {title}
         </span>
         {hint && (
-          <span className="text-xs font-medium" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
             {hint}
           </span>
         )}

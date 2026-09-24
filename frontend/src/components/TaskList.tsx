@@ -56,17 +56,17 @@ export default function TaskList({
         <div className="flex flex-col" style={{ gap: 4 }}>
           <span
             className="text-[17px] font-semibold"
-            style={{ color: "var(--color-ink)" }}
+            style={{ color: "var(--text-primary)" }}
           >
             当前任务池
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             按当前阶段筛选 · 与 /jobs、/today 同源
           </span>
         </div>
         <span
           className="shrink-0 text-right text-xs font-medium"
-          style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}
+          style={{ color: "var(--text-muted)", lineHeight: 1.7 }}
         >
           共 {totalCount} 项 · 完成 {doneCount} 项
         </span>
@@ -80,21 +80,21 @@ export default function TaskList({
             gap: 2,
             padding: "8px 12px",
             background: "var(--color-item-bg)",
-            borderRadius: "var(--radius-item-sm)",
+            borderRadius: "var(--radius-sm)",
           }}
         >
           {scopeReason && (
-            <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
               {scopeReason}
             </span>
           )}
           {excludedFrozen > 0 && (
-            <span className="text-xs" style={{ color: "var(--color-ink-32)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               另有 {excludedFrozen} 项冻结赛道任务已按当前阶段排除
             </span>
           )}
           {unclassified > 0 && (
-            <span className="text-xs" style={{ color: "var(--color-ink-32)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               其中 {unclassified} 项未归类（历史任务，仍计入范围）
             </span>
           )}
@@ -114,8 +114,8 @@ export default function TaskList({
               padding: "5px 10px",
               borderRadius: "var(--radius-pill)",
               cursor: "pointer",
-              background: viewFilterOn ? "var(--color-primary-soft)" : "var(--color-zinc-100)",
-              color: viewFilterOn ? "var(--color-primary)" : "var(--color-ink-48)",
+              background: viewFilterOn ? "var(--accent-primary-soft)" : "var(--color-zinc-100)",
+              color: viewFilterOn ? "var(--accent-primary)" : "var(--text-muted)",
             }}
           >
             <span
@@ -124,13 +124,13 @@ export default function TaskList({
                 width: 7,
                 height: 7,
                 borderRadius: "50%",
-                background: viewFilterOn ? "var(--color-primary)" : "#C4C4C8",
+                background: viewFilterOn ? "var(--accent-primary)" : "#C4C4C8",
               }}
             />
             视图筛选{viewFilterOn ? "：开" : "：关"}
           </button>
           {filterActive && (
-            <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               {viewFilter.trackName} · 显示 {visibleTasks.length} / {totalCount} 项
               {viewFilter.isFrozen ? "（长期赛道）" : ""}
             </span>
@@ -150,7 +150,7 @@ export default function TaskList({
                 gap: 6,
                 padding: "14px 16px",
                 background: "var(--color-item-bg)",
-                borderRadius: "var(--radius-item-md)",
+                borderRadius: "var(--radius-md)",
               }}
             >
               <div className="flex items-center justify-between" style={{ gap: 12 }}>
@@ -166,8 +166,8 @@ export default function TaskList({
                         borderRadius: "var(--radius-pill)",
                         fontSize: 11,
                         fontWeight: 600,
-                        background: "var(--color-primary-soft)",
-                        color: "var(--color-primary)",
+                        background: "var(--accent-primary-soft)",
+                        color: "var(--accent-primary)",
                       }}
                     >
                       {task.skill}
@@ -176,19 +176,19 @@ export default function TaskList({
                 </div>
                 <span
                   className="shrink-0 text-xs font-medium"
-                  style={{ color: "var(--color-ink-48)" }}
+                  style={{ color: "var(--text-muted)" }}
                 >
                   {task.duration && task.duration > 0 ? `${task.duration} min` : "未估时"}
                 </span>
               </div>
               <span
                 className="text-[15px] font-semibold"
-                style={{ color: "var(--color-ink)" }}
+                style={{ color: "var(--text-primary)" }}
               >
                 {task.title}
               </span>
               {task.acceptance && task.acceptance.length > 0 && (
-                <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   验收 · {task.acceptance.join("  ·  ")}
                 </span>
               )}
@@ -197,7 +197,7 @@ export default function TaskList({
                   onClick={() => setActiveTaskId(isOpen ? null : task.id)}
                   className="mt-1 self-start border-none text-xs font-medium"
                   style={{
-                    color: "var(--color-primary)",
+                    color: "var(--accent-primary)",
                     background: "transparent",
                     cursor: "pointer",
                   }}
@@ -223,12 +223,12 @@ export default function TaskList({
           className="flex flex-col items-center"
           style={{ gap: 6, padding: "32px 16px" }}
         >
-          <span className="text-sm font-medium" style={{ color: "var(--color-ink)" }}>
+          <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
             {filterActive ? "该视图筛选下暂无任务" : "还没有任务"}
           </span>
           <span
             className="text-center text-xs"
-            style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}
+            style={{ color: "var(--text-muted)", lineHeight: 1.6 }}
           >
             {filterActive ? (
               <>关掉「视图筛选」可以看到全部 {totalCount} 项任务。</>

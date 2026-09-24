@@ -56,29 +56,29 @@ export default function ModeSwitchPanel({
         right: 0,
         width: 380,
         zIndex: 50,
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
         padding: 20,
         boxShadow: "0 10px 32px rgba(0, 0, 0, 0.18)",
       }}
       role="dialog"
       aria-label="切换职业阶段"
     >
-      <p className="text-xs font-semibold" style={{ color: "var(--color-ink-48)" }}>
+      <p className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
         当前阶段
       </p>
-      <p className="text-sm font-semibold" style={{ color: "var(--color-ink)", marginTop: 2 }}>
+      <p className="text-sm font-semibold" style={{ color: "var(--text-primary)", marginTop: 2 }}>
         {current.name}
       </p>
-      <p className="text-xs" style={{ color: "var(--color-ink-32)", marginTop: 2 }}>
+      <p className="text-xs" style={{ color: "var(--text-muted)", marginTop: 2 }}>
         {current.objective}
       </p>
-      <p className="text-xs" style={{ color: "var(--color-ink-48)", marginTop: 2 }}>
+      <p className="text-xs" style={{ color: "var(--text-muted)", marginTop: 2 }}>
         {deadlineText(current)}
       </p>
 
-      <div style={{ height: 1, background: "var(--color-hairline-soft)", margin: "14px 0" }} />
+      <div style={{ height: 1, background: "var(--border-subtle)", margin: "14px 0" }} />
 
       <div className="flex flex-col" style={{ gap: 6 }}>
         {available.map((mode) => {
@@ -94,18 +94,18 @@ export default function ModeSwitchPanel({
                 gap: 10,
                 width: "100%",
                 padding: "10px 12px",
-                borderRadius: "var(--radius-item-md)",
-                background: isPending ? "var(--color-primary-soft)" : "transparent",
-                border: `1px solid ${isPending ? "var(--color-primary)" : "var(--color-hairline-soft)"}`,
+                borderRadius: "var(--radius-md)",
+                background: isPending ? "var(--accent-primary-soft)" : "transparent",
+                border: `1px solid ${isPending ? "var(--accent-primary)" : "var(--border-subtle)"}`,
                 cursor: mode.isCurrent || isSubmitting ? "default" : "pointer",
                 opacity: mode.isCurrent ? 0.6 : 1,
               }}
             >
               <span className="flex flex-col" style={{ gap: 2 }}>
-                <span className="text-xs font-semibold" style={{ color: "var(--color-ink)" }}>
+                <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
                   {mode.name}
                 </span>
-                <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {mode.objective}
                 </span>
               </span>
@@ -116,8 +116,8 @@ export default function ModeSwitchPanel({
                     flexShrink: 0,
                     padding: "1px 8px",
                     borderRadius: "var(--radius-pill)",
-                    background: "var(--color-emerald-soft)",
-                    color: "var(--color-emerald-deep)",
+                    background: "var(--accent-success-soft)",
+                    color: "var(--accent-success)",
                   }}
                 >
                   当前
@@ -133,11 +133,11 @@ export default function ModeSwitchPanel({
           <div
             style={{
               padding: 12,
-              borderRadius: "var(--radius-item-md)",
-              background: "var(--color-amber-soft)",
+              borderRadius: "var(--radius-md)",
+              background: "var(--accent-warning-soft)",
             }}
           >
-            <p className="text-xs" style={{ color: "var(--color-amber-deep)", lineHeight: 1.6 }}>
+            <p className="text-xs" style={{ color: "var(--accent-warning)", lineHeight: 1.6 }}>
               切换到「{pending.name}」后，<strong>不会删除、修改或隐藏</strong>任何既有职业目标、
               岗位、任务、投递与面试记录 —— 只会改变默认导航、推荐与任务统计口径。
             </p>
@@ -156,17 +156,17 @@ export default function ModeSwitchPanel({
               padding: "8px 10px",
               fontSize: 12,
               lineHeight: 1.5,
-              color: "var(--color-ink)",
-              background: "var(--color-card)",
-              border: "1px solid var(--color-hairline)",
-              borderRadius: "var(--radius-item-sm)",
+              color: "var(--text-primary)",
+              background: "var(--surface-card)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-sm)",
               resize: "vertical",
               fontFamily: "inherit",
             }}
           />
 
           {errorMessage && (
-            <p className="text-xs" style={{ color: "var(--color-rose-deep)", marginTop: 8 }}>
+            <p className="text-xs" style={{ color: "var(--accent-danger)", marginTop: 8 }}>
               {errorMessage}
             </p>
           )}
@@ -181,9 +181,9 @@ export default function ModeSwitchPanel({
                 paddingInline: 14,
                 fontSize: 12,
                 fontWeight: 500,
-                color: "var(--color-ink-80)",
+                color: "var(--text-secondary)",
                 background: "transparent",
-                border: "1px solid var(--color-hairline)",
+                border: "1px solid var(--border-default)",
                 borderRadius: "var(--radius-pill)",
                 cursor: "pointer",
               }}
@@ -199,8 +199,8 @@ export default function ModeSwitchPanel({
                 paddingInline: 16,
                 fontSize: 12,
                 fontWeight: 600,
-                color: "var(--color-on-primary)",
-                background: "var(--color-primary)",
+                color: "var(--text-inverse)",
+                background: "var(--accent-primary)",
                 border: "none",
                 borderRadius: "var(--radius-pill)",
                 cursor: isSubmitting ? "wait" : "pointer",

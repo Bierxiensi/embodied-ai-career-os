@@ -3,8 +3,8 @@ import type { ExperimentVariant } from "@/types";
 const thStyle: React.CSSProperties = {
   textAlign: "left",
   padding: "8px 12px",
-  borderBottom: "1px solid var(--color-hairline)",
-  color: "var(--color-ink-48)",
+  borderBottom: "1px solid var(--border-default)",
+  color: "var(--text-muted)",
   fontSize: 11,
   fontWeight: 600,
   whiteSpace: "nowrap",
@@ -13,8 +13,8 @@ const thStyle: React.CSSProperties = {
 
 const tdStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderBottom: "1px solid var(--color-hairline-soft)",
-  color: "var(--color-ink-80)",
+  borderBottom: "1px solid var(--border-subtle)",
+  color: "var(--text-secondary)",
   fontSize: 12,
   whiteSpace: "nowrap",
 };
@@ -27,7 +27,7 @@ const tdStyle: React.CSSProperties = {
 export default function ExperimentTable({ variants }: { variants: ExperimentVariant[] }) {
   if (!variants || variants.length === 0) {
     return (
-      <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
         暂无变体数据（variants 为空）
       </span>
     );

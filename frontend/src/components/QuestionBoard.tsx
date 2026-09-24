@@ -26,16 +26,16 @@ import QuestionCard from "./QuestionCard";
 /* ───────────────────────── 元数据 ───────────────────────── */
 
 const CATEGORY_META: Record<QuestionCategory, { label: string; color: string; soft: string }> = {
-  LLM: { label: "LLM", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
+  LLM: { label: "LLM", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
   Multimodal: { label: "多模态", color: "var(--color-violet)", soft: "var(--color-violet-soft)" },
   Project: { label: "项目", color: "var(--color-sky)", soft: "var(--color-sky-soft)" },
-  Coding: { label: "编码", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
+  Coding: { label: "编码", color: "var(--accent-warning)", soft: "var(--accent-warning-soft)" },
 };
 
 const DIFFICULTY_META: Record<Difficulty, { label: string; color: string; soft: string }> = {
-  beginner: { label: "入门", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  intermediate: { label: "进阶", color: "var(--color-amber)", soft: "var(--color-amber-soft)" },
-  advanced: { label: "高阶", color: "var(--color-rose)", soft: "rgba(244,63,94,0.12)" },
+  beginner: { label: "入门", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
+  intermediate: { label: "进阶", color: "var(--accent-warning)", soft: "var(--accent-warning-soft)" },
+  advanced: { label: "高阶", color: "var(--accent-danger)", soft: "rgba(244,63,94,0.12)" },
 };
 
 const CATEGORIES: QuestionCategory[] = ["LLM", "Multimodal", "Project", "Coding"];
@@ -53,25 +53,25 @@ const SOURCE_OPTIONS = [
 
 const cardStyle: React.CSSProperties = {
   padding: 24,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 15,
   fontWeight: 600,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   letterSpacing: "-0.01em",
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderRadius: "var(--radius-item-sm)",
-  border: "1px solid var(--color-hairline)",
-  background: "var(--color-card)",
+  borderRadius: "var(--radius-sm)",
+  border: "1px solid var(--border-default)",
+  background: "var(--surface-card)",
   fontSize: 13,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   outline: "none",
   minWidth: 140,
 };
@@ -80,8 +80,8 @@ const primaryBtn: React.CSSProperties = {
   padding: "8px 20px",
   borderRadius: "var(--radius-pill)",
   border: "none",
-  background: "var(--color-primary)",
-  color: "var(--color-on-primary)",
+  background: "var(--accent-primary)",
+  color: "var(--text-inverse)",
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
@@ -90,7 +90,7 @@ const primaryBtn: React.CSSProperties = {
 const iconBtn: React.CSSProperties = {
   border: "none",
   background: "transparent",
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
   cursor: "pointer",
   fontSize: 16,
   lineHeight: 1,
@@ -149,7 +149,7 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
     <div style={cardStyle}>
       <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
         <h2 style={sectionTitleStyle}>题库分布 · 我有哪些题</h2>
-        <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
           {coverage.total} 题 · {coverage.skills.length} 个技能 · 覆盖 {coverage.cellsFilled}/
           {coverage.cellsTotal} 格
         </span>
@@ -160,15 +160,15 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
         {coverage.categories.map((c) => (
           <div key={c.key} className="flex flex-col" style={{ gap: 6 }}>
             <div className="flex items-center justify-between">
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-ink)" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                 {CATEGORY_META[c.key].label}
                 {c.core && (
-                  <span style={{ marginLeft: 6, fontSize: 11, color: "var(--color-rose-deep)", fontWeight: 600 }}>
+                  <span style={{ marginLeft: 6, fontSize: 11, color: "var(--accent-danger)", fontWeight: 600 }}>
                     核心
                   </span>
                 )}
               </span>
-              <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                 {c.done} 题
               </span>
             </div>
@@ -182,15 +182,15 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
         <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12 }}>
           <thead>
             <tr>
-              <th style={{ textAlign: "left", padding: "6px 10px", color: "var(--color-ink-48)", fontWeight: 600 }}>
+              <th style={{ textAlign: "left", padding: "6px 10px", color: "var(--text-muted)", fontWeight: 600 }}>
                 技能 \ 分类
               </th>
               {cats.map((c) => (
-                <th key={c} style={{ padding: "6px 10px", color: "var(--color-ink-48)", fontWeight: 600 }}>
+                <th key={c} style={{ padding: "6px 10px", color: "var(--text-muted)", fontWeight: 600 }}>
                   {CATEGORY_META[c].label}
                 </th>
               ))}
-              <th style={{ padding: "6px 10px", color: "var(--color-ink-48)", fontWeight: 600 }}>合计</th>
+              <th style={{ padding: "6px 10px", color: "var(--text-muted)", fontWeight: 600 }}>合计</th>
             </tr>
           </thead>
           <tbody>
@@ -199,7 +199,7 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
                 <td
                   style={{
                     padding: "7px 10px",
-                    color: "var(--color-ink)",
+                    color: "var(--text-primary)",
                     fontWeight: 500,
                     whiteSpace: "nowrap",
                   }}
@@ -218,11 +218,11 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
                           minWidth: 30,
                           height: 24,
                           padding: "0 8px",
-                          borderRadius: "var(--radius-item-sm)",
+                          borderRadius: "var(--radius-sm)",
                           fontVariantNumeric: "tabular-nums",
                           fontWeight: 600,
                           // 中性呈现：0 只表示"这类还没录题"，不是"缺口"，所以不标红。
-                          color: n === 0 ? "var(--color-ink-48)" : "var(--color-ink-80)",
+                          color: n === 0 ? "var(--text-muted)" : "var(--text-secondary)",
                           background: n === 0 ? "transparent" : "var(--color-item-bg)",
                         }}
                       >
@@ -231,7 +231,7 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
                     </td>
                   );
                 })}
-                <td style={{ padding: "7px 10px", textAlign: "center", color: "var(--color-ink-80)", fontWeight: 600 }}>
+                <td style={{ padding: "7px 10px", textAlign: "center", color: "var(--text-secondary)", fontWeight: 600 }}>
                   {s.total}
                 </td>
               </tr>
@@ -239,7 +239,7 @@ function CoverageMatrix({ coverage }: { coverage: QuestionCoverage }) {
           </tbody>
         </table>
       </div>
-      <p style={{ fontSize: 12, color: "var(--color-ink-48)", marginTop: 10, lineHeight: 1.7 }}>
+      <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 10, lineHeight: 1.7 }}>
         共 {coverage.total} 题。题库自 2026-09-22 起不再按「目标题数」考核，只作存档与自测用
         —— 所以这里只展示「有什么」，检验学习效果请看上方的「我的练习」。
       </p>
@@ -274,7 +274,7 @@ function PracticeModal({
     >
       <div
         style={{
-          background: "var(--color-card)",
+          background: "var(--surface-card)",
           borderRadius: 16,
           padding: 28,
           maxWidth: 560,
@@ -475,7 +475,7 @@ export default function QuestionBoard({
       <div style={cardStyle}>
         <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
           <h2 style={sectionTitleStyle}>快速录题 · ≤ 1 分钟</h2>
-          <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
             Enter 录入 · Shift+Enter 换行 · 可粘贴多行一次录多道
           </span>
         </div>
@@ -514,7 +514,7 @@ export default function QuestionBoard({
         </div>
         <button
           onClick={() => setShowOutline((v) => !v)}
-          style={{ ...iconBtn, fontSize: 12, color: "var(--color-primary)", marginTop: 6 }}
+          style={{ ...iconBtn, fontSize: 12, color: "var(--accent-primary)", marginTop: 6 }}
         >
           {showOutline ? "− 收起答题要点" : "＋ 加答题要点（可选）"}
         </button>
@@ -564,21 +564,21 @@ export default function QuestionBoard({
               return (
                 <div
                   key={q.id}
-                  style={{ padding: "10px 12px", border: "1px solid var(--color-hairline-soft)", borderRadius: "var(--radius-item-md)" }}
+                  style={{ padding: "10px 12px", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)" }}
                 >
                   <div className="flex items-center" style={{ gap: 8, flexWrap: "wrap" }}>
                     <Pill label={cat.label} color={cat.color} soft={cat.soft} />
                     <Pill label={dif.label} color={dif.color} soft={dif.soft} />
-                    <span style={{ fontSize: 13, color: "var(--color-ink)", flex: 1, minWidth: 200 }}>{q.question}</span>
+                    <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1, minWidth: 200 }}>{q.question}</span>
                     <button
                       onClick={() => setPickedOutline(pickedOutline === q.id ? null : q.id)}
-                      style={{ ...iconBtn, fontSize: 13, color: "var(--color-primary)" }}
+                      style={{ ...iconBtn, fontSize: 13, color: "var(--accent-primary)" }}
                     >
                       {pickedOutline === q.id ? "隐藏要点" : "看要点"}
                     </button>
                   </div>
                   {pickedOutline === q.id && q.answerOutline ? (
-                    <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.6, color: "var(--color-ink-80)", background: "var(--color-zinc-100)", padding: "8px 10px", borderRadius: "var(--radius-item-sm)" }}>
+                    <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)", background: "var(--color-zinc-100)", padding: "8px 10px", borderRadius: "var(--radius-sm)" }}>
                       {q.answerOutline}
                     </div>
                   ) : null}
@@ -610,7 +610,7 @@ export default function QuestionBoard({
 
         <div className="flex flex-col" style={{ gap: 8, marginTop: 14 }}>
           {questions.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
               题库为空。上面输入框敲一道题开始攒（题库是存档，不是 KPI）。
             </p>
           ) : (
@@ -619,7 +619,7 @@ export default function QuestionBoard({
               const dif = DIFFICULTY_META[q.difficulty];
               const expanded = expandQ === q.id;
               return (
-                <div key={q.id} style={{ border: "1px solid var(--color-hairline-soft)", borderRadius: "var(--radius-item-md)", overflow: "hidden" }}>
+                <div key={q.id} style={{ border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
                   <div
                     className="flex items-center"
                     style={{ gap: 10, padding: "10px 12px", flexWrap: "wrap", cursor: "pointer" }}
@@ -627,15 +627,15 @@ export default function QuestionBoard({
                   >
                     <Pill label={cat.label} color={cat.color} soft={cat.soft} />
                     <Pill label={dif.label} color={dif.color} soft={dif.soft} />
-                    <span style={{ fontSize: 13, color: "var(--color-ink)", flex: 1, minWidth: 200 }}>{q.question}</span>
+                    <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1, minWidth: 200 }}>{q.question}</span>
                     {q.skillName && (
-                      <span style={{ fontSize: 11, color: "var(--color-ink-48)" }}>{q.skillName}</span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{q.skillName}</span>
                     )}
                     {q.source && (
-                      <span style={{ fontSize: 11, color: "var(--color-ink-48)", background: "var(--color-zinc-100)", padding: "2px 6px", borderRadius: "var(--radius-pill)" }}>{q.source}</span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--color-zinc-100)", padding: "2px 6px", borderRadius: "var(--radius-pill)" }}>{q.source}</span>
                     )}
                     {q.sourceDaySeq != null && (
-                      <span style={{ fontSize: 11, color: "var(--color-ink-48)" }}>Day {q.sourceDaySeq}</span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Day {q.sourceDaySeq}</span>
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); setPracticeQuestion(q); }}
@@ -643,7 +643,7 @@ export default function QuestionBoard({
                       style={{
                         ...iconBtn,
                         fontSize: 12,
-                        color: "var(--color-primary)",
+                        color: "var(--accent-primary)",
                         fontWeight: 600,
                       }}
                     >
@@ -655,7 +655,7 @@ export default function QuestionBoard({
                       style={{
                         ...iconBtn,
                         fontSize: 12,
-                        color: q.isVerified ? "var(--color-primary)" : "var(--color-ink-48)",
+                        color: q.isVerified ? "var(--accent-primary)" : "var(--text-muted)",
                       }}
                     >
                       {q.isVerified ? "✓ 已验证" : "○ 验证"}
@@ -663,7 +663,7 @@ export default function QuestionBoard({
                     <button onClick={(e) => { e.stopPropagation(); handleDelete(q.id); }} title="删除" style={iconBtn}>×</button>
                   </div>
                   {expanded && q.answerOutline ? (
-                    <div style={{ padding: "10px 12px", background: "var(--color-zinc-100)", borderTop: "1px solid var(--color-hairline-soft)", fontSize: 12, lineHeight: 1.6, color: "var(--color-ink-80)" }}>
+                    <div style={{ padding: "10px 12px", background: "var(--color-zinc-100)", borderTop: "1px solid var(--border-subtle)", fontSize: 12, lineHeight: 1.6, color: "var(--text-secondary)" }}>
                       {q.answerOutline}
                     </div>
                   ) : null}

@@ -22,15 +22,15 @@ function TrackMetrics({ track, emphasis }: { track: TrackProgress; emphasis: boo
         <div className="flex items-center" style={{ gap: 8, minWidth: 0 }}>
           <span
             className={emphasis ? "text-[15px] font-semibold" : "text-[13px] font-medium"}
-            style={{ color: emphasis ? "var(--color-ink)" : "var(--color-ink-80)" }}
+            style={{ color: emphasis ? "var(--text-primary)" : "var(--text-secondary)" }}
           >
             {track.name}
           </span>
           <span
             className="text-[11px] shrink-0"
             style={{
-              color: "var(--color-ink-48)",
-              border: "1px solid var(--color-hairline)",
+              color: "var(--text-muted)",
+              border: "1px solid var(--border-default)",
               borderRadius: "var(--radius-pill)",
               padding: "1px 8px",
             }}
@@ -41,7 +41,7 @@ function TrackMetrics({ track, emphasis }: { track: TrackProgress; emphasis: boo
             <span
               className="text-[11px] shrink-0"
               style={{
-                color: "var(--color-ink-48)",
+                color: "var(--text-muted)",
                 background: "var(--color-zinc-100)",
                 borderRadius: "var(--radius-pill)",
                 padding: "1px 8px",
@@ -52,10 +52,10 @@ function TrackMetrics({ track, emphasis }: { track: TrackProgress; emphasis: boo
           ) : null}
         </div>
         <div className="flex items-baseline shrink-0" style={{ gap: 10 }}>
-          <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+          <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
             {track.matchPct}%
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             达标 {track.strictPct}%（{track.qualifiedCount}/{track.requiredCount}）
           </span>
         </div>
@@ -69,13 +69,13 @@ function TrackMetrics({ track, emphasis }: { track: TrackProgress; emphasis: boo
           className="h-full"
           style={{
             width: `${track.matchPct}%`,
-            background: emphasis ? "var(--color-primary)" : "var(--color-ink-28)",
+            background: emphasis ? "var(--accent-primary)" : "var(--text-muted)",
             borderRadius: "var(--radius-pill)",
           }}
         />
       </div>
 
-      <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
         {track.skillCount} 项硬性要求技能，仍有 {track.gapCount} 项未达标
       </span>
     </div>
@@ -105,21 +105,21 @@ export default function CareerProgressCard({ progress, mode, asOf }: Props) {
         minWidth: 0,
         gap: "var(--spacing-md)",
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex flex-col" style={{ gap: 4 }}>
         <div className="flex items-center justify-between" style={{ gap: 10 }}>
-          <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+          <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
             职业进度
           </span>
           <span
             className="text-[11px] font-semibold shrink-0"
             style={{
-              color: "var(--color-primary)",
-              background: "var(--color-primary-soft)",
+              color: "var(--accent-primary)",
+              background: "var(--accent-primary-soft)",
               borderRadius: "var(--radius-pill)",
               padding: "2px 10px",
             }}
@@ -128,7 +128,7 @@ export default function CareerProgressCard({ progress, mode, asOf }: Props) {
             {mode.daysLeft !== null ? ` · 距阶段结束 ${daysText(mode.daysLeft)}` : ""}
           </span>
         </div>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           截至 {asOf} · {mode.objective}
         </span>
       </div>
@@ -136,13 +136,13 @@ export default function CareerProgressCard({ progress, mode, asOf }: Props) {
       {primary ? (
         <TrackMetrics track={primary} emphasis />
       ) : (
-        <span className="text-[13px]" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-[13px]" style={{ color: "var(--text-muted)" }}>
           暂无赛道数据（后端 target_roles 为空）
         </span>
       )}
 
       {others.length > 0 ? (
-        <div className="flex flex-col" style={{ gap: 12, paddingTop: 4, borderTop: "1px solid var(--color-hairline)" }}>
+        <div className="flex flex-col" style={{ gap: 12, paddingTop: 4, borderTop: "1px solid var(--border-default)" }}>
           {others.map((t) => (
             <TrackMetrics key={t.key} track={t} emphasis={false} />
           ))}
@@ -153,9 +153,9 @@ export default function CareerProgressCard({ progress, mode, asOf }: Props) {
       {progress.milestones.length > 0 ? (
         <div
           className="flex flex-col"
-          style={{ gap: 10, paddingTop: 12, borderTop: "1px solid var(--color-hairline)" }}
+          style={{ gap: 10, paddingTop: 12, borderTop: "1px solid var(--border-default)" }}
         >
-          <span className="text-[13px] font-semibold" style={{ color: "var(--color-ink-80)" }}>
+          <span className="text-[13px] font-semibold" style={{ color: "var(--text-secondary)" }}>
             关键节点
           </span>
           {progress.milestones.map((m) => (
@@ -164,7 +164,7 @@ export default function CareerProgressCard({ progress, mode, asOf }: Props) {
                 className="text-[11px] font-semibold shrink-0"
                 style={{
                   color: COUNTDOWN_COLOR[m.status],
-                  background: "var(--color-canvas)",
+                  background: "var(--surface-canvas)",
                   border: `1px solid ${COUNTDOWN_COLOR[m.status]}`,
                   borderRadius: "var(--radius-pill)",
                   padding: "1px 8px",
@@ -173,8 +173,8 @@ export default function CareerProgressCard({ progress, mode, asOf }: Props) {
               >
                 {COUNTDOWN_LABEL[m.status]}
               </span>
-              <span className="text-[13px]" style={{ color: "var(--color-ink-80)", lineHeight: 1.6 }}>
-                <span style={{ fontWeight: 600, color: "var(--color-ink)" }}>{m.label}：</span>
+              <span className="text-[13px]" style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{m.label}：</span>
                 {daysText(m.daysLeft)}（{m.deadline}）· {m.note}
               </span>
             </div>

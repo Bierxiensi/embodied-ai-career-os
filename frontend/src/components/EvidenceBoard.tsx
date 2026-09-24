@@ -8,7 +8,7 @@ type Props = {
 };
 
 // L0..L4 颜色（与证据强度对应）
-const LEVEL_COLOR = ["#86868B", "var(--color-sky)", "var(--color-violet)", "var(--color-amber)", "var(--color-emerald)"];
+const LEVEL_COLOR = ["#86868B", "var(--color-sky)", "var(--color-violet)", "var(--accent-warning)", "var(--accent-success)"];
 
 const KIND_PREFIX: Record<string, string> = {
   note: "因为这份笔记",
@@ -19,9 +19,9 @@ const KIND_PREFIX: Record<string, string> = {
 };
 
 const cardStyle: CSSProperties = {
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
   padding: "var(--spacing-lg)",
 };
 
@@ -35,7 +35,7 @@ export default function EvidenceBoard({ skills }: Props) {
   if (skills.length === 0) {
     return (
       <div style={cardStyle}>
-        <span className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-sm" style={{ color: "var(--text-muted)" }}>
           暂无技能数据。
         </span>
       </div>
@@ -61,16 +61,16 @@ export default function EvidenceBoard({ skills }: Props) {
               }}
             >
               <div className="flex items-center" style={{ gap: 12, flexWrap: "wrap" }}>
-                <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+                <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
                   {s.name}
                 </span>
-                <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   自评 L{s.level} / 目标 L{s.targetLevel}
                 </span>
               </div>
               <div className="flex items-center" style={{ gap: 12 }}>
                 <GateBadge level={gated} />
-                <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {s.evidence.length} 条证据 {isOpen ? "▲" : "▼"}
                 </span>
               </div>
@@ -79,7 +79,7 @@ export default function EvidenceBoard({ skills }: Props) {
             {isOpen && (
               <div className="flex flex-col" style={{ gap: 10, marginTop: 14 }}>
                 {s.evidence.length === 0 ? (
-                  <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>
+                  <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
                     暂无证据 —— 该技能等级仍靠自评。把对应课程日的代码 / 笔记 / commit 或一条
                     Experiment 录进来，证据链会自动推导可信等级。
                   </span>
@@ -95,7 +95,7 @@ export default function EvidenceBoard({ skills }: Props) {
                           gap: 10,
                           padding: "10px 12px",
                           background: "var(--color-item-bg)",
-                          borderRadius: "var(--radius-item-md)",
+                          borderRadius: "var(--radius-md)",
                         }}
                       >
                         <span
@@ -107,17 +107,17 @@ export default function EvidenceBoard({ skills }: Props) {
                             borderRadius: "var(--radius-pill)",
                             fontSize: 11,
                             fontWeight: 700,
-                            color: "var(--color-on-primary)",
+                            color: "var(--text-inverse)",
                             background: LEVEL_COLOR[e.level] ?? "#86868B",
                           }}
                         >
                           L{e.level}
                         </span>
                         <div className="flex flex-col" style={{ gap: 2, minWidth: 0 }}>
-                          <span className="text-[13px] font-medium" style={{ color: "var(--color-ink)" }}>
+                          <span className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
                             {e.label}
                           </span>
-                          <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+                          <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
                             {KIND_PREFIX[e.kind] ?? "因为"}：{e.ref}
                           </span>
                         </div>
@@ -143,7 +143,7 @@ function GateBadge({ level }: { level: number }) {
         borderRadius: "var(--radius-pill)",
         fontSize: 11,
         fontWeight: 700,
-        color: "var(--color-on-primary)",
+        color: "var(--text-inverse)",
         background: color,
       }}
     >

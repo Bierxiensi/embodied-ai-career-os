@@ -10,9 +10,9 @@ interface StatusStyle {
 }
 
 export const STATUS_MAP: Record<TaskStatusKey, StatusStyle> = {
-  todo: { label: "待办", bg: "var(--color-zinc-100)", fg: "var(--color-ink-32)" },
-  doing: { label: "进行中", bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-  done: { label: "已完成", bg: "var(--color-emerald-soft)", fg: "var(--color-emerald-deep)" },
+  todo: { label: "待办", bg: "var(--color-zinc-100)", fg: "var(--text-muted)" },
+  doing: { label: "进行中", bg: "var(--accent-warning-soft)", fg: "var(--accent-warning)" },
+  done: { label: "已完成", bg: "var(--accent-success-soft)", fg: "var(--accent-success)" },
 };
 
 /** 状态标签基础样式。 */

@@ -43,17 +43,17 @@ export default function SkillLinesCard({ report }: Props) {
       style={{
         gap: 16,
         padding: 24,
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex items-center justify-between" style={{ gap: 12 }}>
         <div className="flex flex-col" style={{ gap: 4 }}>
-          <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+          <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
             技能行（附证据）
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             可写进简历 {summary.ready} 项 · 待补证据 {summary.pending} 项 · 技能总数{" "}
             {summary.total}
           </span>
@@ -64,10 +64,10 @@ export default function SkillLinesCard({ report }: Props) {
             onClick={copyAll}
             style={{
               padding: "7px 14px",
-              borderRadius: "var(--radius-item-sm)",
-              border: "1px solid var(--color-hairline)",
-              background: "var(--color-card)",
-              color: "var(--color-ink-80)",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--border-default)",
+              background: "var(--surface-card)",
+              color: "var(--text-secondary)",
               fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",
@@ -79,7 +79,7 @@ export default function SkillLinesCard({ report }: Props) {
       </div>
 
       {msg && (
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {msg}
         </span>
       )}
@@ -95,11 +95,11 @@ export default function SkillLinesCard({ report }: Props) {
                 gap: 8,
                 padding: "12px 14px",
                 background: "var(--color-item-bg)",
-                borderRadius: "var(--radius-item-md)",
+                borderRadius: "var(--radius-md)",
               }}
             >
               <div className="flex items-center" style={{ gap: 8 }}>
-                <span className="text-sm font-medium" style={{ color: "var(--color-ink)" }}>
+                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                   {r.skill}
                 </span>
                 <span
@@ -109,13 +109,13 @@ export default function SkillLinesCard({ report }: Props) {
                     borderRadius: "var(--radius-pill)",
                     fontSize: 10,
                     fontWeight: 700,
-                    background: "var(--color-emerald-soft)",
-                    color: "var(--color-emerald-deep)",
+                    background: "var(--accent-success-soft)",
+                    color: "var(--accent-success)",
                   }}
                 >
                   L{r.gateLevel}
                 </span>
-                <span className="ml-auto text-xs" style={{ color: "var(--color-ink-48)" }}>
+                <span className="ml-auto text-xs" style={{ color: "var(--text-muted)" }}>
                   自评 L{r.level}
                 </span>
               </div>
@@ -132,9 +132,9 @@ export default function SkillLinesCard({ report }: Props) {
           style={{
             padding: "14px 16px",
             background: "var(--color-item-bg)",
-            borderRadius: "var(--radius-item-md)",
+            borderRadius: "var(--radius-md)",
             fontSize: 12,
-            color: "var(--color-ink-48)",
+            color: "var(--text-muted)",
             lineHeight: 1.7,
           }}
         >
@@ -148,7 +148,7 @@ export default function SkillLinesCard({ report }: Props) {
       {/* pending */}
       {pending.length > 0 && (
         <div className="flex flex-col" style={{ gap: 8 }}>
-          <span className="text-xs font-semibold" style={{ color: "var(--color-amber-deep)" }}>
+          <span className="text-xs font-semibold" style={{ color: "var(--accent-warning)" }}>
             ⚠️ 待补证据（自评 L{summary.pendingMinLevel}+ 但无证据 —— 现在写进简历即虚构）
           </span>
           <div className="flex flex-wrap" style={{ gap: 6 }}>
@@ -162,8 +162,8 @@ export default function SkillLinesCard({ report }: Props) {
                   borderRadius: "var(--radius-pill)",
                   fontSize: 11,
                   fontWeight: 600,
-                  background: "var(--color-amber-soft)",
-                  color: "var(--color-amber-deep)",
+                  background: "var(--accent-warning-soft)",
+                  color: "var(--accent-warning)",
                 }}
               >
                 {p.skill} · L{p.level}
@@ -174,7 +174,7 @@ export default function SkillLinesCard({ report }: Props) {
       )}
 
       {note && (
-        <p className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>
+        <p className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
           {note}
         </p>
       )}
@@ -185,11 +185,11 @@ export default function SkillLinesCard({ report }: Props) {
 function RefLine({ item }: { item: SkillEvidenceItem }) {
   const isUrl = /^https?:\/\//.test(item.ref);
   return (
-    <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>
+    <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
       <span
         style={{
           fontWeight: 700,
-          color: "var(--color-emerald-deep)",
+          color: "var(--accent-success)",
           marginRight: 6,
         }}
       >
@@ -200,7 +200,7 @@ function RefLine({ item }: { item: SkillEvidenceItem }) {
           href={item.ref}
           target="_blank"
           rel="noreferrer"
-          style={{ color: "var(--color-primary)" }}
+          style={{ color: "var(--accent-primary)" }}
         >
           {item.ref}
         </a>

@@ -26,22 +26,22 @@ export default async function ProjectsPage() {
             style={{
               gap: 8,
               padding: "56px 24px",
-              background: "var(--color-card)",
-              border: "1px dashed var(--color-hairline)",
-              borderRadius: "var(--radius-card-lg)",
+              background: "var(--surface-card)",
+              border: "1px dashed var(--border-default)",
+              borderRadius: "var(--radius-lg)",
             }}
           >
             <span
               className="text-[15px] font-semibold"
-              style={{ color: "var(--color-ink)" }}
+              style={{ color: "var(--text-primary)" }}
             >
               还没有项目
             </span>
-            <span className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-sm" style={{ color: "var(--text-muted)" }}>
               通过 API 创建你的第一个实践项目：
               <code
                 className="ml-1 font-mono"
-                style={{ color: "var(--color-primary)" }}
+                style={{ color: "var(--accent-primary)" }}
               >
                 POST /api/projects
               </code>

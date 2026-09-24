@@ -11,9 +11,9 @@ const LEVEL_RATIO: Record<RiskLevel, number> = {
 
 /** 维度等级 → 语义色（禁止硬编码 hex）。 */
 const LEVEL_COLOR: Record<RiskLevel, string> = {
-  red: "var(--color-rose)",
-  amber: "var(--color-amber)",
-  green: "var(--color-emerald)",
+  red: "var(--accent-danger)",
+  amber: "var(--accent-warning)",
+  green: "var(--accent-success)",
 };
 
 const LEVEL_LABEL: Record<RiskLevel, string> = {
@@ -46,8 +46,8 @@ type Props = {
 /** Phase 2 风险雷达卡片 — 纯 SVG 七轴雷达 + 逐维原因。
  *
  * 设计要点（对齐 §一 规格 D）：
- *  - 轴色按 level：red=var(--color-rose) / amber=var(--color-amber) / green=var(--color-emerald)
- *  - 白底卡片 + hairline 边框 + 18px 圆角（var(--radius-card-lg)），全程禁硬编码 hex
+ *  - 轴色按 level：red=var(--accent-danger) / amber=var(--accent-warning) / green=var(--accent-success)
+ *  - 白底卡片 + hairline 边框 + 18px 圆角（var(--radius-lg)），全程禁硬编码 hex
  *  - 雷达下方逐维一行 reason 文本，便于直接读"为什么是该等级"
  *
  * 半径语义：red 顶点最外（风险敞口最大），green 最内（安全），符合风险雷达直觉。
@@ -94,14 +94,14 @@ export default function RiskRadar({ risk, size = 360 }: Props) {
         minWidth: 0,
         gap: "var(--spacing-md)",
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       {/* Card header */}
       <div className="flex items-center justify-between">
-        <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
           职业风险雷达
         </span>
         <div className="flex items-center" style={{ gap: 8 }}>
@@ -134,7 +134,7 @@ export default function RiskRadar({ risk, size = 360 }: Props) {
               key={i}
               points={pts}
               fill="none"
-              stroke="var(--color-hairline)"
+              stroke="var(--border-default)"
               strokeWidth={1}
             />
           ))}
@@ -178,7 +178,7 @@ export default function RiskRadar({ risk, size = 360 }: Props) {
                   y={labelPos.y}
                   textAnchor={anchor}
                   dominantBaseline="middle"
-                  style={{ fontSize: 11, fontWeight: 600, fill: "var(--color-ink-80)" }}
+                  style={{ fontSize: 11, fontWeight: 600, fill: "var(--text-secondary)" }}
                 >
                   {d.label}
                 </text>
@@ -194,13 +194,13 @@ export default function RiskRadar({ risk, size = 360 }: Props) {
           <div
             key={d.key}
             className="flex items-start"
-            style={{ gap: 10, paddingTop: 8, borderTop: "1px solid var(--color-hairline)" }}
+            style={{ gap: 10, paddingTop: 8, borderTop: "1px solid var(--border-default)" }}
           >
             <span
               className="text-[11px] font-semibold shrink-0"
               style={{
                 color: LEVEL_COLOR[d.level],
-                background: "var(--color-canvas)",
+                background: "var(--surface-canvas)",
                 border: `1px solid ${LEVEL_COLOR[d.level]}`,
                 borderRadius: "var(--radius-pill)",
                 padding: "1px 8px",
@@ -209,8 +209,8 @@ export default function RiskRadar({ risk, size = 360 }: Props) {
             >
               {LEVEL_LABEL[d.level]}
             </span>
-            <span className="text-[13px]" style={{ color: "var(--color-ink-80)", lineHeight: 1.6 }}>
-              <span style={{ fontWeight: 600, color: "var(--color-ink)" }}>{d.label}：</span>
+            <span className="text-[13px]" style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{d.label}：</span>
               {d.reason}
             </span>
           </div>

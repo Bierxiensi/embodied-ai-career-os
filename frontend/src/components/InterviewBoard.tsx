@@ -15,25 +15,25 @@ import {
 
 const cardStyle: React.CSSProperties = {
   padding: 24,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 15,
   fontWeight: 600,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   letterSpacing: "-0.01em",
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 12px",
-  borderRadius: "var(--radius-item-sm)",
-  border: "1px solid var(--color-hairline)",
-  background: "var(--color-card)",
+  borderRadius: "var(--radius-sm)",
+  border: "1px solid var(--border-default)",
+  background: "var(--surface-card)",
   fontSize: 13,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   outline: "none",
   minWidth: 140,
 };
@@ -42,8 +42,8 @@ const primaryBtn: React.CSSProperties = {
   padding: "8px 20px",
   borderRadius: "var(--radius-pill)",
   border: "none",
-  background: "var(--color-primary)",
-  color: "var(--color-on-primary)",
+  background: "var(--accent-primary)",
+  color: "var(--text-inverse)",
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
@@ -52,7 +52,7 @@ const primaryBtn: React.CSSProperties = {
 const iconBtn: React.CSSProperties = {
   border: "none",
   background: "transparent",
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
   cursor: "pointer",
   fontSize: 16,
   lineHeight: 1,
@@ -67,7 +67,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
       style={{
         padding: 14,
         background: "var(--color-zinc-100)",
-        borderRadius: "var(--radius-item-md)",
+        borderRadius: "var(--radius-md)",
         display: "flex",
         flexDirection: "column",
         gap: 4,
@@ -76,7 +76,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
       }}
     >
       <span style={{ fontSize: 22, fontWeight: 700, color }}>{value}</span>
-      <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{label}</span>
     </div>
   );
 }
@@ -200,17 +200,17 @@ export default function InterviewBoard({ initialLogs, initialStats }: Props) {
           <div className="flex flex-col" style={{ gap: 8, minWidth: 0 }}>
             <span
               className="text-xs font-semibold uppercase"
-              style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+              style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
             >
               INTERVIEW · FEEDBACK LOOP
             </span>
             <h1
               className="font-semibold"
-              style={{ fontSize: 40, color: "var(--color-ink)", letterSpacing: "-0.02em" }}
+              style={{ fontSize: 40, color: "var(--text-primary)", letterSpacing: "-0.02em" }}
             >
               面试线 · 面经 → 弱项 → 任务
             </h1>
-            <p className="text-[17px]" style={{ color: "var(--color-ink-48)" }}>
+            <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
               记录面经自动聚合弱项 · 一键回写学习任务（纯规则，不依赖 LLM）
             </p>
           </div>
@@ -220,8 +220,8 @@ export default function InterviewBoard({ initialLogs, initialStats }: Props) {
             style={{
               padding: "8px 16px",
               borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--color-primary)",
-              color: "var(--color-primary)",
+              border: "1px solid var(--accent-primary)",
+              color: "var(--accent-primary)",
               fontSize: 13,
               fontWeight: 600,
               whiteSpace: "nowrap",
@@ -233,25 +233,25 @@ export default function InterviewBoard({ initialLogs, initialStats }: Props) {
 
         {/* Stats */}
         <div className="grid" style={{ gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>
-          <StatCard label="面经数" value={stats.totalLogs} color="var(--color-ink)" />
-          <StatCard label="弱项条目" value={stats.totalWeak} color="var(--color-rose)" />
-          <StatCard label="不重复弱项" value={stats.weakTopics.length} color="var(--color-amber)" />
+          <StatCard label="面经数" value={stats.totalLogs} color="var(--text-primary)" />
+          <StatCard label="弱项条目" value={stats.totalWeak} color="var(--accent-danger)" />
+          <StatCard label="不重复弱项" value={stats.weakTopics.length} color="var(--accent-warning)" />
         </div>
 
         {/* 弱项排行榜 */}
         <div style={cardStyle}>
           <h2 style={{ ...sectionTitleStyle, marginBottom: 14 }}>弱项排行榜（跨面经聚合）</h2>
           {stats.weakTopics.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>暂无弱项，去记录一条面经吧。</p>
+            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>暂无弱项，去记录一条面经吧。</p>
           ) : (
             <div className="flex flex-col" style={{ gap: 10 }}>
               {stats.weakTopics.map((w) => (
                 <div key={w.topic} className="flex items-center" style={{ gap: 12 }}>
-                  <span style={{ fontSize: 13, width: 220, color: "var(--color-ink-80)" }}>{w.topic}</span>
+                  <span style={{ fontSize: 13, width: 220, color: "var(--text-secondary)" }}>{w.topic}</span>
                   <div style={{ flex: 1 }}>
-                    <Bar pct={(w.count / maxWeak) * 100} color="var(--color-rose)" />
+                    <Bar pct={(w.count / maxWeak) * 100} color="var(--accent-danger)" />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-rose-deep)", width: 28, textAlign: "right" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--accent-danger)", width: 28, textAlign: "right" }}>
                     ×{w.count}
                   </span>
                 </div>
@@ -269,9 +269,9 @@ export default function InterviewBoard({ initialLogs, initialStats }: Props) {
               style={{
                 padding: "6px 14px",
                 borderRadius: "var(--radius-pill)",
-                border: "1px solid var(--color-primary)",
-                background: showLogForm ? "var(--color-primary)" : "transparent",
-                color: showLogForm ? "var(--color-on-primary)" : "var(--color-primary)",
+                border: "1px solid var(--accent-primary)",
+                background: showLogForm ? "var(--accent-primary)" : "transparent",
+                color: showLogForm ? "var(--text-inverse)" : "var(--accent-primary)",
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -326,18 +326,18 @@ export default function InterviewBoard({ initialLogs, initialStats }: Props) {
 
           <div className="flex flex-col" style={{ gap: 8, marginTop: 14 }}>
             {logs.length === 0 ? (
-              <p style={{ fontSize: 13, color: "var(--color-ink-48)" }}>暂无面经。</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>暂无面经。</p>
             ) : (
               logs.map((l) => (
                 <div
                   key={l.id}
-                  style={{ padding: "12px 14px", border: "1px solid var(--color-hairline-soft)", borderRadius: "var(--radius-item-md)" }}
+                  style={{ padding: "12px 14px", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-md)" }}
                 >
                   <div className="flex items-center" style={{ gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>{l.company}</span>
-                    <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{l.role}{l.round ? ` · ${l.round}` : ""}{l.interviewedAt ? ` · ${l.interviewedAt}` : ""}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{l.company}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{l.role}{l.round ? ` · ${l.round}` : ""}{l.interviewedAt ? ` · ${l.interviewedAt}` : ""}</span>
                     <div style={{ flex: 1 }} />
-                    <button onClick={() => handleToTasks(l.id)} style={{ ...iconBtn, fontSize: 13, color: "var(--color-primary)" }}>
+                    <button onClick={() => handleToTasks(l.id)} style={{ ...iconBtn, fontSize: 13, color: "var(--accent-primary)" }}>
                       回写学习任务
                     </button>
                     <button onClick={() => handleDeleteLog(l.id)} title="删除" style={iconBtn}>×</button>
@@ -345,14 +345,14 @@ export default function InterviewBoard({ initialLogs, initialStats }: Props) {
                   {l.weakQuestions.length > 0 ? (
                     <div className="flex flex-wrap" style={{ gap: 6, marginTop: 8 }}>
                       {l.weakQuestions.map((w, i) => (
-                        <span key={i} style={{ padding: "2px 8px", borderRadius: "var(--radius-pill)", fontSize: 11, color: "var(--color-rose-deep)", background: "rgba(244,63,94,0.10)" }}>
+                        <span key={i} style={{ padding: "2px 8px", borderRadius: "var(--radius-pill)", fontSize: 11, color: "var(--accent-danger)", background: "rgba(244,63,94,0.10)" }}>
                           {w}
                         </span>
                       ))}
                     </div>
                   ) : null}
                   {l.generatedTaskIds.length > 0 ? (
-                    <div style={{ fontSize: 11, color: "var(--color-ink-48)", marginTop: 6 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
                       已回写任务 #{l.generatedTaskIds.join(", #")}
                     </div>
                   ) : null}
@@ -362,7 +362,7 @@ export default function InterviewBoard({ initialLogs, initialStats }: Props) {
           </div>
         </div>
 
-        <footer style={{ fontSize: 12, color: "var(--color-ink-48)", textAlign: "center", paddingTop: 8 }}>
+        <footer style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", paddingTop: 8 }}>
           Career OS · 面试线 · 数据来自 /api/interviews（弱项聚合纯规则，不依赖 LLM）· 题库见 /questions
         </footer>
       </div>

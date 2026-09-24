@@ -15,14 +15,14 @@ import {
 
 /* 等级配色：全部走 globals.css token（2026-09-22 清硬编码色值，含暗色变体） */
 const GRADE_COLOR: Record<string, string> = {
-  A: "var(--color-emerald)",
-  B: "var(--color-primary)",
-  C: "var(--color-amber)",
-  D: "var(--color-rose)",
+  A: "var(--accent-success)",
+  B: "var(--accent-primary)",
+  C: "var(--accent-warning)",
+  D: "var(--accent-danger)",
 };
 
 function gradeColor(grade: string | undefined): string {
-  return (grade && GRADE_COLOR[grade]) || "var(--color-ink-48)";
+  return (grade && GRADE_COLOR[grade]) || "var(--text-muted)";
 }
 
 /** 距离报名截止日的天数（null=常年招生；负=已错过）。 */
@@ -46,10 +46,10 @@ function daysToDeadline(deadline: string | null): number | null {
  */
 function countdownLabel(deadline: string | null): { text: string; color: string } {
   const days = daysToDeadline(deadline);
-  if (days === null) return { text: "待补录截止日", color: "var(--color-ink-48)" };
-  if (days < 0) return { text: `已过期 ${Math.abs(days)} 天 · 待补录新周期`, color: "var(--color-rose)" };
-  if (days <= 60) return { text: `剩余 ${days} 天`, color: "var(--color-amber)" };
-  return { text: `剩余 ${days} 天`, color: "var(--color-emerald)" };
+  if (days === null) return { text: "待补录截止日", color: "var(--text-muted)" };
+  if (days < 0) return { text: `已过期 ${Math.abs(days)} 天 · 待补录新周期`, color: "var(--accent-danger)" };
+  if (days <= 60) return { text: `剩余 ${days} 天`, color: "var(--accent-warning)" };
+  return { text: `剩余 ${days} 天`, color: "var(--accent-success)" };
 }
 
 function MatchRing({ match }: { match: PhDMatchDTO }) {
@@ -68,7 +68,7 @@ function MatchRing({ match }: { match: PhDMatchDTO }) {
       <span className="text-lg font-bold" style={{ color }}>
         {match.overall}
       </span>
-      <span className="text-[10px]" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
         {match.grade} 级
       </span>
     </div>
@@ -97,9 +97,9 @@ function AdvisorCard({
     <div
       className="flex flex-col"
       style={{
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg, 16px)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg, 16px)",
         padding: 18,
         gap: 12,
       }}
@@ -107,20 +107,20 @@ function AdvisorCard({
       <div className="flex items-start justify-between" style={{ gap: 12 }}>
         <div className="flex flex-col" style={{ gap: 4, minWidth: 0 }}>
           <div className="flex items-center" style={{ gap: 8, flexWrap: "wrap" }}>
-            <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+            <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
               {a.name}
             </span>
             {a.recruiting ? (
               <span
                 className="text-[10px] font-medium"
-                style={{ color: "var(--color-emerald)", background: "var(--color-emerald-soft)", padding: "2px 6px", borderRadius: 6 }}
+                style={{ color: "var(--accent-success)", background: "var(--accent-success-soft)", padding: "2px 6px", borderRadius: 6 }}
               >
                 在招
               </span>
             ) : (
               <span
                 className="text-[10px] font-medium"
-                style={{ color: "var(--color-ink-48)", background: "var(--color-zinc-100)", padding: "2px 6px", borderRadius: 6 }}
+                style={{ color: "var(--text-muted)", background: "var(--color-zinc-100)", padding: "2px 6px", borderRadius: 6 }}
               >
                 停招
               </span>
@@ -128,23 +128,23 @@ function AdvisorCard({
             {a.contacted && (
               <span
                 className="text-[10px] font-medium"
-                style={{ color: "var(--color-primary)", background: "var(--color-primary-soft)", padding: "2px 6px", borderRadius: 6 }}
+                style={{ color: "var(--accent-primary)", background: "var(--accent-primary-soft)", padding: "2px 6px", borderRadius: 6 }}
               >
                 已联系
               </span>
             )}
           </div>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             {[a.institution, a.tier, a.city].filter(Boolean).join(" · ")}
             {a.title ? ` · ${a.title}` : ""}
           </span>
           {a.research_area && (
-            <span className="text-xs" style={{ color: "var(--color-ink-32)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               {a.research_area}
             </span>
           )}
           {a.direction_key && (
-            <span className="text-xs" style={{ color: "var(--color-primary)" }}>
+            <span className="text-xs" style={{ color: "var(--accent-primary)" }}>
               方向：{dirName}
             </span>
           )}
@@ -157,7 +157,7 @@ function AdvisorCard({
         <div className="flex flex-col" style={{ gap: 5 }}>
           {(Object.keys(DIM_LABELS) as (keyof typeof dims)[]).map((k) => (
             <div key={k} className="flex items-center" style={{ gap: 8 }}>
-              <span className="text-[10px]" style={{ color: "var(--color-ink-48)", width: 88, flexShrink: 0 }}>
+              <span className="text-[10px]" style={{ color: "var(--text-muted)", width: 88, flexShrink: 0 }}>
                 {DIM_LABELS[k]}
               </span>
               <div
@@ -167,12 +167,12 @@ function AdvisorCard({
                   style={{
                     width: `${dims[k]}%`,
                     height: "100%",
-                    background: dims[k] < 60 ? "var(--color-amber)" : "var(--color-primary)",
+                    background: dims[k] < 60 ? "var(--accent-warning)" : "var(--accent-primary)",
                     borderRadius: 3,
                   }}
                 />
               </div>
-              <span className="text-[10px] tabular-nums" style={{ color: "var(--color-ink-48)", width: 22, textAlign: "right" }}>
+              <span className="text-[10px] tabular-nums" style={{ color: "var(--text-muted)", width: 22, textAlign: "right" }}>
                 {dims[k]}
               </span>
             </div>
@@ -186,7 +186,7 @@ function AdvisorCard({
           {cd.text}
         </span>
         {a.in_service_friendly && (
-          <span className="text-[10px]" style={{ color: "var(--color-primary)" }}>
+          <span className="text-[10px]" style={{ color: "var(--accent-primary)" }}>
             在职友好
           </span>
         )}
@@ -194,11 +194,11 @@ function AdvisorCard({
 
       {match && match.gaps.length > 0 && (
         <div className="flex flex-col" style={{ gap: 3 }}>
-          <span className="text-[10px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
             待补强
           </span>
           {match.gaps.map((g) => (
-            <span key={g.dimension} className="text-[11px]" style={{ color: "var(--color-amber)" }}>
+            <span key={g.dimension} className="text-[11px]" style={{ color: "var(--accent-warning)" }}>
               · {DIM_LABELS[g.dimension as keyof typeof DIM_LABELS]}：{g.hint}
             </span>
           ))}
@@ -206,7 +206,7 @@ function AdvisorCard({
       )}
 
       {a.notes && (
-        <p className="text-[11px] leading-relaxed" style={{ color: "var(--color-ink-48)" }}>
+        <p className="text-[11px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
           {a.notes}
         </p>
       )}
@@ -214,7 +214,7 @@ function AdvisorCard({
       {/* 操作区：主页 / 联系标记 / 删除 */}
       <div
         className="flex items-center justify-between"
-        style={{ gap: 8, borderTop: "1px solid var(--color-hairline-soft)", paddingTop: 10 }}
+        style={{ gap: 8, borderTop: "1px solid var(--border-subtle)", paddingTop: 10 }}
       >
         <div className="flex items-center" style={{ gap: 10, minWidth: 0 }}>
           {a.homepage && (
@@ -223,12 +223,12 @@ function AdvisorCard({
               target="_blank"
               rel="noreferrer"
               className="text-[11px] no-underline"
-              style={{ color: "var(--color-primary)" }}
+              style={{ color: "var(--accent-primary)" }}
             >
               主页 ↗
             </a>
           )}
-          <span className="text-[10px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
             {a.contacted
               ? `已联系${a.contact_date ? ` · ${a.contact_date.slice(0, 10)}` : ""}`
               : "未联系"}
@@ -240,7 +240,7 @@ function AdvisorCard({
             disabled={busy}
             className="text-[11px] font-medium"
             style={{
-              color: "var(--color-primary)",
+              color: "var(--accent-primary)",
               background: "transparent",
               border: "none",
               cursor: busy ? "default" : "pointer",
@@ -255,7 +255,7 @@ function AdvisorCard({
             disabled={busy}
             className="text-[11px] font-medium"
             style={{
-              color: "var(--color-rose)",
+              color: "var(--accent-danger)",
               background: "transparent",
               border: "none",
               cursor: busy ? "default" : "pointer",
@@ -346,13 +346,13 @@ export default function PhDAdvisorBoard({
   };
 
   return (
-    <main className="min-h-full" style={{ background: "var(--color-canvas)", padding: "20px 24px" }}>
+    <main className="min-h-full" style={{ background: "var(--surface-canvas)", padding: "20px 24px" }}>
       <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
         <div>
-          <h1 className="text-xl font-bold" style={{ color: "var(--color-ink)" }}>
+          <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
             博士模块 · 导师匹配看板
           </h1>
-          <p className="text-xs" style={{ color: "var(--color-ink-48)", marginTop: 4 }}>
+          <p className="text-xs" style={{ color: "var(--text-muted)", marginTop: 4 }}>
             六维匹配：研究方向契合 · 院校层次 · 地域在职便利 · 成果门槛 · 在职友好 · 时间窗口
           </p>
         </div>
@@ -363,8 +363,8 @@ export default function PhDAdvisorBoard({
           style={{
             padding: "8px 14px",
             borderRadius: 10,
-            border: "1px solid var(--color-primary)",
-            color: "var(--color-primary)",
+            border: "1px solid var(--accent-primary)",
+            color: "var(--accent-primary)",
             background: "transparent",
             cursor: loading ? "default" : "pointer",
             opacity: loading ? 0.6 : 1,
@@ -377,7 +377,7 @@ export default function PhDAdvisorBoard({
       {sorted.length === 0 ? (
         <div
           className="text-sm"
-          style={{ color: "var(--color-ink-48)", padding: 24, background: "var(--color-card)", borderRadius: 16 }}
+          style={{ color: "var(--text-muted)", padding: 24, background: "var(--surface-card)", borderRadius: 16 }}
         >
           暂无导师数据。用上方「录入」面板添加院校机会与导师，录完后点「重算全部匹配」。
         </div>

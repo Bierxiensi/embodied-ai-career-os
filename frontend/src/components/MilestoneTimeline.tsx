@@ -17,30 +17,30 @@ const STATUS_STYLE: Record<
 > = {
   completed: {
     label: "已完成",
-    bg: "var(--color-emerald-soft)",
-    color: "var(--color-emerald-deep)",
-    border: "var(--color-hairline)",
+    bg: "var(--accent-success-soft)",
+    color: "var(--accent-success)",
+    border: "var(--border-default)",
     icon: "✓",
   },
   in_progress: {
     label: "进行中",
-    bg: "var(--color-primary-soft)",
-    color: "var(--color-primary)",
-    border: "var(--color-primary)",
+    bg: "var(--accent-primary-soft)",
+    color: "var(--accent-primary)",
+    border: "var(--accent-primary)",
     icon: "●",
   },
   needs_baseline: {
     label: "待生成 baseline",
-    bg: "var(--color-amber-soft)",
-    color: "var(--color-amber-deep)",
-    border: "var(--color-amber)",
+    bg: "var(--accent-warning-soft)",
+    color: "var(--accent-warning)",
+    border: "var(--accent-warning)",
     icon: "◐",
   },
   locked: {
     label: "未解锁",
     bg: "#F5F5F5",
-    color: "var(--color-ink-32)",
-    border: "var(--color-hairline)",
+    color: "var(--text-muted)",
+    border: "var(--border-default)",
     icon: "○",
   },
 };
@@ -107,9 +107,9 @@ export default function MilestoneTimeline({
             style={{
               gap: 10,
               padding: "14px 16px",
-              background: isActive ? "var(--color-primary-soft)" : "var(--color-item-bg)",
-              border: `1px solid ${isActive ? style.border : "var(--color-hairline)"}`,
-              borderRadius: "var(--radius-item-md)",
+              background: isActive ? "var(--accent-primary-soft)" : "var(--color-item-bg)",
+              border: `1px solid ${isActive ? style.border : "var(--border-default)"}`,
+              borderRadius: "var(--radius-md)",
             }}
           >
             <div className="flex items-center justify-between" style={{ gap: 16 }}>
@@ -143,7 +143,7 @@ export default function MilestoneTimeline({
                   <div className="flex items-center" style={{ gap: 8 }}>
                     <span
                       className="text-[15px] font-semibold"
-                      style={{ color: "var(--color-ink)" }}
+                      style={{ color: "var(--text-primary)" }}
                     >
                       {m.version} · {m.title}
                     </span>
@@ -161,7 +161,7 @@ export default function MilestoneTimeline({
                       {style.label}
                     </span>
                   </div>
-                  <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {m.goal}
                   </span>
                 </div>
@@ -180,8 +180,8 @@ export default function MilestoneTimeline({
                     borderRadius: "var(--radius-pill)",
                     fontSize: 12,
                     fontWeight: 600,
-                    background: "var(--color-primary)",
-                    color: "var(--color-on-primary)",
+                    background: "var(--accent-primary)",
+                    color: "var(--text-inverse)",
                     border: "none",
                     cursor:
                       generating === m.id || hasTasks || m.status === "needs_baseline"
@@ -209,13 +209,13 @@ export default function MilestoneTimeline({
                 style={{
                   gap: 10,
                   paddingTop: 12,
-                  borderTop: "1px solid var(--color-hairline)",
+                  borderTop: "1px solid var(--border-default)",
                 }}
               >
                 {m.workspace && (
                   <div
                     className="font-mono text-xs"
-                    style={{ color: "var(--color-ink-48)" }}
+                    style={{ color: "var(--text-muted)" }}
                   >
                     📁 {m.workspace}
                   </div>
@@ -230,26 +230,26 @@ export default function MilestoneTimeline({
                           gap: 4,
                           listStyle: "none",
                           padding: "10px 12px",
-                          background: "var(--color-card)",
-                          borderRadius: "var(--radius-item-sm)",
+                          background: "var(--surface-card)",
+                          borderRadius: "var(--radius-sm)",
                         }}
                       >
                         <span
                           className="text-xs font-semibold"
-                          style={{ color: "var(--color-ink)" }}
+                          style={{ color: "var(--text-primary)" }}
                         >
                           ✏️ 必改项 {i + 1}：{mod.title}
                         </span>
                         <span
                           className="text-xs"
-                          style={{ color: "var(--color-ink-48)" }}
+                          style={{ color: "var(--text-muted)" }}
                         >
                           {mod.goal}
                         </span>
                         {mod.files?.length > 0 && (
                           <span
                             className="font-mono text-[11px]"
-                            style={{ color: "var(--color-ink-32)" }}
+                            style={{ color: "var(--text-muted)" }}
                           >
                             {mod.files.join(" · ")}
                           </span>
@@ -260,9 +260,9 @@ export default function MilestoneTimeline({
                             style={{
                               marginTop: 2,
                               padding: "6px 8px",
-                              background: "var(--color-primary-soft)",
-                              color: "var(--color-primary)",
-                              borderRadius: "var(--radius-item-sm)",
+                              background: "var(--accent-primary-soft)",
+                              color: "var(--accent-primary)",
+                              borderRadius: "var(--radius-sm)",
                             }}
                           >
                             {mod.verification}
@@ -282,26 +282,26 @@ export default function MilestoneTimeline({
                 style={{
                   gap: 10,
                   padding: "10px 12px",
-                  background: "var(--color-amber-soft)",
-                  borderRadius: "var(--radius-item-sm)",
+                  background: "var(--accent-warning-soft)",
+                  borderRadius: "var(--radius-sm)",
                 }}
               >
                 <span
                   className="text-sm"
-                  style={{ color: "var(--color-amber-deep)" }}
+                  style={{ color: "var(--accent-warning)" }}
                 >
                   ⏳
                 </span>
                 <div className="flex flex-col" style={{ gap: 2 }}>
                   <span
                     className="text-xs font-semibold"
-                    style={{ color: "var(--color-amber-deep)" }}
+                    style={{ color: "var(--accent-warning)" }}
                   >
                     Baseline 待生成
                   </span>
                   <span
                     className="text-xs"
-                    style={{ color: "var(--color-amber-deep)", opacity: 0.85 }}
+                    style={{ color: "var(--accent-warning)", opacity: 0.85 }}
                   >
                     在 Claude Code 说「开始 {m.version}」，AI 会生成参考代码并回退核心逻辑供你练习。
                   </span>

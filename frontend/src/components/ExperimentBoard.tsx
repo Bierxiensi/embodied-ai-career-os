@@ -22,13 +22,13 @@ const KIND_LABEL: Record<ExperimentKind, string> = {
 const KIND_COLOR: Record<ExperimentKind, string> = {
   finetune: "var(--color-violet)",
   benchmark: "var(--color-sky)",
-  ablation: "var(--color-amber)",
+  ablation: "var(--accent-warning)",
 };
 
 const cardStyle: CSSProperties = {
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
   padding: "var(--spacing-lg)",
 };
 
@@ -112,7 +112,7 @@ export default function ExperimentBoard({ experiments }: Props) {
   return (
     <div className="flex flex-col" style={{ gap: 18 }}>
       <div className="flex items-center justify-between">
-        <span className="text-sm" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-sm" style={{ color: "var(--text-muted)" }}>
           实验是一等公民（决策 4）：把「我跑了 Qwen」变成「我研究了 PEFT 对成本与效果的影响」。
         </span>
         <button
@@ -122,8 +122,8 @@ export default function ExperimentBoard({ experiments }: Props) {
           style={{
             padding: "7px 14px",
             borderRadius: "var(--radius-pill)",
-            background: "var(--color-primary-soft)",
-            color: "var(--color-primary)",
+            background: "var(--accent-primary-soft)",
+            color: "var(--accent-primary)",
             cursor: "pointer",
           }}
         >
@@ -208,8 +208,8 @@ export default function ExperimentBoard({ experiments }: Props) {
               style={{
                 padding: "8px 16px",
                 borderRadius: "var(--radius-pill)",
-                background: "var(--color-primary)",
-                color: "var(--color-on-primary)",
+                background: "var(--accent-primary)",
+                color: "var(--text-inverse)",
                 cursor: busy ? "wait" : "pointer",
               }}
             >
@@ -222,15 +222,15 @@ export default function ExperimentBoard({ experiments }: Props) {
                 padding: "8px 12px",
                 borderRadius: "var(--radius-pill)",
                 background: "var(--color-item-bg)",
-                border: "1px solid var(--color-hairline)",
-                color: "var(--color-ink-48)",
+                border: "1px solid var(--border-default)",
+                color: "var(--text-muted)",
                 cursor: "pointer",
               }}
             >
               填入 LoRA vs QLoRA 模板
             </button>
             {error && (
-              <span className="text-xs" style={{ color: "var(--color-rose-deep)" }}>
+              <span className="text-xs" style={{ color: "var(--accent-danger)" }}>
                 {error}
               </span>
             )}
@@ -240,10 +240,10 @@ export default function ExperimentBoard({ experiments }: Props) {
 
       {experiments.length === 0 ? (
         <div className="flex flex-col" style={{ ...cardStyle, gap: 8 }}>
-          <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+          <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
             还没有实验记录
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
             点「+ 新增实验」填一次 LoRA vs QLoRA / SFT vs LoRA / Transformers vs vLLM，
             页面会直接渲染出对比表。Day 12 / 22 / 23 都要求落实验表。
           </span>
@@ -255,7 +255,7 @@ export default function ExperimentBoard({ experiments }: Props) {
               <div className="flex items-center" style={{ gap: 10, flexWrap: "wrap" }}>
                 <span
                   className="font-semibold"
-                  style={{ fontSize: 16, color: "var(--color-ink)" }}
+                  style={{ fontSize: 16, color: "var(--text-primary)" }}
                 >
                   {exp.name}
                 </span>
@@ -267,8 +267,8 @@ export default function ExperimentBoard({ experiments }: Props) {
                     fontSize: 11,
                     fontWeight: 600,
                     background: "var(--color-item-bg)",
-                    border: "1px solid var(--color-hairline)",
-                    color: "var(--color-ink-48)",
+                    border: "1px solid var(--border-default)",
+                    color: "var(--text-muted)",
                   }}
                 >
                   Day {exp.daySeq}
@@ -280,7 +280,7 @@ export default function ExperimentBoard({ experiments }: Props) {
                     borderRadius: "var(--radius-pill)",
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "var(--color-on-primary)",
+                    color: "var(--text-inverse)",
                     background: KIND_COLOR[exp.kind],
                   }}
                 >
@@ -293,8 +293,8 @@ export default function ExperimentBoard({ experiments }: Props) {
                       padding: "3px 9px",
                       borderRadius: "var(--radius-pill)",
                       fontSize: 11,
-                      background: "var(--color-emerald-soft)",
-                      color: "var(--color-emerald-deep)",
+                      background: "var(--accent-success-soft)",
+                      color: "var(--accent-success)",
                     }}
                   >
                     {exp.skillName}
@@ -307,7 +307,7 @@ export default function ExperimentBoard({ experiments }: Props) {
                 className="border-none text-xs"
                 style={{
                   background: "transparent",
-                  color: "var(--color-ink-48)",
+                  color: "var(--text-muted)",
                   cursor: "pointer",
                 }}
               >
@@ -328,8 +328,8 @@ export default function ExperimentBoard({ experiments }: Props) {
                       borderRadius: "var(--radius-pill)",
                       fontSize: 11,
                       background: "var(--color-item-bg)",
-                      border: "1px solid var(--color-hairline)",
-                      color: "var(--color-ink-48)",
+                      border: "1px solid var(--border-default)",
+                      color: "var(--text-muted)",
                     }}
                   >
                     {m.name}: {String(m.value)}
@@ -340,7 +340,7 @@ export default function ExperimentBoard({ experiments }: Props) {
             )}
 
             {exp.conclusion && (
-              <p className="text-[13px]" style={{ color: "var(--color-ink-80)", lineHeight: 1.7, margin: 0 }}>
+              <p className="text-[13px]" style={{ color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
                 {exp.conclusion}
               </p>
             )}
@@ -353,10 +353,10 @@ export default function ExperimentBoard({ experiments }: Props) {
 
 const inputStyle: CSSProperties = {
   padding: "8px 10px",
-  borderRadius: "var(--radius-item-md)",
-  border: "1px solid var(--color-hairline)",
-  background: "var(--color-card)",
-  color: "var(--color-ink)",
+  borderRadius: "var(--radius-md)",
+  border: "1px solid var(--border-default)",
+  background: "var(--surface-card)",
+  color: "var(--text-primary)",
   fontSize: 13,
   width: "100%",
   fontFamily: "inherit",
@@ -365,7 +365,7 @@ const inputStyle: CSSProperties = {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col" style={{ gap: 4, flex: "1 1 200px", minWidth: 0 }}>
-      <span className="text-[11px] font-medium" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
         {label}
       </span>
       {children}

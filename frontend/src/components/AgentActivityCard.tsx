@@ -64,16 +64,16 @@ export default function AgentActivityCard({
       style={{
         gap: 18,
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
           Agent 执行动态
         </span>
-        <span className="text-xs font-medium" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
           {runs.length} 条记录 · 成功率 {successRate}%
         </span>
       </div>
@@ -81,7 +81,7 @@ export default function AgentActivityCard({
       {retryMsg && (
         <p
           className="text-xs"
-          style={{ color: retryMsg.startsWith("重试失败") ? "var(--color-rose-deep)" : "var(--color-emerald-deep)" }}
+          style={{ color: retryMsg.startsWith("重试失败") ? "var(--accent-danger)" : "var(--accent-success)" }}
         >
           {retryMsg}
         </p>
@@ -100,7 +100,7 @@ export default function AgentActivityCard({
             style={{
               padding: 14,
               background: "var(--color-item-bg)",
-              borderRadius: "var(--radius-item-md)",
+              borderRadius: "var(--radius-md)",
             }}
           >
             <div className="flex items-center" style={{ gap: 14 }}>
@@ -116,19 +116,19 @@ export default function AgentActivityCard({
               />
               <div className="flex flex-1 flex-col" style={{ gap: 6 }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold" style={{ color: "var(--color-ink)" }}>
+                  <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                     {agentLabel(run.agentName)}
                   </span>
                   <span
                     className="text-xs font-semibold"
                     style={{
-                      color: isSuccess ? "var(--color-emerald-deep)" : "var(--color-rose-deep)",
+                      color: isSuccess ? "var(--accent-success)" : "var(--accent-danger)",
                     }}
                   >
                     {isSuccess ? "success" : "failed"}
                   </span>
                 </div>
-                <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {run.outputSummary?.slice(0, 60) ?? "无摘要"} · {formatDuration(run.durationMs)}
                   {run.traceId ? ` · trace ${run.traceId.slice(0, 8)}` : ""}
                 </span>
@@ -143,7 +143,7 @@ export default function AgentActivityCard({
                     type="button"
                     onClick={() => setExpandedId(isExpanded ? null : run.id)}
                     className="text-xs font-medium no-underline border-none bg-transparent"
-                    style={{ color: "var(--color-primary)", cursor: "pointer", padding: 0 }}
+                    style={{ color: "var(--accent-primary)", cursor: "pointer", padding: 0 }}
                   >
                     {isExpanded ? "收起 trace" : "查看 trace"}
                   </button>
@@ -155,10 +155,10 @@ export default function AgentActivityCard({
                     disabled={retryingId === run.id}
                     className="text-xs font-medium no-underline border-none rounded-full"
                     style={{
-                      color: "var(--color-rose-deep)",
+                      color: "var(--accent-danger)",
                       cursor: retryingId === run.id ? "not-allowed" : "pointer",
                       padding: "4px 10px",
-                      background: "var(--color-rose-soft)",
+                      background: "var(--accent-danger-soft)",
                       opacity: retryingId === run.id ? 0.6 : 1,
                     }}
                   >
@@ -176,8 +176,8 @@ export default function AgentActivityCard({
                   marginTop: 10,
                   paddingLeft: 18,
                   paddingTop: 10,
-                  borderTop: "1px dashed var(--color-hairline)",
-                  color: "var(--color-ink-48)",
+                  borderTop: "1px dashed var(--border-default)",
+                  color: "var(--text-muted)",
                   fontFamily: "var(--font-mono, monospace)",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
@@ -185,7 +185,7 @@ export default function AgentActivityCard({
               >
                 {run.inputContext && (
                   <>
-                    <div style={{ color: "var(--color-ink-80)", fontWeight: 600, marginBottom: 4 }}>
+                    <div style={{ color: "var(--text-secondary)", fontWeight: 600, marginBottom: 4 }}>
                       INPUT
                     </div>
                     <div>{JSON.stringify(run.inputContext, null, 2)}</div>
@@ -193,7 +193,7 @@ export default function AgentActivityCard({
                 )}
                 {run.outputResult && (
                   <>
-                    <div style={{ color: "var(--color-ink-80)", fontWeight: 600, margin: "10px 0 4px" }}>
+                    <div style={{ color: "var(--text-secondary)", fontWeight: 600, margin: "10px 0 4px" }}>
                       OUTPUT
                     </div>
                     <div>{JSON.stringify(run.outputResult, null, 2)}</div>

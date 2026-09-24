@@ -17,7 +17,7 @@ export default function ResultCard({ result, onContinue, continueLabel, onClose 
       style={{
         borderRadius: 12,
         border: `2px solid ${isPass ? "#22c55e" : result.correct ? "#3b82f6" : "#ef4444"}`,
-        background: isPass ? "#f0fdf4" : result.correct ? "#eff6ff" : "var(--color-rose-soft)",
+        background: isPass ? "#f0fdf4" : result.correct ? "#eff6ff" : "var(--accent-danger-soft)",
         padding: 20,
       }}
     >

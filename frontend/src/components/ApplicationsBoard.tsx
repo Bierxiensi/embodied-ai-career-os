@@ -23,8 +23,8 @@ const APP_STATUS_META: Record<JobAppStatus, { label: string; color: string; soft
   applied: { label: "已投递", color: "#86868B", soft: "var(--color-zinc-100)" },
   screening: { label: "筛选中", color: "var(--color-sky)", soft: "rgba(14,165,233,0.10)" },
   interview: { label: "面试中", color: "var(--color-violet)", soft: "rgba(139,92,246,0.10)" },
-  offer: { label: "已拿offer", color: "var(--color-emerald)", soft: "var(--color-emerald-soft)" },
-  rejected: { label: "已挂", color: "var(--color-rose)", soft: "var(--color-rose-soft)" },
+  offer: { label: "已拿offer", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
+  rejected: { label: "已挂", color: "var(--accent-danger)", soft: "var(--accent-danger-soft)" },
 };
 
 const STATUS_ORDER: JobAppStatus[] = ["applied", "screening", "interview", "offer", "rejected"];
@@ -40,24 +40,24 @@ const TRACK_LABEL: Record<string, string> = {
 
 const cardStyle: React.CSSProperties = {
   padding: 24,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const sectionTitleStyle: React.CSSProperties = {
   fontSize: 15,
   fontWeight: 600,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
 };
 
 const inputStyle: React.CSSProperties = {
   padding: "8px 12px",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-item-md)",
-  background: "var(--color-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  background: "var(--surface-card)",
   fontSize: 13,
-  color: "var(--color-ink)",
+  color: "var(--text-primary)",
   flex: "1 1 140px",
   minWidth: 120,
 };
@@ -167,7 +167,7 @@ export default function ApplicationsBoard({
         style={{
           fontSize: 22,
           fontWeight: 700,
-          color: "var(--color-ink)",
+          color: "var(--text-primary)",
           margin: 0,
         }}
       >
@@ -187,14 +187,14 @@ export default function ApplicationsBoard({
           <FunnelStat label="已投递" value={funnel.by.applied} color="#86868B" />
           <FunnelStat label="筛选中" value={funnel.by.screening} color="var(--color-sky)" />
           <FunnelStat label="面试中" value={funnel.by.interview} color="var(--color-violet)" />
-          <FunnelStat label="已拿offer" value={funnel.by.offer} color="var(--color-emerald)" />
-          <FunnelStat label="已挂" value={funnel.by.rejected} color="var(--color-rose)" />
-          <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--color-primary)" />
+          <FunnelStat label="已拿offer" value={funnel.by.offer} color="var(--accent-success)" />
+          <FunnelStat label="已挂" value={funnel.by.rejected} color="var(--accent-danger)" />
+          <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--accent-primary)" />
         </div>
 
         {/* 新增按钮 */}
         <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-          <span style={{ fontSize: 13, color: "var(--color-ink-48)" }}>
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
             共 {apps.length} 条记录
           </span>
           <button
@@ -202,9 +202,9 @@ export default function ApplicationsBoard({
             style={{
               padding: "6px 14px",
               borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--color-primary)",
-              background: showForm ? "var(--color-primary)" : "transparent",
-              color: showForm ? "var(--color-on-primary)" : "var(--color-primary)",
+              border: "1px solid var(--accent-primary)",
+              background: showForm ? "var(--accent-primary)" : "transparent",
+              color: showForm ? "var(--text-inverse)" : "var(--accent-primary)",
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
@@ -223,7 +223,7 @@ export default function ApplicationsBoard({
               padding: 16,
               marginBottom: 16,
               background: "var(--color-zinc-100)",
-              borderRadius: "var(--radius-item-md)",
+              borderRadius: "var(--radius-md)",
             }}
           >
             <div className="flex" style={{ gap: 10, flexWrap: "wrap" }}>
@@ -294,8 +294,8 @@ export default function ApplicationsBoard({
                   padding: "8px 20px",
                   borderRadius: "var(--radius-pill)",
                   border: "none",
-                  background: "var(--color-primary)",
-                  color: "var(--color-on-primary)",
+                  background: "var(--accent-primary)",
+                  color: "var(--text-inverse)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: busy ? "not-allowed" : "pointer",
@@ -311,7 +311,7 @@ export default function ApplicationsBoard({
         {/* 投递列表 */}
         <div className="flex flex-col" style={{ gap: 8 }}>
           {apps.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--color-ink-48)", textAlign: "center", padding: 24 }}>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: 24 }}>
               暂无投递记录，点击「＋ 新增投递」开始跟踪。
             </p>
           ) : (
@@ -324,33 +324,33 @@ export default function ApplicationsBoard({
                   style={{
                     gap: 12,
                     padding: "12px 14px",
-                    border: "1px solid var(--color-hairline-soft)",
-                    borderRadius: "var(--radius-item-md)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-md)",
                     flexWrap: "wrap",
                   }}
                 >
                   <div className="flex flex-col" style={{ gap: 2, minWidth: 180, flex: 1 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
                       {a.company}
                     </span>
-                    <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>
+                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
                       {a.role}
                       {a.salaryRange ? ` · ${a.salaryRange}` : ""}
                     </span>
                   </div>
                   <Pill
                     label={TRACK_LABEL[a.track] || a.track}
-                    color="var(--color-ink-48)"
+                    color="var(--text-muted)"
                     soft="var(--color-zinc-100)"
                   />
                   {a.appliedAt ? (
-                    <span style={{ fontSize: 12, color: "var(--color-ink-48)" }}>{a.appliedAt}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{a.appliedAt}</span>
                   ) : null}
                   {a.nextAction ? (
                     <span
                       style={{
                         fontSize: 12,
-                        color: "var(--color-amber-deep)",
+                        color: "var(--accent-warning)",
                         flex: "1 1 160px",
                         minWidth: 120,
                       }}
@@ -388,7 +388,7 @@ export default function ApplicationsBoard({
                     style={{
                       border: "none",
                       background: "transparent",
-                      color: "var(--color-ink-48)",
+                      color: "var(--text-muted)",
                       cursor: "pointer",
                       fontSize: 16,
                       lineHeight: 1,
@@ -422,13 +422,13 @@ function FunnelStat({
     <div
       style={{
         padding: "10px 8px",
-        borderRadius: "var(--radius-item-md)",
+        borderRadius: "var(--radius-md)",
         background: "var(--color-zinc-100)",
         textAlign: "center",
       }}
     >
       <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
-      <div style={{ fontSize: 11, color: "var(--color-ink-48)", marginTop: 2 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{label}</div>
     </div>
   );
 }

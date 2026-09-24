@@ -24,27 +24,27 @@ export default function ErrorCard({ pageName, error }: Props) {
   return (
     <main
       className="flex flex-1 items-center justify-center"
-      style={{ background: "var(--color-canvas)" }}
+      style={{ background: "var(--surface-canvas)" }}
     >
       <div
         className="max-w-md text-center"
         style={{
           padding: 32,
-          background: "var(--color-card)",
-          border: "1px solid var(--color-rose)",
-          borderRadius: "var(--radius-card-lg)",
+          background: "var(--surface-card)",
+          border: "1px solid var(--accent-danger)",
+          borderRadius: "var(--radius-lg)",
         }}
       >
         <h1
           className="text-lg font-semibold"
-          style={{ color: "var(--color-rose-deep)" }}
+          style={{ color: "var(--accent-danger)" }}
         >
           {pageName}加载失败
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "var(--color-ink-48)" }}>
+        <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
           {message}
         </p>
-        <p className="mt-4 text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <p className="mt-4 text-xs" style={{ color: "var(--text-muted)" }}>
           请确认后端已启动：uvicorn app.main:app --reload --port 8000
         </p>
       </div>

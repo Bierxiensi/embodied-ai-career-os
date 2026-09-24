@@ -25,15 +25,15 @@ const TRACK_LABEL: Record<string, string> = {
 };
 
 const STATUS_META: Record<string, { label: string; bg: string; fg: string }> = {
-  todo: { label: "待办", bg: "#F5F5F5", fg: "var(--color-ink-32)" },
-  doing: { label: "进行中", bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-  done: { label: "已完成", bg: "var(--color-emerald-soft)", fg: "var(--color-emerald-deep)" },
+  todo: { label: "待办", bg: "#F5F5F5", fg: "var(--text-muted)" },
+  doing: { label: "进行中", bg: "var(--accent-warning-soft)", fg: "var(--accent-warning)" },
+  done: { label: "已完成", bg: "var(--accent-success-soft)", fg: "var(--accent-success)" },
 };
 
 const cardStyle: CSSProperties = {
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
   padding: "var(--spacing-lg)",
 };
 
@@ -41,11 +41,11 @@ const cardStyle: CSSProperties = {
 function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }) {
   return (
     <div className="flex items-baseline justify-between" style={{ gap: 12 }}>
-      <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+      <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
         {children}
       </span>
       {hint && (
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {hint}
         </span>
       )}
@@ -135,12 +135,12 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
               style={{
                 fontSize: 28,
                 lineHeight: 1,
-                color: "var(--color-ink)",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.02em",
               }}
             >
               Day {day.seq}
-              <span style={{ color: "var(--color-ink-48)", fontWeight: 500 }}>
+              <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
                 {" "}
                 / {today.totalDays}
               </span>
@@ -152,19 +152,19 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                 borderRadius: "var(--radius-pill)",
                 fontSize: 11,
                 fontWeight: 600,
-                background: "var(--color-primary-soft)",
-                color: "var(--color-primary)",
+                background: "var(--accent-primary-soft)",
+                color: "var(--accent-primary)",
               }}
             >
               {TRACK_LABEL[day.trackKey] ?? day.trackKey}
             </span>
-            <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               {day.phaseName}
             </span>
           </div>
           <span
             className="text-[17px] font-semibold"
-            style={{ color: "var(--color-ink)" }}
+            style={{ color: "var(--text-primary)" }}
           >
             {day.title}
           </span>
@@ -174,17 +174,17 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
           className="flex shrink-0 flex-col items-end"
           style={{ gap: 4, textAlign: "right" }}
         >
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             预计投入 {Math.round(day.estMinutes / 60)} 小时
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             日历已过 {today.calendarDaysElapsed} 天 · 起 {today.sprintStart}
           </span>
           {viewingOtherDay && (
             <Link
               href="/today"
               className="text-xs font-medium no-underline"
-              style={{ color: "var(--color-primary)" }}
+              style={{ color: "var(--accent-primary)" }}
             >
               回到今天（Day {today.dayIndex}）→
             </Link>
@@ -233,9 +233,9 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                   gap: 4,
                   minWidth: 140,
                   padding: "14px 16px",
-                  borderRadius: "var(--radius-item-md)",
-                  border: `1px solid ${done ? "var(--color-emerald)" : "var(--color-hairline)"}`,
-                  background: done ? "var(--color-emerald-soft)" : "var(--color-item-bg)",
+                  borderRadius: "var(--radius-md)",
+                  border: `1px solid ${done ? "var(--accent-success)" : "var(--border-default)"}`,
+                  background: done ? "var(--accent-success-soft)" : "var(--color-item-bg)",
                   cursor: isPending ? "wait" : "pointer",
                   opacity: isPending ? 0.6 : 1,
                   textAlign: "left",
@@ -250,9 +250,9 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                       borderRadius: 4,
                       fontSize: 11,
                       fontWeight: 700,
-                      background: done ? "var(--color-emerald)" : "var(--color-card)",
-                      border: done ? "none" : "1px solid var(--color-hairline)",
-                      color: done ? "var(--color-on-primary)" : "transparent",
+                      background: done ? "var(--accent-success)" : "var(--surface-card)",
+                      border: done ? "none" : "1px solid var(--border-default)",
+                      color: done ? "var(--text-inverse)" : "transparent",
                     }}
                   >
                     ✓
@@ -260,13 +260,13 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                   <span
                     className="text-[13px] font-semibold"
                     style={{
-                      color: done ? "var(--color-emerald-deep)" : "var(--color-ink)",
+                      color: done ? "var(--accent-success)" : "var(--text-primary)",
                     }}
                   >
                     {meta.label}
                   </span>
                 </span>
-                <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                   {done ? `已交 ${count} 条` : meta.hint}
                 </span>
               </button>
@@ -285,9 +285,9 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--color-item-bg)",
-                  border: "1px solid var(--color-hairline)",
+                  border: "1px solid var(--border-default)",
                   fontSize: 11,
-                  color: "var(--color-ink-32)",
+                  color: "var(--text-muted)",
                 }}
               >
                 {a.title ?? a.kind}
@@ -299,7 +299,7 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                   style={{
                     background: "transparent",
                     cursor: "pointer",
-                    color: "var(--color-ink-48)",
+                    color: "var(--text-muted)",
                     fontSize: 12,
                     lineHeight: 1,
                     padding: 0,
@@ -313,7 +313,7 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
         )}
 
         <div className="flex flex-wrap items-center justify-between" style={{ gap: 10 }}>
-          <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
             P2：commit 已从 GitHub 按日期自动归集（auto-verified）；面试题由题库当日条数判定
             {today.questionsFromBank > 0 && ` · 今日题库 ${today.questionsFromBank} 题`}。
           </span>
@@ -343,13 +343,13 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
         </div>
 
         {syncMsg && (
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             {syncMsg}
           </span>
         )}
 
         {error && (
-          <span className="text-xs" style={{ color: "var(--color-rose-deep)" }}>
+          <span className="text-xs" style={{ color: "var(--accent-danger)" }}>
             {error}
           </span>
         )}
@@ -378,15 +378,15 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: "var(--color-primary-soft)",
-                    color: "var(--color-primary)",
+                    background: "var(--accent-primary-soft)",
+                    color: "var(--accent-primary)",
                   }}
                 >
                   {i + 1}
                 </span>
                 <span
                   className="text-[13px]"
-                  style={{ color: "var(--color-ink-80)", lineHeight: 1.6 }}
+                  style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}
                 >
                   {item}
                 </span>
@@ -396,14 +396,14 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
 
           {day.objectives.length > 0 && (
             <>
-              <div style={{ height: 1, background: "var(--color-hairline-soft)" }} />
+              <div style={{ height: 1, background: "var(--border-subtle)" }} />
               <SectionTitle>学习目标</SectionTitle>
               <ul className="flex flex-col" style={{ gap: 8, margin: 0, padding: 0, listStyle: "none" }}>
                 {day.objectives.map((item, i) => (
                   <li
                     key={i}
                     className="text-[13px]"
-                    style={{ color: "var(--color-ink-80)", lineHeight: 1.6 }}
+                    style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}
                   >
                     · {item}
                   </li>
@@ -423,14 +423,14 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
               <span
                 key={i}
                 className="text-[13px]"
-                style={{ color: "var(--color-ink-80)", lineHeight: 1.6 }}
+                style={{ color: "var(--text-secondary)", lineHeight: 1.6 }}
               >
                 {q}
               </span>
             ))}
           </div>
 
-          <div style={{ height: 1, background: "var(--color-hairline-soft)" }} />
+          <div style={{ height: 1, background: "var(--border-subtle)" }} />
           {/* 口径：不写死数字 —— 资源锁曾从 5 类扩到 8 类，而这里一度仍写着"这 5 类"。
               写死的数字是负债，下次还会变。 */}
           <SectionTitle hint="均来自资源锁，不得自选">指定资源</SectionTitle>
@@ -449,7 +449,7 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
         {scopeNotice ? <Notice tone="amber">{scopeNotice}</Notice> : null}
 
         {today.tasks.length === 0 ? (
-          <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.7 }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
             这一天还没有绑定的任务。本日的执行内容以上方「验收标准」为准；
             Planning 生成的任务会自动挂到当天（P1 起支持在页面内直接生成）。
           </span>
@@ -465,7 +465,7 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                   gap: 10,
                   padding: "12px 14px",
                   background: "var(--color-item-bg)",
-                  borderRadius: "var(--radius-item-md)",
+                  borderRadius: "var(--radius-md)",
                 }}
               >
                 <div className="flex flex-col" style={{ gap: 4, minWidth: 0 }}>
@@ -484,19 +484,19 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                       {meta.label}
                     </span>
                     {task.skill && (
-                      <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                         {task.skill}
                       </span>
                     )}
                   </span>
                   <span
                     className="text-[14px] font-semibold"
-                    style={{ color: "var(--color-ink)" }}
+                    style={{ color: "var(--text-primary)" }}
                   >
                     {task.title}
                   </span>
                   {task.objective && (
-                    <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                       {task.objective}
                     </span>
                   )}
@@ -514,8 +514,8 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                     style={{
                       padding: "6px 12px",
                       borderRadius: "var(--radius-pill)",
-                      background: "var(--color-primary-soft)",
-                      color: "var(--color-primary)",
+                      background: "var(--accent-primary-soft)",
+                      color: "var(--accent-primary)",
                       cursor: busy ? "wait" : "pointer",
                     }}
                   >
@@ -541,15 +541,15 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                 style={{ flex: "1 1 120px", minWidth: 110, gap: 6 }}
               >
                 <span className="flex items-baseline justify-between" style={{ gap: 6 }}>
-                  <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {item.label}
                   </span>
                   <span
                     className="text-[13px] font-semibold"
-                    style={{ color: "var(--color-ink)" }}
+                    style={{ color: "var(--text-primary)" }}
                   >
                     {item.done}
-                    <span style={{ color: "var(--color-ink-48)", fontWeight: 400 }}>
+                    <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>
                       /{item.target}
                     </span>
                   </span>
@@ -558,7 +558,7 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                   style={{
                     height: 4,
                     borderRadius: 999,
-                    background: "var(--color-hairline-soft)",
+                    background: "var(--border-subtle)",
                     overflow: "hidden",
                     display: "block",
                   }}
@@ -568,7 +568,7 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
                       display: "block",
                       height: "100%",
                       width: `${pct}%`,
-                      background: pct >= 100 ? "var(--color-emerald)" : "var(--color-primary)",
+                      background: pct >= 100 ? "var(--accent-success)" : "var(--accent-primary)",
                     }}
                   />
                 </span>
@@ -584,8 +584,8 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
 /** 提示条。 */
 function Notice({ tone, children }: { tone: "amber" | "rose"; children: ReactNode }) {
   const map = {
-    amber: { bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)" },
-    rose: { bg: "var(--color-rose-soft)", fg: "var(--color-rose-deep)" },
+    amber: { bg: "var(--accent-warning-soft)", fg: "var(--accent-warning)" },
+    rose: { bg: "var(--accent-danger-soft)", fg: "var(--accent-danger)" },
   } as const;
   const c = map[tone];
   return (
@@ -593,7 +593,7 @@ function Notice({ tone, children }: { tone: "amber" | "rose"; children: ReactNod
       className="text-xs"
       style={{
         padding: "10px 14px",
-        borderRadius: "var(--radius-item-md)",
+        borderRadius: "var(--radius-md)",
         background: c.bg,
         color: c.fg,
         lineHeight: 1.6,

@@ -6,10 +6,10 @@ import type { CountdownStatus } from "@/types";
  * "答辩红色、导师窗口橙色" 这种同一分档不同色的问题。
  */
 export const COUNTDOWN_COLOR: Record<CountdownStatus, string> = {
-  overdue: "var(--color-rose)",
-  urgent: "var(--color-rose)",
-  soon: "var(--color-amber)",
-  ok: "var(--color-emerald)",
+  overdue: "var(--accent-danger)",
+  urgent: "var(--accent-danger)",
+  soon: "var(--accent-warning)",
+  ok: "var(--accent-success)",
 };
 
 /** 倒计时分档 → 文案。 */

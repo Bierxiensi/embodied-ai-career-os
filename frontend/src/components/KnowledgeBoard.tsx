@@ -18,17 +18,17 @@ import type { KnowledgeAnswer, KnowledgeCitation, KnowledgeStats } from "@/types
  */
 
 const cardStyle: CSSProperties = {
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
   padding: "var(--spacing-lg)",
 };
 
 /** 置信度三态配色。后端给的是 high/medium/low，未知值按 low 处理。 */
 const CONFIDENCE_META: Record<string, { label: string; color: string; soft: string }> = {
-  high: { label: "高", color: "var(--color-emerald-deep)", soft: "var(--color-emerald-soft)" },
-  medium: { label: "中", color: "var(--color-amber-deep)", soft: "var(--color-amber-soft)" },
-  low: { label: "低", color: "var(--color-rose-deep)", soft: "var(--color-rose-soft)" },
+  high: { label: "高", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
+  medium: { label: "中", color: "var(--accent-warning)", soft: "var(--accent-warning-soft)" },
+  low: { label: "低", color: "var(--accent-danger)", soft: "var(--accent-danger-soft)" },
 };
 
 const PILL: CSSProperties = {
@@ -43,14 +43,14 @@ const PILL: CSSProperties = {
 function Notice({ tone, children }: { tone: "amber" | "rose"; children: React.ReactNode }) {
   const meta =
     tone === "amber"
-      ? { bg: "var(--color-amber-soft)", fg: "var(--color-amber-deep)", bd: "var(--color-amber)" }
-      : { bg: "var(--color-rose-soft)", fg: "var(--color-rose-deep)", bd: "var(--color-rose)" };
+      ? { bg: "var(--accent-warning-soft)", fg: "var(--accent-warning)", bd: "var(--accent-warning)" }
+      : { bg: "var(--accent-danger-soft)", fg: "var(--accent-danger)", bd: "var(--accent-danger)" };
   return (
     <div
       className="text-xs"
       style={{
         padding: "8px 12px",
-        borderRadius: "var(--radius-item-md)",
+        borderRadius: "var(--radius-md)",
         background: meta.bg,
         color: meta.fg,
         border: `1px solid ${meta.bd}`,
@@ -73,23 +73,23 @@ function CitationList({ citations }: { citations: KnowledgeCitation[] }) {
           style={{
             gap: 4,
             padding: "10px 12px",
-            borderRadius: "var(--radius-item-md)",
+            borderRadius: "var(--radius-md)",
             background: "var(--color-item-bg)",
-            border: "1px solid var(--color-hairline)",
+            border: "1px solid var(--border-default)",
           }}
         >
           <span className="flex flex-wrap items-center" style={{ gap: 8 }}>
-            <span style={{ ...PILL, background: "var(--color-primary-soft)", color: "var(--color-primary)" }}>
+            <span style={{ ...PILL, background: "var(--accent-primary-soft)", color: "var(--accent-primary)" }}>
               {c.section}
             </span>
-            <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
               {c.score.toFixed(3)} · p.{c.page}
             </span>
-            <span className="text-[11px]" style={{ color: "var(--color-ink-32)" }}>
+            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
               {c.paperTitle}
             </span>
           </span>
-          <span className="text-xs" style={{ color: "var(--color-ink-80)", lineHeight: 1.65 }}>
+          <span className="text-xs" style={{ color: "var(--text-secondary)", lineHeight: 1.65 }}>
             {c.text}
           </span>
         </div>
@@ -146,7 +146,7 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
     <div className="flex flex-col" style={{ gap: 18 }}>
       {/* ═══════ 库里有什么 ═══════ */}
       <div className="flex flex-col" style={{ ...cardStyle, gap: 12 }}>
-        <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
           知识库
         </span>
         <div className="flex flex-wrap" style={{ gap: 20 }}>
@@ -157,16 +157,16 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
             { label: "覆盖率", value: `${(stats.coverage * 100).toFixed(1)}%` },
           ].map((m) => (
             <div key={m.label} className="flex flex-col" style={{ gap: 2 }}>
-              <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                 {m.label}
               </span>
-              <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+              <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
                 {m.value}
               </span>
             </div>
           ))}
         </div>
-        <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
           嵌入模型：{stats.modelName || "（未上报）"}
         </span>
         {embedderDegraded && (
@@ -182,7 +182,7 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
 
       {/* ═══════ 这个概念在哪：检索 ═══════ */}
       <div className="flex flex-col" style={{ ...cardStyle, gap: 12 }}>
-        <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
           检索
         </span>
         <div className="flex flex-wrap" style={{ gap: 8 }}>
@@ -197,10 +197,10 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
             style={{
               minWidth: 240,
               padding: "9px 12px",
-              borderRadius: "var(--radius-item-md)",
-              border: "1px solid var(--color-hairline)",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border-default)",
               background: "var(--color-item-bg)",
-              color: "var(--color-ink)",
+              color: "var(--text-primary)",
             }}
           />
           <button
@@ -209,10 +209,10 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
             className="text-[13px] font-medium"
             style={{
               padding: "9px 18px",
-              borderRadius: "var(--radius-item-md)",
+              borderRadius: "var(--radius-md)",
               border: "none",
-              background: "var(--color-primary)",
-              color: "var(--color-on-primary)",
+              background: "var(--accent-primary)",
+              color: "var(--text-inverse)",
               cursor: searching ? "wait" : "pointer",
               opacity: searching || !query.trim() ? 0.6 : 1,
             }}
@@ -222,7 +222,7 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
         </div>
         {hits !== null &&
           (hits.length === 0 ? (
-            <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               没有命中。换个说法，或先导入更多论文。
             </span>
           ) : (
@@ -232,7 +232,7 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
 
       {/* ═══════ 卡住了问一句：问答 ═══════ */}
       <div className="flex flex-col" style={{ ...cardStyle, gap: 12 }}>
-        <span className="text-[15px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
           提问
         </span>
         <textarea
@@ -243,10 +243,10 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
           className="text-[13px]"
           style={{
             padding: "9px 12px",
-            borderRadius: "var(--radius-item-md)",
-            border: "1px solid var(--color-hairline)",
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--border-default)",
             background: "var(--color-item-bg)",
-            color: "var(--color-ink)",
+            color: "var(--text-primary)",
             resize: "vertical",
             fontFamily: "inherit",
           }}
@@ -258,10 +258,10 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
             className="text-[13px] font-medium"
             style={{
               padding: "9px 18px",
-              borderRadius: "var(--radius-item-md)",
+              borderRadius: "var(--radius-md)",
               border: "none",
-              background: "var(--color-primary)",
-              color: "var(--color-on-primary)",
+              background: "var(--accent-primary)",
+              color: "var(--text-inverse)",
               cursor: asking ? "wait" : "pointer",
               opacity: asking || !question.trim() ? 0.6 : 1,
             }}
@@ -281,15 +281,15 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
                   </span>
                 );
               })()}
-              <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                 命中 {answer.hitCount} 块
               </span>
               {answer.answerMode === "rule" && (
                 <span
                   style={{
                     ...PILL,
-                    background: "var(--color-amber-soft)",
-                    color: "var(--color-amber-deep)",
+                    background: "var(--accent-warning-soft)",
+                    color: "var(--accent-warning)",
                   }}
                 >
                   片段兜底（LLM 不可用）
@@ -299,18 +299,18 @@ export default function KnowledgeBoard({ stats }: { stats: KnowledgeStats }) {
             <div
               className="text-[13px]"
               style={{
-                color: "var(--color-ink-80)",
+                color: "var(--text-secondary)",
                 lineHeight: 1.75,
                 whiteSpace: "pre-wrap",
                 padding: "12px 14px",
-                borderRadius: "var(--radius-item-md)",
+                borderRadius: "var(--radius-md)",
                 background: "var(--color-item-bg)",
-                border: "1px solid var(--color-hairline)",
+                border: "1px solid var(--border-default)",
               }}
             >
               {answer.answer}
             </div>
-            <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               引用来源
             </span>
             <CitationList citations={answer.citations} />

@@ -23,14 +23,14 @@ function CountdownRow({
   return (
     <div className="flex flex-col" style={{ gap: 6 }}>
       <div className="flex items-center justify-between" style={{ gap: 10 }}>
-        <span className="text-[13px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
           {title}
         </span>
         <span
           className="text-[11px] font-semibold shrink-0"
           style={{
             color: COUNTDOWN_COLOR[status],
-            background: "var(--color-canvas)",
+            background: "var(--surface-canvas)",
             border: `1px solid ${COUNTDOWN_COLOR[status]}`,
             borderRadius: "var(--radius-pill)",
             padding: "1px 8px",
@@ -40,14 +40,14 @@ function CountdownRow({
         </span>
       </div>
       <div className="flex items-baseline" style={{ gap: 10 }}>
-        <span className="text-[22px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[22px] font-semibold" style={{ color: "var(--text-primary)" }}>
           {daysLeft}
         </span>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           天 · {daysText(daysLeft)} · 截止 {deadline}
         </span>
       </div>
-      <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+      <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
         {note}
       </span>
     </div>
@@ -63,18 +63,18 @@ function Stat({ label, value, accent }: { label: string; value: number; accent?:
         flex: "1 1 0",
         gap: 2,
         padding: "8px 4px",
-        background: "var(--color-canvas)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-item-md)",
+        background: "var(--surface-canvas)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-md)",
       }}
     >
       <span
         className="text-[17px] font-semibold"
-        style={{ color: accent ? "var(--color-primary)" : "var(--color-ink)" }}
+        style={{ color: accent ? "var(--accent-primary)" : "var(--text-primary)" }}
       >
         {value}
       </span>
-      <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
         {label}
       </span>
     </div>
@@ -87,18 +87,18 @@ function AdvisorRow({ advisor }: { advisor: AdvisorBrief }) {
   return (
     <div className="flex items-center justify-between" style={{ gap: 10 }}>
       <div className="flex items-center" style={{ gap: 8, minWidth: 0 }}>
-        <span className="text-[13px] font-medium" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
           {advisor.name}
         </span>
-        <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
           {advisor.institution ?? "院校待补"}
         </span>
         {advisor.tier ? (
           <span
             className="text-[11px] shrink-0"
             style={{
-              color: "var(--color-ink-48)",
-              border: "1px solid var(--color-hairline)",
+              color: "var(--text-muted)",
+              border: "1px solid var(--border-default)",
               borderRadius: "var(--radius-pill)",
               padding: "0 6px",
             }}
@@ -109,21 +109,21 @@ function AdvisorRow({ advisor }: { advisor: AdvisorBrief }) {
       </div>
       <div className="flex items-center shrink-0" style={{ gap: 8 }}>
         {advisor.contacted ? (
-          <span className="text-[11px] font-semibold" style={{ color: "var(--color-emerald-deep)" }}>
+          <span className="text-[11px] font-semibold" style={{ color: "var(--accent-success)" }}>
             已联系
           </span>
         ) : (
-          <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
             未联系
           </span>
         )}
         {hasMatch ? (
-          <span className="text-xs" style={{ color: "var(--color-ink-80)" }}>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
             六维 {advisor.matchOverall}/{advisor.matchOverallMax}
             {advisor.matchGrade ? ` · ${advisor.matchGrade}` : ""}
           </span>
         ) : (
-          <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
             未匹配
           </span>
         )}
@@ -155,16 +155,16 @@ export default function AcademicProgressCard({ academic }: Props) {
         minWidth: 0,
         gap: "var(--spacing-md)",
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       <div className="flex flex-col" style={{ gap: 4 }}>
-        <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+        <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
           学术与博士
         </span>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           答辩是转型窗口的硬边界；博士申请季与导师联系窗口压在同一季度
         </span>
       </div>
@@ -179,13 +179,13 @@ export default function AcademicProgressCard({ academic }: Props) {
 
       <div
         className="flex flex-col"
-        style={{ gap: 12, paddingTop: 12, borderTop: "1px solid var(--color-hairline)" }}
+        style={{ gap: 12, paddingTop: 12, borderTop: "1px solid var(--border-default)" }}
       >
         <div className="flex items-center justify-between" style={{ gap: 10 }}>
-          <span className="text-[13px] font-semibold" style={{ color: "var(--color-ink)" }}>
+          <span className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
             博士申请
           </span>
-          <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
             {phd.seasonLabel}
           </span>
         </div>
@@ -206,19 +206,19 @@ export default function AcademicProgressCard({ academic }: Props) {
         </div>
 
         {phd.nearestDeadline ? (
-          <span className="text-xs" style={{ color: "var(--color-ink-80)" }}>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
             最近截止：{phd.nearestDeadline.institution} · {phd.nearestDeadline.deadline}
             {" "}({daysText(phd.nearestDeadline.daysLeft)})
           </span>
         ) : (
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             暂无院校截止日（/phd 页补录 13 所院校的 deadline 后显示）
           </span>
         )}
 
         {phd.topAdvisors.length > 0 ? (
           <div className="flex flex-col" style={{ gap: 8 }}>
-            <span className="text-[13px] font-semibold" style={{ color: "var(--color-ink-80)" }}>
+            <span className="text-[13px] font-semibold" style={{ color: "var(--text-secondary)" }}>
               重点导师
             </span>
             {phd.topAdvisors.map((a) => (
@@ -226,7 +226,7 @@ export default function AcademicProgressCard({ academic }: Props) {
             ))}
           </div>
         ) : (
-          <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             导师库为空 —— 在 /phd 页录入院校与导师后，这里显示六维匹配 Top3
           </span>
         )}

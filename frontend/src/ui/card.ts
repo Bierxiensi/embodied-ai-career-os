@@ -7,14 +7,14 @@ import type { CSSProperties } from "react";
  *   <div style={{ ...cardShell, padding: 32 }}>...</div>  // 覆盖个别属性
  */
 export const cardShell: CSSProperties = {
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
   padding: "var(--spacing-lg)",
 };
 
 /** 卡片内子项背景（任务行、活动行等）。 */
 export const itemBg: CSSProperties = {
   background: "var(--color-item-bg)",
-  borderRadius: "var(--radius-item-md)",
+  borderRadius: "var(--radius-md)",
 };

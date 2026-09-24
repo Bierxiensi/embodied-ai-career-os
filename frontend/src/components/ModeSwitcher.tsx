@@ -62,7 +62,7 @@ export default function ModeSwitcher() {
 
   if (isLoading) {
     return (
-      <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+      <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
         阶段…
       </span>
     );
@@ -70,7 +70,7 @@ export default function ModeSwitcher() {
 
   if (current === null) {
     return (
-      <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }} title="后端未连接">
+      <span className="text-[11px]" style={{ color: "var(--text-muted)" }} title="后端未连接">
         阶段不可用
       </span>
     );
@@ -91,14 +91,14 @@ export default function ModeSwitcher() {
           paddingInline: 12,
           borderRadius: "var(--radius-pill)",
           background: "rgba(255, 255, 255, 0.14)",
-          color: "var(--color-canvas)",
+          color: "var(--surface-canvas)",
           fontSize: 12,
           fontWeight: 600,
           cursor: "pointer",
         }}
       >
         <span>{current.name}</span>
-        <span style={{ color: "var(--color-ink-48)", fontWeight: 500 }}>
+        <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>
           {badgeDeadlineText(current)}
         </span>
       </button>

@@ -18,14 +18,14 @@ interface Props {
 
 const cardStyle: React.CSSProperties = {
   padding: 22,
-  background: "var(--color-card)",
-  border: "1px solid var(--color-hairline)",
-  borderRadius: "var(--radius-card-lg)",
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
 };
 
 const metaStyle: React.CSSProperties = {
   fontSize: 12,
-  color: "var(--color-ink-48)",
+  color: "var(--text-muted)",
 };
 
 const chipStyle: React.CSSProperties = {
@@ -39,9 +39,9 @@ const chipStyle: React.CSSProperties = {
 
 /** 得分 → 颜色（>=80 绿 / >=60 蓝 / 其余红，与 ResultCard 的判定保持一致）。 */
 function scoreColor(score: number): { fg: string; bg: string } {
-  if (score >= 80) return { fg: "var(--color-emerald-deep)", bg: "var(--color-emerald-soft)" };
-  if (score >= 60) return { fg: "var(--color-primary)", bg: "var(--color-primary-soft)" };
-  return { fg: "var(--color-rose-deep)", bg: "var(--color-rose-soft)" };
+  if (score >= 80) return { fg: "var(--accent-success)", bg: "var(--accent-success-soft)" };
+  if (score >= 60) return { fg: "var(--accent-primary)", bg: "var(--accent-primary-soft)" };
+  return { fg: "var(--accent-danger)", bg: "var(--accent-danger-soft)" };
 }
 
 export default function QuizResultView({ result, onClose }: Props) {
@@ -50,17 +50,17 @@ export default function QuizResultView({ result, onClose }: Props) {
   return (
     <div style={cardStyle}>
       <div className="flex items-center justify-between" style={{ flexWrap: "wrap", gap: 10 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>
           本轮成绩单
         </h2>
         <button
           onClick={onClose}
           style={{
             padding: "6px 14px",
-            borderRadius: "var(--radius-item-sm)",
-            border: "1px solid var(--color-hairline)",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border-default)",
             background: "transparent",
-            color: "var(--color-ink-80)",
+            color: "var(--text-secondary)",
             fontSize: 13,
             cursor: "pointer",
           }}
@@ -108,8 +108,8 @@ export default function QuizResultView({ result, onClose }: Props) {
                 key={s}
                 style={{
                   ...chipStyle,
-                  color: "var(--color-rose-deep)",
-                  background: "var(--color-rose-soft)",
+                  color: "var(--accent-danger)",
+                  background: "var(--accent-danger-soft)",
                 }}
               >
                 {s}
@@ -128,8 +128,8 @@ export default function QuizResultView({ result, onClose }: Props) {
               key={`${r.questionId}-${i}`}
               style={{
                 padding: "12px 14px",
-                border: "1px solid var(--color-hairline-soft)",
-                borderRadius: "var(--radius-item-md)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
                 background: "var(--color-item-bg)",
               }}
             >
@@ -138,24 +138,24 @@ export default function QuizResultView({ result, onClose }: Props) {
                   {r.score} 分
                 </span>
                 <span style={{ ...metaStyle }}>{questionTypeLabel(r.questionType)}</span>
-                <span style={{ fontSize: 13, color: "var(--color-ink)", flex: 1, minWidth: 180 }}>
+                <span style={{ fontSize: 13, color: "var(--text-primary)", flex: 1, minWidth: 180 }}>
                   {r.question}
                 </span>
               </div>
 
-              <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.7, color: "var(--color-ink-80)" }}>
+              <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.7, color: "var(--text-secondary)" }}>
                 <div>
-                  <span style={{ color: "var(--color-ink-48)" }}>你的答案：</span>
+                  <span style={{ color: "var(--text-muted)" }}>你的答案：</span>
                   {r.userAnswer || "（空）"}
                 </div>
                 {r.correctAnswer && (
                   <div>
-                    <span style={{ color: "var(--color-ink-48)" }}>参考答案：</span>
+                    <span style={{ color: "var(--text-muted)" }}>参考答案：</span>
                     {r.correctAnswer}
                   </div>
                 )}
                 {r.feedback && (
-                  <div style={{ color: "var(--color-ink-48)" }}>{r.feedback}</div>
+                  <div style={{ color: "var(--text-muted)" }}>{r.feedback}</div>
                 )}
               </div>
             </div>

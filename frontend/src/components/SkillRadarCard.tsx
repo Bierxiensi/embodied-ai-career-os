@@ -24,7 +24,7 @@ function GapBar({
         <span
           className="whitespace-nowrap text-[13px] font-medium"
           style={{
-            color: "var(--color-ink)",
+            color: "var(--text-primary)",
             ...(labelWidth ? { width: labelWidth } : null),
           }}
         >
@@ -42,7 +42,7 @@ function GapBar({
             className="h-full"
             style={{
               width: `${fillPct}%`,
-              background: isCritical ? "var(--color-rose)" : "var(--color-amber)",
+              background: isCritical ? "var(--accent-danger)" : "var(--accent-warning)",
               borderRadius: "var(--radius-pill)",
             }}
           />
@@ -50,7 +50,7 @@ function GapBar({
         <span
           className="whitespace-nowrap text-xs"
           style={{
-            color: "var(--color-ink-48)",
+            color: "var(--text-muted)",
             ...(labelWidth ? { width: 46, textAlign: "right" as const } : null),
           }}
         >
@@ -61,7 +61,7 @@ function GapBar({
         <span
           className="text-[11px]"
           style={{
-            color: "var(--color-ink-48)",
+            color: "var(--text-muted)",
             paddingLeft: labelWidth ?? 0,
             lineHeight: 1.5,
           }}
@@ -107,15 +107,15 @@ export default function SkillRadarCard({ data }: Props) {
         minWidth: 0,
         gap: "var(--spacing-md)",
         padding: "var(--spacing-lg)",
-        background: "var(--color-card)",
-        border: "1px solid var(--color-hairline)",
-        borderRadius: "var(--radius-card-lg)",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
       }}
     >
       {/* Card header */}
       <div className="flex flex-col" style={{ gap: 4 }}>
         <div className="flex items-center justify-between">
-          <span className="text-[17px] font-semibold" style={{ color: "var(--color-ink)" }}>
+          <span className="text-[17px] font-semibold" style={{ color: "var(--text-primary)" }}>
             {data.title}
           </span>
           <div className="hidden md:flex items-center" style={{ gap: 14 }}>
@@ -125,11 +125,11 @@ export default function SkillRadarCard({ data }: Props) {
                   width: 8,
                   height: 8,
                   borderRadius: "var(--radius-pill)",
-                  background: "var(--color-emerald)",
+                  background: "var(--accent-success)",
                   display: "inline-block",
                 }}
               />
-              <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                 当前
               </span>
             </div>
@@ -139,23 +139,23 @@ export default function SkillRadarCard({ data }: Props) {
                   width: 8,
                   height: 8,
                   borderRadius: "var(--radius-pill)",
-                  background: "var(--color-primary)",
+                  background: "var(--accent-primary)",
                   display: "inline-block",
                 }}
               />
-              <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                 目标
               </span>
             </div>
           </div>
         </div>
-        <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
           {data.axisCaption}
         </span>
       </div>
 
       {!hasAxes ? (
-        <span className="text-[13px]" style={{ color: "var(--color-ink-48)", paddingBlock: 24 }}>
+        <span className="text-[13px]" style={{ color: "var(--text-muted)", paddingBlock: 24 }}>
           {data.emptyHint}
         </span>
       ) : (
@@ -177,33 +177,33 @@ export default function SkillRadarCard({ data }: Props) {
             <div className="flex flex-1 flex-col" style={{ gap: 14, paddingTop: 88, minWidth: 180 }}>
               <span
                 className="text-[11px] font-semibold uppercase"
-                style={{ color: "var(--color-ink-48)", letterSpacing: "0.04em" }}
+                style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
               >
                 {data.readinessCaption}
               </span>
               <span
                 className="font-semibold"
-                style={{ fontSize: 30, color: "var(--color-ink)", letterSpacing: "-0.01em" }}
+                style={{ fontSize: 30, color: "var(--text-primary)", letterSpacing: "-0.01em" }}
               >
                 {readiness}%
               </span>
               {data.readinessNote ? (
-                <span className="text-xs" style={{ color: "var(--color-ink-48)", lineHeight: 1.6 }}>
+                <span className="text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
                   {data.readinessNote}
                 </span>
               ) : null}
               <div className="flex items-baseline justify-between" style={{ gap: 8, marginTop: 4 }}>
-                <span className="text-[13px] font-semibold" style={{ color: "var(--color-ink-80)" }}>
+                <span className="text-[13px] font-semibold" style={{ color: "var(--text-secondary)" }}>
                   最大缺口 Top 3
                 </span>
                 {gaps.length > 0 ? (
-                  <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+                  <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                     共 {gaps.length} 项待补
                   </span>
                 ) : null}
               </div>
               {gaps.length === 0 ? (
-                <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                   已满足全部要求
                 </span>
               ) : (
@@ -221,19 +221,19 @@ export default function SkillRadarCard({ data }: Props) {
             <div className="flex items-baseline" style={{ gap: 10 }}>
               <span
                 className="font-semibold"
-                style={{ fontSize: 30, color: "var(--color-ink)", letterSpacing: "-0.01em" }}
+                style={{ fontSize: 30, color: "var(--text-primary)", letterSpacing: "-0.01em" }}
               >
                 {readiness}%
               </span>
-              <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {data.readinessCaption}
               </span>
             </div>
-            <span className="text-[13px] font-semibold" style={{ color: "var(--color-ink-80)" }}>
+            <span className="text-[13px] font-semibold" style={{ color: "var(--text-secondary)" }}>
               缺口（按差距排序）
             </span>
             {gaps.length === 0 ? (
-              <span className="text-xs" style={{ color: "var(--color-ink-48)" }}>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                 已满足全部要求
               </span>
             ) : (
@@ -242,7 +242,7 @@ export default function SkillRadarCard({ data }: Props) {
                   <GapBar key={gap.name} gap={gap} labelWidth={92} />
                 ))}
                 {gaps.length > MOBILE_GAP_LIMIT ? (
-                  <span className="text-[11px]" style={{ color: "var(--color-ink-48)" }}>
+                  <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
                     另有 {gaps.length - MOBILE_GAP_LIMIT} 项待补未显示
                   </span>
                 ) : null}

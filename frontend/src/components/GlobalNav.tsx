@@ -60,12 +60,12 @@ export default function GlobalNav() {
       <div className="flex items-center" style={{ gap: 28 }}>
         <div className="relative" style={{ width: 20, height: 20 }}>
           <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="7" cy="7" r="4" fill="var(--color-primary)" />
-            <circle cx="13" cy="13" r="4" fill="var(--color-emerald)" />
-            <path d="M7 7L13 13" stroke="var(--color-ink)" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="7" cy="7" r="4" fill="var(--accent-primary)" />
+            <circle cx="13" cy="13" r="4" fill="var(--accent-success)" />
+            <path d="M7 7L13 13" stroke="var(--text-primary)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
-        <span className="text-[13px] font-semibold" style={{ color: "var(--color-canvas)" }}>
+        <span className="text-[13px] font-semibold" style={{ color: "var(--surface-canvas)" }}>
           Career OS
         </span>
         <div className="flex" style={{ gap: 28 }}>
@@ -89,13 +89,13 @@ export default function GlobalNav() {
         <ModeSwitcher />
         <div style={{ width: 16, height: 16 }}>
           <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="7" cy="7" r="5" stroke="var(--color-ink-48)" strokeWidth="1.5" />
-            <path d="M11 11L15 15" stroke="var(--color-ink-48)" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="7" cy="7" r="5" stroke="var(--text-muted)" strokeWidth="1.5" />
+            <path d="M11 11L15 15" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </div>
         <div
           className="rounded-full"
-          style={{ width: 26, height: 26, background: "var(--color-primary)" }}
+          style={{ width: 26, height: 26, background: "var(--accent-primary)" }}
         />
       </div>
     </nav>
