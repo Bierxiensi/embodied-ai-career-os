@@ -18,3 +18,6 @@ export { default as Breadcrumb } from "./Breadcrumb";
 export { default as Tabs } from "./Tabs";
 export { default as Modal } from "./Modal";
 export { default as Popover } from "./Popover";
+export { default as CommandPalette } from "./CommandPalette";
+export { default as Drawer } from "./Drawer";
+export { default as Sidebar } from "./Sidebar";
