@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: "AI 驱动的求职作战与能力成长操作系统（Multi-Agent）",
 };
 
-/** 全局侧边栏分区 — 代替旧的 SectionNav，常驻于所有页面左侧。 */
+/** 全局侧边栏分区 — 常驻于所有页面左侧。 */
 const SIDEBAR_SECTIONS = [
   {
     label: "求职",

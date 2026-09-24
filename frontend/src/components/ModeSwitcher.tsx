@@ -18,7 +18,7 @@ function badgeDeadlineText(mode: CareerMode): string {
 /** 全局导航里的「当前阶段」徽章 + 切换入口。
  *
  * 数据来自 CareerModeContext（由 layout 层的 Provider 提供），
- * 不再自己 fetch —— 避免与 GlobalNav / SectionNav 重复请求。
+ * 不再自己 fetch —— 避免与 GlobalNav / Sidebar 重复请求。
  */
 export default function ModeSwitcher() {
   const router = useRouter();
@@ -46,7 +46,7 @@ export default function ModeSwitcher() {
     setSwitchError(null);
     try {
       const result = await switchCareerMode(pendingKey, note.trim() || null);
-      // 就地更新 Context：GlobalNav / SectionNav 立即响应
+      // 就地更新 Context：GlobalNav / Sidebar 立即响应
       refreshMode(result.current);
       setIsOpen(false);
       // 刷新服务端组件：任务与推荐口径随阶段变化

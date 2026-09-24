@@ -40,10 +40,10 @@ const DEFAULT_MODE: CareerMode = {
  * 职责：
  *   - 首次挂载时从后端拉取当前模式（失败时降级为默认 job_hunt）
  *   - 提供 refreshMode() 供 ModeSwitcher 切换后就地更新
- *   - 导航组件（GlobalNav / SectionNav）通过 useCareerMode() 读取当前模式
+ *   - 导航组件（GlobalNav / Sidebar）通过 useCareerMode() 读取当前模式
  *
  * 为什么用 Context 而不是让每个组件自己 fetch：
- *   模式是全局状态，GlobalNav、SectionNav、ModeSwitcher 都需要它。
+ *   模式是全局状态，GlobalNav、Sidebar、ModeSwitcher 都需要它。
  *   让三个组件各自 fetch 会产生 3 次请求 + 状态不一致的窗口。
  */
 export function CareerModeProvider({ children }: { children: ReactNode }) {
