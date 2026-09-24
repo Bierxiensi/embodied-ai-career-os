@@ -12,3 +12,4 @@ export { default as EmptyState } from "./EmptyState";
 export { default as Skeleton } from "./Skeleton";
 export { default as ProgressBar } from "./ProgressBar";
 export { default as Stat } from "./Stat";
+export { default as StepIndicator } from "./StepIndicator";
