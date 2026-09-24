@@ -1,9 +1,39 @@
 "use client";
 
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import type { Task } from "@/types";
 import TaskCompleteForm from "./TaskCompleteForm";
-import { cardShell, itemBg, STATUS_MAP, pillStyle, type TaskStatusKey } from "@/ui";
+
+/** 卡片外壳样式（原 @/ui card.ts，内联至此以移除遗留模块）。 */
+const cardShell: CSSProperties = {
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
+  padding: "var(--spacing-lg)",
+};
+
+type TaskStatusKey = "todo" | "doing" | "done";
+
+const STATUS_MAP: Record<TaskStatusKey, { label: string; bg: string; fg: string }> = {
+  todo: { label: "待办", bg: "var(--color-zinc-100)", fg: "var(--text-muted)" },
+  doing: { label: "进行中", bg: "var(--accent-warning-soft)", fg: "var(--accent-warning)" },
+  done: { label: "已完成", bg: "var(--accent-success-soft)", fg: "var(--accent-success)" },
+};
+
+function pillStyle(status: TaskStatusKey): CSSProperties {
+  const s = STATUS_MAP[status] ?? STATUS_MAP.todo;
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "3px 9px",
+    borderRadius: "var(--radius-pill)",
+    fontSize: 11,
+    fontWeight: 600,
+    background: s.bg,
+    color: s.fg,
+  };
+}
 
 type Props = {
   /** 当前阶段范围内的任务（CareerMode 口径）。 */

@@ -1,5 +1,13 @@
+import type { CSSProperties } from "react";
 import type { ActiveTrack, Task } from "@/types";
-import { cardShell, itemBg } from "@/ui";
+
+/** 卡片外壳样式（原 @/ui card.ts，内联至此以移除遗留模块）。 */
+const cardShell: CSSProperties = {
+  background: "var(--surface-card)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-lg)",
+  padding: "var(--spacing-lg)",
+};
 
 type Props = {
   /** 距截止日期天数（null 表示无截止日期或长期模式）。 */
