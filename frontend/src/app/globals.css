@@ -1,67 +1,242 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════
-   Design Tokens (from Ardot canvas — 27 variables)
+   Design Tokens — 三层架构，通过 data-theme 切换
    ═══════════════════════════════════════════════════════════ */
-:root {
-  /* Colors */
+
+/* 默认主题（Light）的 CSS 变量 — SSR 时立即可见 */
+[data-theme="ardot-light"], :root {
+  --surface-canvas: #F5F5F7;
+  --surface-card: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --surface-overlay: rgba(0, 0, 0, 0.4);
+  --surface-sidebar: #FAFAFB;
+
+  --text-primary: #1D1D1F;
+  --text-secondary: #3A3A3C;
+  --text-muted: #787880;
+  --text-inverse: #FFFFFF;
+  --text-link: #0066CC;
+
+  --border-default: #E0E0E0;
+  --border-subtle: #E8E8ED;
+  --border-focus: #0066CC;
+  --border-error: #F43F5E;
+
+  --accent-primary: #0066CC;
+  --accent-primary-hover: #0055AA;
+  --accent-primary-soft: #EAF3FC;
+  --accent-success: #10B981;
+  --accent-success-soft: #DDF4EA;
+  --accent-warning: #F59E0B;
+  --accent-warning-soft: #FEF3C7;
+  --accent-danger: #F43F5E;
+  --accent-danger-soft: #FEF2F2;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-glow: none;
+
+  --gradient-accent: none;
+  --gradient-subtle: none;
+  --backdrop-blur: none;
+
+  --radius-card: 16px;
+  --radius-item: 10px;
+
+  /* 兼容旧变量名（Phase 6 迁移完成后删除） */
   --color-canvas: #F5F5F7;
   --color-card: #FFFFFF;
   --color-ink: #1D1D1F;
   --color-ink-80: #3A3A3C;
   --color-ink-48: #787880;
+  --color-ink-32: #52525B;
+  --color-ink-28: #71717A;
   --color-hairline: #E0E0E0;
   --color-hairline-soft: #E8E8ED;
   --color-primary: #0066CC;
   --color-primary-soft: #EAF3FC;
   --color-emerald: #10B981;
   --color-emerald-soft: #DDF4EA;
+  --color-emerald-deep: #047857;
   --color-amber: #F59E0B;
   --color-amber-soft: #FEF3C7;
+  --color-amber-deep: #B45309;
   --color-rose: #F43F5E;
+  --color-rose-soft: #FEF2F2;
+  --color-rose-deep: #B91C1C;
   --color-sky: #0EA5E9;
   --color-violet: #8B5CF6;
   --color-navy: #1E3A5F;
   --color-zinc-100: #F4F4F5;
   --color-on-primary: #FFFFFF;
-
-  /* Semantic extensions */
-  --color-amber-deep: #B45309;
-  --color-emerald-deep: #047857;
-  --color-rose-deep: #B91C1C;
-  --color-ink-32: #52525B;
-  --color-ink-28: #71717A;
-
-  /* Component-level tokens (补全) */
   --color-item-bg: #FAFAFB;
-  --color-rose-soft: #FEF2F2;
   --color-violet-soft: rgba(139, 92, 246, 0.12);
   --color-sky-soft: rgba(14, 165, 233, 0.12);
-  --color-violet: #8B5CF6;
-
-  /* Type scale */
-  --font-size-hero: 34px;
-  --font-size-title: 17px;
-  --font-size-body: 15px;
-  --font-size-caption: 13px;
-  --font-size-micro: 11px;
-
-  /* Radius */
-  --radius-card-lg: 18px;
-  --radius-item-md: 11px;
-  --radius-item-sm: 8px;
+  --radius-card-lg: 16px;
+  --radius-item-md: 10px;
+  --radius-item-sm: 6px;
   --radius-pill: 999px;
-
-  /* Spacing */
   --spacing-sm: 12px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
-
-  /* Legacy tokens (kept for compatibility) */
+  --font-size-hero: 40px;
+  --font-size-title: 17px;
+  --font-size-body: 15px;
+  --font-size-caption: 13px;
+  --font-size-micro: 11px;
   --background: #F5F5F7;
   --foreground: #1D1D1F;
 }
+
+[data-theme="ardot-dark"] {
+  --surface-canvas: #0A0A0C;
+  --surface-card: #18181B;
+  --surface-elevated: #232326;
+  --surface-overlay: rgba(0, 0, 0, 0.6);
+  --surface-sidebar: #111113;
+
+  --text-primary: #F5F5F7;
+  --text-secondary: #D1D1D6;
+  --text-muted: #9898A0;
+  --text-inverse: #1D1D1F;
+  --text-link: #60A5FA;
+
+  --border-default: #38383A;
+  --border-subtle: #2C2C2E;
+  --border-focus: #3B82F6;
+  --border-error: #F43F5E;
+
+  --accent-primary: #3B82F6;
+  --accent-primary-hover: #60A5FA;
+  --accent-primary-soft: rgba(59, 130, 246, 0.15);
+  --accent-success: #34D399;
+  --accent-success-soft: rgba(52, 211, 153, 0.15);
+  --accent-warning: #FBBF24;
+  --accent-warning-soft: rgba(251, 191, 36, 0.15);
+  --accent-danger: #FB7185;
+  --accent-danger-soft: rgba(251, 113, 133, 0.15);
+
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-elevated: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-glow: none;
+
+  --gradient-accent: none;
+  --gradient-subtle: none;
+  --backdrop-blur: none;
+
+  --radius-card: 16px;
+  --radius-item: 10px;
+
+  /* 兼容旧变量名 */
+  --color-canvas: #0A0A0C;
+  --color-card: #18181B;
+  --color-ink: #F5F5F7;
+  --color-ink-80: #D1D1D6;
+  --color-ink-48: #9898A0;
+  --color-ink-32: #A1A1AA;
+  --color-ink-28: #9898A0;
+  --color-hairline: #38383A;
+  --color-hairline-soft: #2C2C2E;
+  --color-primary: #3B82F6;
+  --color-primary-soft: rgba(59, 130, 246, 0.15);
+  --color-emerald: #34D399;
+  --color-emerald-soft: rgba(52, 211, 153, 0.15);
+  --color-emerald-deep: #34D399;
+  --color-amber: #FBBF24;
+  --color-amber-soft: rgba(251, 191, 36, 0.15);
+  --color-amber-deep: #FBBF24;
+  --color-rose: #FB7185;
+  --color-rose-soft: rgba(251, 113, 133, 0.15);
+  --color-rose-deep: #FB7185;
+  --color-sky: #38BDF8;
+  --color-violet: #A78BFA;
+  --color-navy: #1E3A5F;
+  --color-zinc-100: #2C2C2E;
+  --color-on-primary: #FFFFFF;
+  --color-item-bg: #2A2A2C;
+  --color-violet-soft: rgba(167, 139, 250, 0.18);
+  --color-sky-soft: rgba(56, 189, 248, 0.18);
+  --background: #0A0A0C;
+  --foreground: #ededed;
+}
+
+[data-theme="ardot-neon"] {
+  --surface-canvas: #0F0F14;
+  --surface-card: rgba(255, 255, 255, 0.03);
+  --surface-elevated: rgba(255, 255, 255, 0.06);
+  --surface-overlay: rgba(0, 0, 0, 0.7);
+  --surface-sidebar: rgba(255, 255, 255, 0.02);
+
+  --text-primary: #F5F5F7;
+  --text-secondary: #D1D1D6;
+  --text-muted: #71717A;
+  --text-inverse: #0F0F14;
+  --text-link: #A78BFA;
+
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-focus: #8B5CF6;
+  --border-error: #F43F5E;
+
+  --accent-primary: #8B5CF6;
+  --accent-primary-hover: #A78BFA;
+  --accent-primary-soft: rgba(139, 92, 246, 0.15);
+  --accent-success: #34D399;
+  --accent-success-soft: rgba(52, 211, 153, 0.15);
+  --accent-warning: #FBBF24;
+  --accent-warning-soft: rgba(251, 191, 36, 0.15);
+  --accent-danger: #FB7185;
+  --accent-danger-soft: rgba(251, 113, 133, 0.15);
+
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.15);
+
+  --gradient-accent: linear-gradient(135deg, #8B5CF6, #3B82F6);
+  --gradient-subtle: linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, transparent 100%);
+  --backdrop-blur: blur(12px);
+
+  --radius-card: 20px;
+  --radius-item: 12px;
+
+  /* 兼容旧变量名 */
+  --color-canvas: #0F0F14;
+  --color-card: rgba(255, 255, 255, 0.03);
+  --color-ink: #F5F5F7;
+  --color-ink-80: #D1D1D6;
+  --color-ink-48: #71717A;
+  --color-ink-32: #A1A1AA;
+  --color-ink-28: #71717A;
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-hairline-soft: rgba(255, 255, 255, 0.04);
+  --color-primary: #8B5CF6;
+  --color-primary-soft: rgba(139, 92, 246, 0.15);
+  --color-emerald: #34D399;
+  --color-emerald-soft: rgba(52, 211, 153, 0.15);
+  --color-emerald-deep: #34D399;
+  --color-amber: #FBBF24;
+  --color-amber-soft: rgba(251, 191, 36, 0.15);
+  --color-amber-deep: #FBBF24;
+  --color-rose: #FB7185;
+  --color-rose-soft: rgba(251, 113, 133, 0.15);
+  --color-rose-deep: #FB7185;
+  --color-sky: #38BDF8;
+  --color-violet: #A78BFA;
+  --color-navy: #1E3A5F;
+  --color-zinc-100: rgba(255, 255, 255, 0.06);
+  --color-on-primary: #0F0F14;
+  --color-item-bg: rgba(255, 255, 255, 0.04);
+  --color-violet-soft: rgba(139, 92, 246, 0.18);
+  --color-sky-soft: rgba(56, 189, 248, 0.18);
+  --background: #0F0F14;
+  --foreground: #F5F5F7;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Base styles
+   ═══════════════════════════════════════════════════════════ */
 
 @theme inline {
   --color-background: var(--background);
@@ -70,34 +245,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --color-canvas: #1A1A1C;
-    --color-card: #232325;
-    --color-ink: #F5F5F7;
-    --color-ink-80: #D1D1D6;
-    --color-ink-48: #9898A0;
-    --color-hairline: #38383A;
-    --color-hairline-soft: #2C2C2E;
-    --color-ink-32: #A1A1AA;
-    --color-ink-28: #9898A0;
-    --color-zinc-100: #2C2C2E;
-    --color-primary-soft: #0A2A4A;
-    --color-emerald-soft: #0A3A2A;
-    --color-amber-soft: #3A2A0A;
-    --color-item-bg: #2A2A2C;
-    --color-rose-soft: #3A1A1A;
-    --color-violet-soft: rgba(139, 92, 246, 0.18);
-    --color-sky-soft: rgba(14, 165, 233, 0.18);
-  }
-}
-
 body {
-  background: var(--color-canvas);
-  color: var(--color-ink);
+  background: var(--surface-canvas);
+  color: var(--text-primary);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 骨架屏动画 */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
