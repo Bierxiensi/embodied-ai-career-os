@@ -79,6 +79,9 @@
 - **多 agent 体系已存在**（`agents/` 12 包）：`AgentRegistry`+`registry_setup.py`、`supervisor`（analyze_intent→select_agents→create_plan）、`orchestrator`（OrchestratorExecutor+AgentWorkflow，`POST /api/agent/run`）——**本身就是个小 harness**。
 - 🔴 **不接 DeepSeek Harness（dsh）作为 runtime**：它是 Node 独立应用（`npx @deepseek-ai/dsh web` → Web UI :3080）、"Everything is a Plugin"(Cordis)、developer preview 且警告破坏性变更、无对外集成 API。理由：①形态不匹配 ②收益重复 ③**与"口径同源"纪律冲突**。**分野：招投标要召回率（harness 灵活性=资产）；Career OS 要口径可信（=负债）。**
 
+- **语料管线已脚本化入库（09-24，别再往 `.workbuddy/tmp/` 重写）**：`backend/scripts/fetch_paper_corpus.py`（下载，幂等/`--dry-run`/`--force`）+ `backend/scripts/rebuild_paper_corpus.py`（重建，**破坏性 → 默认只预演、须 `--yes`、自动带时间戳备份**）。两脚本 docstring 写明命名约定 `<arxivID> <论文标题>.pdf` 及其原因。⚠️ 两者都须 **cwd=backend**（`database_url` 是相对路径）。
+- **09-24 收尾**：09-23 的 8 个批次积压（17 改+9 新）已按主题拆成 **4 个提交**入库，合计 32 文件/+3780−64（`ff036bc` 后端 llm+知识库修复 / `af86005` 前端三件 / `b8d5fb0` 文档记忆 / `3f26d01` 语料脚本）。纪律：只 add 显式路径 + 逐个核对 `git diff --cached --name-only`；提交信息写文件再 `git commit -F`（避免中文+反引号被 shell 解释）。
+
 ## 数据与缺陷
 - 单一源：skill_profile.py + target_roles.py + plan_30d.py（seq 不绑日历）；**skill_graph.py 的 SKILL_EDGES（52 边）是依赖图单一真源**（投影进 skill_dependency 表，禁止反向从表推）；**transition_context.py 是答辩日/导师窗口/在职事实单一真源**（core/risk.py 也用它）。
 - 开发库基线：skills 50（43 标六域 / 7 未标=冻结具身）/ skill_dependency 52 / plan_days 30 / **interview_questions 147（09-22 D1/D2 手术：删近重复 74/75/76 + 11 道 LLM 内容题 Project→LLM；终态 LLM 61/MM 30/Project 26/Coding 30，gap 全 0；备份 app.db.bak-20260922-d1）** / tasks 23 / **job_applications 3（09-22 晚清理：id 8-11 经用户确认是演示数据已删，余 3 条真实：华夏泰科/电价预测J10856 均 rejected、大禹节水 applied）** / research_directions 6 / **phd_targets 8（09-22 晚瘦身：删 985 五所 北大/清华/人大×2/北理工；余 211×4 北邮/中石大/北科大/北交大 + 市属 北信科 + 中科院 国科大自动化所 + 985 北航本校〔有意保留：本校通道〕。**⚠️ deadline 仍多为 NULL 或已过期，须用户补录 2027 周期**）** / **phd_advisors 5（4 条占位 + 王恒〔北科大真实导师，09-22 录入，match 89 分/A 级〕；contacted 全 0）** / practice_records 7 / quiz_session_questions 表已建（空表）。
