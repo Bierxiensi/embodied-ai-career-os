@@ -38,7 +38,6 @@ export default function GlobalNav() {
     ...(isJobHunt ? [{ href: "/jobs", label: "求职" }] : []),
     { href: "/plan", label: "学习" },
     { href: "/phd", label: "博士" },
-    { href: "/dashboard", label: "概览" },
   ];
 
   const isActive = (href: string) => {
