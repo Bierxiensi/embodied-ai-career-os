@@ -19,6 +19,9 @@ export default function UITestPage() {
   return (
     <main style={{ padding: 40, maxWidth: 900, margin: "0 auto" }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 32 }}>UI 组件测试</h1>
+      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, padding: "8px 12px", background: "var(--surface-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)" }}>
+        💡 使用顶栏的 ThemeSwitcher 切换 3 套主题（Light / Dark / Neon）验证所有组件表现。
+      </p>
 
       {/* Button */}
       <section style={{ marginBottom: 40 }}>
