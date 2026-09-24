@@ -1,4 +1,4 @@
-# 项目长期记忆 · Embodied AI Career OS（第13版，2026-09-22）
+# 项目长期记忆 · Embodied AI Career OS（第14版，2026-09-23）
 
 ## 战略现状
 - v3.2（09-21 用户三裁决）：确认留任 → **当前模式 long_term_transition**（active=llm/vlm/phd，frozen=空）。在职转型窗口 2026.09–2027.03；关键节点 2026-12 答辩、PhD 申请季 26秋–27春。
@@ -14,7 +14,11 @@
 - 🔴 **数字口径单一真源**：题库目标只手改 `agents/interview/engine.QUESTION_CATEGORY_TARGETS`（现 {LLM:61, MM:30, Project:26, Coding:30}，**描述性分布，非 KPI**）；CORE_TARGET/TARGET_TOTAL/plan.py 的 TARGET_QUESTIONS 全派生。护栏 `test_targets_are_single_sourced_and_derived`。
 - 🔴 **接口"早就存在"≠接口正确**：所有 JSON 端点必须走 `ok(...)` 包装**包括空数据分支**（apiClient.ts:67 无 success 即抛错）。**接死代码前必须实测真实响应形状**——前端 getQuestionSources 指向的后端端点曾经从未存在（09-22 已连前端带后端一起删）。
 - 🔴 测试隔离：`/api/plan/today` 只返回当天 artifacts；清空 helper 必须显式传 seq，不带参数的 `_today()` 清别的 day 会静默空操作。用例**不得依赖墙钟**（fixture 动态补种日历推导当天）。
-- 🔴 测试不得写开发库；pytest 后核对开发库指纹 md5（**当前基线 `fb970ef302689a75677a970fdb7776ec`**——09-22 晚数据手术〔删演示投递/985 目标〕+ 录入王恒后；迁移/种子/用户数据变更改指纹属正常）。
+- 🔴 **测试的输入必须由测试自己决定，禁依赖 `.env`（09-23 事故）**：`conftest.py` 模块级已同时钉死 `os.environ["DATABASE_URL"]=<临时库>` 与 **`os.environ["LLM_PROVIDER"]="mock"`**。事故经过：`.env` 把 provider 改 xiaomi 后全量 **5 failed**（`test_github_service` 2 例名即 `_mock`；`test_quiz_api::test_start_degrades_to_open_when_llm_unavailable` 前提被打破等）。**验证真实 provider 装配请用 `monkeypatch` 改 `settings`（见 `tests/test_llm_factory_providers.py`）。** 泛化教训：**任何"把外部依赖从 A 换成 B"的环境改动，都要先查测试是否隐式依赖旧值。**
+- 🔴 测试不得写开发库；pytest 后核对开发库指纹 md5。**指纹不要与文档里的历史值比**（并发会话/种子/用户录数据都会改它）：正确姿势是**本次改动前后各取一次自比**。参考值（2026-09-23 实测）`533aa07435fdf724a59af0a564f2a608`（09-22 晚记录的是 `fb970ef3…`，期间变动来自并发会话/常驻后端，非本项目改动）。
+- 🔴 **"看起来有规模"的数字先 GROUP BY 去重**：实测 `/api/paper/stats` 报 `paper_count=98`，`GROUP BY title` 实为 **3 个标题**（90×ACT + 7×Diffusion Policy + 1×Test Paper）→ 开发期反复 ingest 同一篇 inflate 98 倍。模板 `SELECT <name>,COUNT(*) c FROM <t> GROUP BY 1 ORDER BY c DESC LIMIT 20;`
+- 🔴 **接现成接口时参数名/路径以源码为准**：`GET /api/paper/search` 的参数名是 **`query`**（不是 `q`）；学习日志路由是 **`/api/learning-logs`**（连字符，不是下划线）。抄错即 404/422，易误判成"接口没实现"。
+- 🔴 **写死在前端文案里的数字是负债**：`TodayBoard.tsx` 的 `hint="只允许这 5 类来源"` 在 `RESOURCE_LOCK` 已扩到 **8 类**后仍写 5。正确姿势是**去掉数字**（"资源均来自资源锁"），不是把 5 改成 8。
 - 🔴 **共享测试库会被同会话其他用例改**：依赖"库即种子态"的绝对锚点（如 llm 67%/23%）必须自己防污染，或让改库的用例自清理。实证：`test_e2e_v2_learning_loop` 的 reviewer 晋级把 DPO 1→2 不还原 → 锚点假失败 69!=67。定位手法：临时 pytest 插件在 `pytest_runtest_teardown` 逐用例比对表快照并打印 diff（`.workbuddy/tmp/detect_leak.py`）。
 - 迁移：下一条 **0028**；单语句 SQLite 写法；必跑 test_migration_dialect_compat.py（按迁移文件参数化，新增迁移+1 用例属正常）。
 - SKILL_PROFILE 是 **SkillProfile 对象列表**——匹配 `.name`，勿当字符串遍历。
@@ -29,14 +33,51 @@
 
 ## 环境 / 门禁
 - 后端启动（后台）：`backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000`；SQLite backend/data/app.db。
-- pytest：chdir backend + venv python；**基线（09-22 晚）= 377 passed / 0 failed / 2 skipped**（374 + `test_p3_target_track_integrity.py` 3 例）。最稳姿势 `.workbuddy/tmp/run_pytest.py [目标...]`（顺带核对开发库指纹）。
+- pytest：chdir backend + venv python；**基线（09-23）= 411 passed / 0 failed / 2 skipped**（374 → 377 → 384〔+`test_llm_factory_providers.py` 7 例〕→ 396〔+`test_chunker_sections.py` 12 例〕→ 411〔+`test_knowledge_answer_llm.py` 15 例〕）。最稳姿势 `.workbuddy/tmp/run_pytest.py [目标...]`（顺带核对开发库指纹）。
+  - ⚠️ **直接调 ORM/图脚本必须 cwd=backend**：`database_url` 是**相对路径** `sqlite:///./data/app.db`，在仓库根跑会 `unable to open database file`。
   - ⚠️ 全量跑会把 `%TEMP%\pytest-of-*` 的 garbage 累积到 >50 项，触发 safe-delete 护栏使 **pytest exit=1（进度全是点、无 F，纯误报）**；加 `--basetemp=../.workbuddy/tmp/pytest-base` 把临时根挪进工作区即恢复 exit=0。
 - 写后端测试两手法：①干净库用 contextmanager 覆盖 get_db 指**临时文件库**（**别用内存库**，TestClient 线程池连接不共享）；②共享隔离库只做增量断言+自清理。
 - 前端门禁 node 直调：`node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json` + `node node_modules/eslint/bin/eslint.js <files>`（cwd=frontend，managed node 绝对路径）。**next build/dev 本机都跑不了（fonts.googleapis.com 不通）→ 验收 tsc + eslint「除基线外零新增」**。
-  - 基线噪音实测（09-22 晚，`core`/`components` 目录级扫描）：`react-hooks/error-boundaries`（**16 个 page 全命中**，try/catch 里建 JSX 的既定写法）+ `ResumeBoard.tsx:175` 的 **`react-hooks/set-state-in-effect`（error 级）** + 6 个 `no-unused-vars` 警告（ApplicationsBoard/JobsBoard/MilestoneTimeline×2/ReportsBoard×2/TaskList）。**自证手法**：`git show HEAD:<file>` 写临时文件对跑 eslint，问题一一对应即为既有（脚本 `.workbuddy/tmp/head_lint_compare.py`，跑完自清理）。
+  - 基线噪音实测（**09-23 重测更正**）：`src/app` 整目录 **65 个 error，全部是 `react-hooks/error-boundaries`，分布在 15 个文件**（旧记录写"16 个 page 全命中"不准确）。🔴 **该规则可完全避开**：只在 **JSX 写在 `try/catch` 内部**时才报；把 JSX 放到 try 外面（try 里只赋值 + 拿 errorMessage）→ **零报错**（见 `phd/page.tsx`、`knowledge/page.tsx`，两页 eslint 全绿）。**正确姿势是"避开"而非"自证"。**
+  - components 侧既有噪音：`ResumeBoard.tsx:175` 的 **`react-hooks/set-state-in-effect`（error 级）** + 6 个 `no-unused-vars` 警告（ApplicationsBoard/JobsBoard/MilestoneTimeline×2/ReportsBoard×2/TaskList）。
   - 类型检查兜不住运行时行为时（如"六域雷达真的出 6 根轴"）：单独 `tsc src/services/xxx.ts --outDir` 编译成 JS，再让 node 直吃真实 HTTP 响应跑断言（见 `.workbuddy/tmp/radar_smoke.js`）。
 - Git Bash 残缺（ls/head/cd/dirname/mkdir/tail/**sleep** 缺失）→ 文件操作走 Read/Write/Edit/Glob/Grep，命令用 managed python 绝对路径。
 - ⚠️ 本机走系统代理 → 打 127.0.0.1:8000 须 `build_opener(ProxyHandler({}))` 直连；后端常驻必须 `run_in_background=true` + `Popen(...).wait()` 包装（单跑 os.execv 约 8s 被回收）。
+
+## 学习闭环 / 知识库现状（09-23 v4 实测，决定下一阶段方向）
+
+用户 09-23 两条产品判断："可以输入的地方很少、像记录系统不像成长系统" + "内容建设不足、不知道去哪搜集学习资料、是不是做个知识库+agent 接进来"。实测结论（v4 文档详述）：
+
+- **写端点 64 个 / 读 51 个**（21 模块）→ "输入少"**不成立**；真问题是唯一的每日入口（今日施工单）**只收布尔值**：`createArtifact` 只写 `title="Day N · 代码"` 这类自动标题，无处写内容。实证 `day_artifacts=0`、`day_progress=0` → **四件套从未被使用过一次**。
+- **知识库后端已存在且能跑**：`/api/paper/{ingest,index,search,ask,compare}` 5 端点（main.py:100 挂载）+ `agents/knowledge`（retrieve→answer 两节点 LangGraph）+ 向量库 + 索引。**但前端 0 消费**（无页面无 service，无 /knowledge 路由）。
+- ✅ **语料已于 09-23 换成真料**：10 篇 Post-Training 论文（Attention/InstructGPT-RLHF/PPO/LoRA/QLoRA/DPO/DeepSeekMath-GRPO/Qwen2/Qwen2.5-VL/Llama2，与 `RESOURCE_LOCK` 对齐）→ `backend/data/corpus/`（27.8MB，`data/` 已 gitignore）。结果 **10 篇 / 10 distinct title / 1607 chunks / coverage 100%**（原 98 行=3 标题/583 块）。备份 `app.db.bak-20260923-corpus`。命名规则 **`<arxivID> <标题>.pdf`** —— `_parse_pdf` 用文件名作标题线索且剥掉 arxiv id，故这样能同时得到可追溯 id 与干净标题。灌料脚本 `.workbuddy/tmp/ingest_corpus.py`（**必须 cwd=backend**，因 `database_url` 是相对路径 `sqlite:///./data/app.db`）。
+- ✅ **真语义嵌入已于 09-23 换好**（原 hash-384 伪嵌入）。**关键根因**：`huggingface.co` 本机走代理 **502**（`Tunnel connection failed`），模型根本拉不下来，而**没人试过镜像** —— 所以不是"没装包"，是**少一个 `HF_ENDPOINT`**。实测四源：PyPI ✅ / PyTorch CPU 源 ✅ / **huggingface.co ❌502** / **hf-mirror.com ✅**。
+  - 配方（三步缺一不可）：①`pip install torch --index-url https://download.pytorch.org/whl/cpu`（**不能直接 `pip install torch`** —— PyPI 默认是 2.5GB CUDA 构建）+ `pip install sentence-transformers`（本机 `torch 2.14.0+cpu` / `sentence-transformers 6.1.0`）②`.env` 设 `HF_ENDPOINT=https://hf-mirror.com` ③**重建索引** `POST /api/paper/index {"force_rebuild": true}`（旧向量按 `model_name` 隔离，不会自动失效）。
+  - **判据**：`GET /api/paper/stats` 的 `model_name` 必须是 `sentence-transformers/all-MiniLM-L6-v2`；若是 `hash-384` 说明又静默退化了（不报错，只是检索变差）。
+  - 收益（同一组问题复测）：**top-1 正确论文 2/4 → 4/4**；DPO 问题从"4/5 命中 DeepSeekMath"变为"4/5 命中 DPO 论文"；GRPO 从"5/5 命中 PPO"变为"4/5 命中 DeepSeekMath"；分数从挤成一坨（0.21–0.46）变得有区分度（0.54–0.74）。已清残留 `hash-384` 旧向量。
+  - **"换料"只解决"没内容"，"换嵌入"才解决"检索不准" —— 两件事必须都做。**
+- ✅ **RAG 双硬伤均已于 09-23 修复**：①`HashEmbedder` 伪嵌入 → 换真语义嵌入（见上）；②`answer_node` 规则拼接 → **LLM 优先、规则兜底**（`_compose_with_llm`，沿用 `research:_match_with_llm` 同款契约"失败返回 None 由调用方降级"）。`KnowledgeAnswer`/`AskResponse` **追加** `answer_mode`（llm/rule）——**MockClient 必须触发回落**（Mock 模板绝不能冒充知识库答案）。
+- 🔴 **置信度判据曾有个恒真条件（09-23 修复）**：原为 `if top_score >= 0.35 or len(chunks) >= 3` —— **检索总是返回 top_k 条**（默认 5），故 `len(chunks)>=3` **恒真 → 永远 high**（实测语料外问题"React 内存泄漏"也报 high）。重新标定（`.workbuddy/tmp/calibrate_confidence.py`）：相关 top 0.582–0.745 / 无关 0.215–0.399，间隙 0.183 → **`high≥0.50`、`medium≥0.35`，删掉命中数条件**。⚠️ **阈值与嵌入模型绑定，换嵌入模型必须重标**。
+- ⚠️ **知识库问答延迟实测**：单问 9.6s / 12.5s，最长 **57.6s**（答案长时）→ **别放进"点击即需响应"的链路**。
+- **另一个已修的真 bug（09-23）**：`chunker.py` 分节器两处正则口径不一致 —— `_SECTION_PATTERNS` 允许**无点编号**但剥编号的 `^[\dIVXLC]+\.\s*` **要求必须有点** → 学术 PDF 常态的 `1 Introduction` 剥不掉编号 → normalize 成 unknown → 被丢弃 → **整篇只剩 `Abstract`，范围延到文末，N 块全标 abstract**（DPO 论文 147 块中 146 块），也解释摘要 `method` 恒空。修复用 `^(?:\d+|[IVXLC]+)\.?\s+`（**`\s+` 兜底是关键**：用 `\.?` 会让 `Introduction` 的 I、`Conclusion` 的 C〔C=罗马 100〕被吃掉）。护栏 `tests/test_chunker_sections.py` 12 例。
+- **`pypdf` 曾缺失**：`parser.py` 硬依赖它却不在 `requirements.txt` → PDF 通路一直是坏的（降级返回空文本）。09-23 已装 6.19.0 + 补进 requirements.txt。
+- **PDF 语料的质量限制**（换料后实测）：①章节标签偏粗（只识别顶层标题，小节内容继承上一顶层章节，如 QLoRA 内容被标 introduction）②双栏抽取有噪声（连字 `eﬃency`、跨行拆字 `harm\nony`）③summarizer `method` 字段 8/10 篇为空。可选绕法：改用 arXiv HTML（parser 支持 .md/.txt）。
+- **`learning_logs` 就是缺失的"内容位"**：表字段 `content`(Text 必填，含反思)/`duration_minutes`/`artifact_url`（模型注释："Reviewer 据此加分，未来作为 Portfolio 能力证据"）。API 已挂载但**无前端**；库里 14 条全是重复演示数据（"ROS2 publisher 节点" + `commit/test`）。
+- **两个孤岛缺一座桥**：今天学什么(plan_days，有 UI) → 今天学到什么(learning_logs，**无 UI**) → 卡住问(paper/ask，**无 UI**；语料已真但检索不够准) → 谁来评(reviewer，有 UI) → 证据(artifact_url→Portfolio)。**下一阶段的活 = 连通这条链，不是再建模块。**
+- 今日页**已**渲染 `验收标准`/`学习目标`/`面试题主题`/`指定资源`（数据来自 `PlanDayOut`，30/30 天都有）；但「指定资源」只渲染名字**无 URL**（"不知道去哪搜集"的直接原因）。
+
+## LLM 接入层现状（09-23 实测并**已启用小米 MiMo**，🔴 最高杠杆的一条）
+
+- **`backend/app/llm/` 已完整实现**（client/factory/providers/models，约 430 行）：`get_llm()` 工厂 + 单例缓存 + **失败静默 fallback 到 MockClient**；provider 五选一 `mock`/`ollama`/`deepseek`/**`xiaomi`**/`openai_compatible`；接口 `llm.chat([ChatMessage(...)])` 与 `llm.chat_json(msgs, output_schema)`。`openai>=1.0.0` 已装。
+- **✅ 09-23 小米 MiMo 已接入并启用**：`config.py` 新增 `xiaomi_api_key`/`xiaomi_base_url`(默认 `https://token-plan-cn.xiaomimimo.com/v1`)/`xiaomi_model`；`factory.py` 新增 `xiaomi` 分支（含模型名校验、cache key 纳入模型）；`.env` 已设 `LLM_PROVIDER=xiaomi` + 用户填的 key。**小米另有 Anthropic 兼容端点 `.../anthropic`，但本层只实现 openai 协议 → 暂不可用**（要用需另加客户端）。
+- **实测可用模型 8 个**：mimo-v2.5 / mimo-v2.5-asr / mimo-v2.5-pro / mimo-v2.5-tts / mimo-v2.5-tts-voiceclone / mimo-v2.5-tts-voicedesign / **mimo-v2.6-flash**（当前选用）/ **mimo-v2.6-pro**（重推理用）。`XIAOMI_MODEL` 可切换（改一行 + 重启）。
+- **7 个调用点已接线且都有规则兜底**：career、planner(llm_generator)、research、reviewer、supervisor、practice×2、github analyzer。"LLM 是增强不是依赖"。
+- 🔴 **验收必须断言 `llm.model_name == "mimo-v2.6-flash"`**（或对应模型名）：fallback 只 `warnings.warn`，key 错/欠费/网络问题都**静默退回模板**。复核脚本 `.workbuddy/tmp/verify_xiaomi.py`。
+- **实测延迟：单次 chat 5-10 秒** → **不要让 LLM 进"点击即需响应"的主链路**（生成任务/仪表盘）。
+- 🔴 **"接通"≠"生效"（09-23 调用计数取证）**：`supervisor` ✅ 真调；`research` ⚠️ 编排链路喂硬编码 `topic="ACT"` → 命中预设模板 → 0 次；**`planner` ❌ 不可达**（`generator` 默认 `"rule"`，显式传 `"llm"` 才走）；`career`/`reviewer`/`practice` ✅ LLM 优先。取证脚本 `.workbuddy/tmp/probe_llm_usage.py`。
+- **`agents/knowledge/nodes.py` 零 `get_llm` 命中** —— 知识库 `answer_node` 没接 LLM（注释自述"Week 2+ 接 LLM 后替换，签名不变"=Y6 前半段）。
+- **多 agent 体系已存在**（`agents/` 12 包）：`AgentRegistry`+`registry_setup.py`、`supervisor`（analyze_intent→select_agents→create_plan）、`orchestrator`（OrchestratorExecutor+AgentWorkflow，`POST /api/agent/run`）——**本身就是个小 harness**。
+- 🔴 **不接 DeepSeek Harness（dsh）作为 runtime**：它是 Node 独立应用（`npx @deepseek-ai/dsh web` → Web UI :3080）、"Everything is a Plugin"(Cordis)、developer preview 且警告破坏性变更、无对外集成 API。理由：①形态不匹配 ②收益重复 ③**与"口径同源"纪律冲突**。**分野：招投标要召回率（harness 灵活性=资产）；Career OS 要口径可信（=负债）。**
 
 ## 数据与缺陷
 - 单一源：skill_profile.py + target_roles.py + plan_30d.py（seq 不绑日历）；**skill_graph.py 的 SKILL_EDGES（52 边）是依赖图单一真源**（投影进 skill_dependency 表，禁止反向从表推）；**transition_context.py 是答辩日/导师窗口/在职事实单一真源**（core/risk.py 也用它）。
@@ -54,12 +95,28 @@
   - **X4** 🔴 **六维匹配引擎奖励数据缺失（09-22 晚实测发现，未修，待用户裁决）**：`agents/phd/agent.py:_timeline_score` 对 `deadline is None` 返回 **70**，而"已过期"只给 **20** → **越不录截止日，排名越靠前**。实测对照：北邮（录了、已过期）timeline=20，王恒（未录）timeline=70。建议修法 `None → 50` + 输出 gap"截止日未录入"。**另一发现：六维中 geo/publication/in_service 三维在同池候选里近乎恒定（全北京、全 none），0.40 权重是常量 → 实际只有 direction_fit(0.30)+tier(0.15) 在排序**。
   - **X5** 色值债务的真实结构：180 处里只有 95 处有对应令牌；剩 85 处是项目**从未定义**的 Tailwind 原色（`#3b82f6`/`#ef4444`/`#22c55e`/`#6b7280`/`#e5e7eb` 等）→ 属"设计系统扩容"而非"清偿债务"，**不可派低端模型硬替换**（会诱导自造令牌）
   - **D3** `is_verified` 全库 0（需用户闭卷答题，非代码可修）
+- 🔴 **Y 系列（09-23 v4 实测新增，聚焦"学习闭环缺失"；Y2/Y3/Y6 是重点）**：
+  - **Y1** ✅ **已于 09-23 完成**：学习日志表单接进今日施工单（`LearningLogCard` 插在四件套之后，`TodayBoard` 加可选 `learningLogs` prop，`today/page.tsx` 第 5 路并行取数 `.catch(()=>[])`）。四件套只记"勾没勾"、日志记"做了什么" —— **记录系统 → 成长系统的分界就是"存状态 vs 存实质"**。
+  - **Y2** ✅ **已于 09-23 完成**：建了 `/knowledge` 页（`services/knowledgeService.ts` + `components/KnowledgeBoard.tsx` + `app/knowledge/page.tsx`），并加入 `GlobalNav.LEARN_ROUTES` 与 **`SectionNav` 学习区二级导航**（⚠️ **后者才是真正能点到的入口**，只改前者新页只能靠 URL 访问）。两个「降级可见」设计：嵌入模型含 `hash` 时页面顶部告警；`answerMode=rule` 时标注「片段兜底（LLM 不可用）」。
+  - **Y3** ✅ **已于 09-23 完成**（原：语料是假的 98→3）→ 已换 10 篇真 Post-Training 论文（见上）
+  - **Y4** ✅ 同批完成：`learningLogService`（list/create/isToday）。🔴 **naive UTC 陷阱**：后端 `created_at` 是 `"2026-09-10T07:07:20.815959"`（**无时区后缀**，因 `datetime.utcnow()`）；JS `new Date()` 会当**本地时间**解析 → 上海**差 8 小时** → **凌晨日志会被算到前一天、在"今日"里消失**。修法：service 层 `normalizeUtc()` 补 `Z`；"今天"用**本地日历日**比（不是 ISO 串前缀比较）。
+  - **Y5** ✅ **已于 09-23 完成**：新建 `components/ResourceList.tsx`（映射表 3 条 + **arXiv 编号自动链接**，后者让未来加论文无需改前端），TodayBoard 15 行渲染块 → 1 行；**hint 硬编码"这 5 类"改为"均来自资源锁，不得自选"**（去掉数字，不是改成 8）。⚠️ 实测 `docs.vllm.ai`/`arxiv.org` 可达，但 **huggingface.co 两条 502**（本机代理）→ 保留官方 URL 不找替身（`github.com/huggingface/llm-course` **是空壳仓**，换过去比不可点更差）。
+  - **Y6** ✅ **已于 09-23 全部完成**：前半段 HashEmbedder → ST 真语义嵌入（top-1 命中 2/4→4/4）；后半段 `answer_node` 接 LLM（`answer_mode=llm`，成句回答 + 引用，防臆造生效）
+  - **Y7** 🟡 `learning_logs` 14 条重复演示数据 → 清理（先备份）
+  - **Y8** 🟡 讲义覆盖 3/30（`docs/带你学-00/01/02` 应用内 grep 0 引用）→ 用户的活
+  - v4 任务包 A/B/C 已写好可直接下发（A=学习日志表单、B=/knowledge 页、C=资源链接化），D=RAG 升级需先裁决
+- 🔴 **Y9/Y10（09-23 接入小米后实测新增，属"接通≠生效"类）**：
+  - **Y9** `/api/agent/run` 的 `orchestrator/workflow.py:_resolve_input` 是**硬编码占位输入**（`research.topic="ACT"`、`planner.skills=[{Isaac}]`、`career.target_role="Robot AI Engineer"`、reviewer 固定日志）→ **`user_input` 只影响 supervisor 的意图路由，不传给子 agent**。该端点=冒烟级；Dashboard「Agent Activity」展示的正是这些占位运行（`agent_runs=17`）。原文注释自述"Day 5 默认输入仅保证 Agent 不报错"。
+  - **Y10** `LLMGenerator`（planner 的 LLM 生成器）**死代码**：`generator` 三处默认全 `"rule"`（`orchestrator` 不设 / `api/planner.py:76` 默认 / 前端 `plannerService.ts` 从不传 → 全前端 grep generator 零命中）。显式传 `"llm"` 才可达。
 - 历史执行记录（E1-E7 口径修复、题库去 KPI 化 `4a3982f`、小测验接通 D4 等）详见 docs/口径与题库问题清单-2026-09-22.md 与 docs/项目梳理与迭代指导-2026-09-22.md §四。
 
 ## 文档索引
 - 全量梳理+任务包：docs/项目梳理与迭代指导-2026-09-21.md（v1，含 6 个四元组任务包）
 - 09-22 梳理 v2 + 四裁决执行结果：docs/项目梳理与迭代指导-2026-09-22.md
-- **⭐ 09-22 梳理 v3（最新，实测快照 + 剩余工作派发包）**：docs/项目梳理与迭代指导-2026-09-22-v3.md —— 定位：v2.1 四块收口后，边际价值转向「真数据 / 技术债 / 协作卫生」三条腿；含 D5-D8+X1-X3 全清单、P0-P3 路线、3 个可直接下发的四元组任务包、防坑清单 11-13 条
+- **⭐ 09-23 下一步工作指导（小米接入验证后）**：docs/下一步工作指导-2026-09-23.md —— LLM 已真正接通（8 模型 / chat 10.65s / 384 测试全绿 / 开发库未写）+ "接通≠生效"三处发现（Y9/Y10）+ 测试事故与 conftest 修复 + P0-P2 工作规划 + 三个必须注意（延迟/口径会变/静默降级）
+- **⭐ 09-23 深度分析（DeepSeek/Harness/知识库三条路线）**：docs/深度分析-DeepSeek接入与知识库可行性-2026-09-23.md —— 结论：①DeepSeek 当 LLM 已就绪只差 key（2 行 .env，P0 立刻做）②不接 dsh 当 runtime ③知识库先换料再接线
+- **⭐⭐ 09-23 梳理 v4（最新，回应"输入少/内容不足"两条产品判断）**：docs/项目梳理与迭代指导-2026-09-23-v4.md —— 定位：**不是缺功能，是缺通路**。含 4 个可测量命题的实测判定（64 写端点 / `day_artifacts=0` / 98→3 语料 / 知识库已存在）、Y1-Y8 缺陷清单、P0-P3 路线、4 个四元组任务包、防坑清单 14-16 条
+- **⭐ 09-22 梳理 v3（实测快照 + 剩余工作派发包）**：docs/项目梳理与迭代指导-2026-09-22-v3.md —— 定位：v2.1 四块收口后，边际价值转向「真数据 / 技术债 / 协作卫生」三条腿；含 D5-D8+X1-X5 全清单、P0-P3 路线、3 个可直接下发的四元组任务包、防坑清单 11-13 条
 - 背景与能力结构：docs/候选人背景分析-2026-09-17.md；产品诊断：docs/产品设计诊断-2026-09-17.md
 - v2.1 四件套：docs/CAREER_OS_V2_{INCREMENTAL_PRD,ARCHITECTURE,AGENT_SPEC,DEVELOPMENT_PLAN}.md
 - 模式 PRD：docs/PRD_CAREER_OS_MODES.md；实施约束：docs/CODEBUDDY_IMPLEMENTATION_CONSTRAINTS.md / CODEX_MODULAR_DESIGN_STANDARD.md / CODEX_READABILITY_STANDARD.md
