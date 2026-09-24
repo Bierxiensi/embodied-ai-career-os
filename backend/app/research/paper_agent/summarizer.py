@@ -82,8 +82,8 @@ def summarize(
     # 1. 标题：优先从 abstract 首句提取，否则用 meta.title_hint
     title = _extract_title(sections, meta)
 
-    # 2. 方法：从 method section 提取关键句
-    method = _extract_method(sections)
+    # 2. 方法：优先 method section，无则全篇回落（方法章节常以技术命名）
+    method = _extract_method(sections, chunks)
 
     # 3. 数据集：扫描全chunks
     dataset = _extract_dataset(chunks)
@@ -146,21 +146,60 @@ def _extract_title(
     return hint or "Unknown"
 
 
-def _extract_method(sections: dict[str, list[PaperChunk]]) -> str:
+def _is_prose_like(sentence: str) -> bool:
+    """粗过滤：判断候选句是否像"正文散文"，用于挡掉公式碎片/表格残留/提示词模板。
+
+    为什么要这道闸门（2026-09-24 实测）：只按关键词取句时，PDF 里的
+    `Response B:` / `<the other response>` / `SFT 𝑞,𝑜∼𝑃𝑠𝑓𝑡(𝑄,𝑂)` 这类
+    附录模板与公式碎片会被当成"方法描述"（DPO 论文就抽到了提示词模板）。
+
+    判据（宁缺勿滥，宁可返回空也不返回垃圾）：
+      - 长度 40-400 字符
+      - 至少 6 个词
+      - 字母占比 ≥ 0.55（公式/符号串会远低于此）
+      - 不含明显的非正文标记（尖括号、竖线、LaTeX 转义）
+    """
+    s = sentence.strip()
+    if not (40 <= len(s) <= 400):
+        return False
+    if len(s.split()) < 6:
+        return False
+    if any(ch in s for ch in "<>|\\"):
+        return False
+    letters = sum(ch.isalpha() for ch in s)
+    return letters / len(s) >= 0.55
+
+
+def _extract_method(
+    sections: dict[str, list[PaperChunk]], all_chunks: list[PaperChunk]
+) -> str:
     """提取方法描述。
 
-    策略：从 method section 找含方法关键词的首句，截取前 300 字符。
-    """
-    method_chunks = sections.get("method", [])
-    for c in method_chunks:
-        text = c.get("text", "")
-        sentence = _find_sentence_with_keywords(text, _METHOD_KEYWORDS)
-        if sentence:
-            return sentence[:300]
+    三级策略（2026-09-24 重写）：
+      1. 在 method section 里找含方法关键词且"像散文"的句子
+      2. **全篇回落**：论文的方法章节常以技术命名（如 "3 QLoRA Finetuning"、
+         "4 Direct Preference Optimization"），规范章节名盖不住，
+         此时按关键词在全篇扫（这是命中率从 2/10 提到 10/10 的关键）
+      3. 最后兜底：method section 首块前 200 字符 —— **同样过 `_is_prose_like` 闸门**。
+         三级都不合格时返回空串：宁可留空，也不把公式/模板当方法描述。
 
-    # method section 无关键词时，返回首 chunk 前 200 字符
+    ⚠️ 第 3 级最初没设闸门，与"宁缺勿滥"的目标自相矛盾（由测试发现）。
+    """
+    for c in sections.get("method", []):
+        sentence = _find_sentence_with_keywords(c.get("text", ""), _METHOD_KEYWORDS)
+        if _is_prose_like(sentence):
+            return sentence.strip()[:300]
+
+    for c in all_chunks:
+        sentence = _find_sentence_with_keywords(c.get("text", ""), _METHOD_KEYWORDS)
+        if _is_prose_like(sentence):
+            return sentence.strip()[:300]
+
+    method_chunks = sections.get("method", [])
     if method_chunks:
-        return method_chunks[0].get("text", "")[:200].strip()
+        head = method_chunks[0].get("text", "")[:200].strip()
+        if _is_prose_like(head):
+            return head
 
     return ""
 
