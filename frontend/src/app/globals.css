@@ -276,6 +276,8 @@
 
 body {
   background: var(--surface-canvas);
+  /* 窄屏防护：Sidebar 固定宽度 + flex 布局可能触发横向滚动 */
+  overflow-x: hidden;
   color: var(--text-primary);
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
