@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import ModeSwitcher from "@/components/ModeSwitcher";
+import ThemeSwitcher from "@/theme/ThemeSwitcher";
 import { useCareerMode } from "@/lib/careerModeContext";
 
 /** 求职模式下的二级路由（用于 isActive 前缀匹配）。 */
@@ -87,6 +88,7 @@ export default function GlobalNav() {
 
       {/* Right cluster: 当前阶段 + Search + Avatar */}
       <div className="flex items-center" style={{ gap: 18 }}>
+        <ThemeSwitcher />
         <ModeSwitcher />
         <div style={{ width: 16, height: 16 }}>
           <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
