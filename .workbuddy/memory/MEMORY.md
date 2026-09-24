@@ -33,7 +33,7 @@
 
 ## 环境 / 门禁
 - 后端启动（后台）：`backend/.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000`；SQLite backend/data/app.db。
-- pytest：chdir backend + venv python；**基线（09-23）= 411 passed / 0 failed / 2 skipped**（374 → 377 → 384〔+`test_llm_factory_providers.py` 7 例〕→ 396〔+`test_chunker_sections.py` 12 例〕→ 411〔+`test_knowledge_answer_llm.py` 15 例〕）。最稳姿势 `.workbuddy/tmp/run_pytest.py [目标...]`（顺带核对开发库指纹）。
+- pytest：chdir backend + venv python；**基线（09-24）= 437 passed / 0 failed / 2 skipped**（374 → 377 → 384 → 396 → 411 → 437〔+`test_chunker_sections.py` 12→26 例、+`test_summarizer_method.py` 12 例〕）。最稳姿势 `.workbuddy/tmp/run_pytest.py [目标...]`（顺带核对开发库指纹）。
   - ⚠️ **直接调 ORM/图脚本必须 cwd=backend**：`database_url` 是**相对路径** `sqlite:///./data/app.db`，在仓库根跑会 `unable to open database file`。
   - ⚠️ 全量跑会把 `%TEMP%\pytest-of-*` 的 garbage 累积到 >50 项，触发 safe-delete 护栏使 **pytest exit=1（进度全是点、无 F，纯误报）**；加 `--basetemp=../.workbuddy/tmp/pytest-base` 把临时根挪进工作区即恢复 exit=0。
 - 写后端测试两手法：①干净库用 contextmanager 覆盖 get_db 指**临时文件库**（**别用内存库**，TestClient 线程池连接不共享）；②共享隔离库只做增量断言+自清理。
@@ -61,7 +61,12 @@
 - ⚠️ **知识库问答延迟实测**：单问 9.6s / 12.5s，最长 **57.6s**（答案长时）→ **别放进"点击即需响应"的链路**。
 - **另一个已修的真 bug（09-23）**：`chunker.py` 分节器两处正则口径不一致 —— `_SECTION_PATTERNS` 允许**无点编号**但剥编号的 `^[\dIVXLC]+\.\s*` **要求必须有点** → 学术 PDF 常态的 `1 Introduction` 剥不掉编号 → normalize 成 unknown → 被丢弃 → **整篇只剩 `Abstract`，范围延到文末，N 块全标 abstract**（DPO 论文 147 块中 146 块），也解释摘要 `method` 恒空。修复用 `^(?:\d+|[IVXLC]+)\.?\s+`（**`\s+` 兜底是关键**：用 `\.?` 会让 `Introduction` 的 I、`Conclusion` 的 C〔C=罗马 100〕被吃掉）。护栏 `tests/test_chunker_sections.py` 12 例。
 - **`pypdf` 曾缺失**：`parser.py` 硬依赖它却不在 `requirements.txt` → PDF 通路一直是坏的（降级返回空文本）。09-23 已装 6.19.0 + 补进 requirements.txt。
-- **PDF 语料的质量限制**（换料后实测）：①章节标签偏粗（只识别顶层标题，小节内容继承上一顶层章节，如 QLoRA 内容被标 introduction）②双栏抽取有噪声（连字 `eﬃency`、跨行拆字 `harm\nony`）③summarizer `method` 字段 8/10 篇为空。可选绕法：改用 arXiv HTML（parser 支持 .md/.txt）。
+- ✅ **PDF 语料质量已于 09-24 修复两项**（原三条限制）：
+  - ①章节标签 ✅ **已修**：根因是 **PDF 把 LaTeX 小体大写拆开了** —— `\textsc{}` 标题抽取后首字母与其余字母间多空格（`1 Introduction` → `1 I NTRODUCTION`、`4 Our Method` → `4 O UR METHOD`），导致词面匹配全落空、整篇只剩 `ABSTRACT` 一个 section 吞掉全文（LoRA 的 abstract 段曾占 **28531 字符**）。修法：标题**压平**（去空格标点小写）后与规范名做子串比对（`ourmethod` 含 `method`）。另加"子节继承父标签"与"未识别顶层标 `unknown`（**不沿用上一节**，宁可诚实）"。效果：全库 abstract 196→26、experiment 105→484；`section` 过滤从不可用变可用。
+  - ③`summarizer.method` ✅ **已修**：填充率 **2/10 → 10/10**。三级策略：method section 命中 → **全篇回落**（方法章节常以技术命名如 `3 QLoRA Finetuning`，任何词表盖不住）→ 末级兜底；三级**都过 `_is_prose_like` 闸门**（长度/词数/字母占比/非正文标记），挡掉附录模板与公式碎片。剩余小瑕疵：3 篇句子不理想（附录授权句/半句/从句中开始）。
+  - ②**双栏抽取噪声仍在**（连字 `eﬃency`、跨行拆字 `harm\nony`）→ 可选绕法：改用 arXiv HTML（parser 支持 `.md/.txt`）。
+- ⚠️ **改分节/summarizer 后必须重建语料**（库里存量标签是旧的）：`cd backend && python scripts/rebuild_paper_corpus.py --yes`（自动备份 + 清三表 + 重灌，实测 172s）。
+- 🔴 **诊断工具本身会撒谎**（09-24 教训）：第一版诊断正则只捕一个 `\S`，把 `1 Introduction` 显示成 `1 I`，看起来像数据损坏 → 险些按错误结论动手。**诊断输出被截断时，先怀疑诊断本身，打印完整行。**
 - **`learning_logs` 就是缺失的"内容位"**：表字段 `content`(Text 必填，含反思)/`duration_minutes`/`artifact_url`（模型注释："Reviewer 据此加分，未来作为 Portfolio 能力证据"）。API 已挂载但**无前端**；库里 14 条全是重复演示数据（"ROS2 publisher 节点" + `commit/test`）。
 - **两个孤岛缺一座桥**：今天学什么(plan_days，有 UI) → 今天学到什么(learning_logs，**无 UI**) → 卡住问(paper/ask，**无 UI**；语料已真但检索不够准) → 谁来评(reviewer，有 UI) → 证据(artifact_url→Portfolio)。**下一阶段的活 = 连通这条链，不是再建模块。**
 - 今日页**已**渲染 `验收标准`/`学习目标`/`面试题主题`/`指定资源`（数据来自 `PlanDayOut`，30/30 天都有）；但「指定资源」只渲染名字**无 URL**（"不知道去哪搜集"的直接原因）。
