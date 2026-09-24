@@ -25,7 +25,6 @@ const SECTIONS: Section[] = [
       { href: "/jobs/applications", label: "投递管理" },
       { href: "/resume", label: "简历" },
       { href: "/interview", label: "面试" },
-      { href: "/reports", label: "报告" },
     ],
   },
   {
