@@ -127,7 +127,13 @@ class SentenceTransformerEmbedder(Embedder):
     def dim(self) -> int:
         # all-MiniLM-L6-v2 为 384 维；其他模型首次 embed 后从模型获取
         if self._model is not None:
-            return self._model.get_sentence_embedding_dimension()
+            # ST 6.x 把 get_sentence_embedding_dimension 改名为 get_embedding_dimension，
+            # 旧名仍在但会发 FutureWarning 且未来会移除。这里优先新名、回落旧名，
+            # 以兼容 requirements 里 ^3.0 的旧版本。
+            getter = getattr(self._model, "get_embedding_dimension", None)
+            if getter is None:
+                getter = self._model.get_sentence_embedding_dimension
+            return getter()
         return 384
 
     @property

@@ -44,9 +44,9 @@ class Settings:
     database_url: str = "sqlite:///./data/app.db"
 
     # ---------- LLM Provider ----------
-    # 支持：mock / ollama / deepseek / openai_compatible
+    # 支持：mock / ollama / deepseek / xiaomi / openai_compatible
     llm_provider: str = "mock"
-    # API Key（deepseek / openai_compatible 需要）
+    # API Key（deepseek / xiaomi / openai_compatible 需要）
     llm_api_key: str = ""
     # 自定义 API Base URL（openai_compatible 需要）
     llm_base_url: str = ""
@@ -56,6 +56,14 @@ class Settings:
     ollama_base_url: str = "http://localhost:11434/v1"
     # Ollama 模型名
     ollama_model: str = "qwen2.5:7b"
+
+    # ---------- LLM Provider：小米 MiMo（专属 Base URL） ----------
+    # 小米 MiMo 提供 OpenAI 兼容端点；Anthropic 兼容端点见 .env 注释（当前未实现对应客户端）。
+    xiaomi_api_key: str = ""
+    xiaomi_base_url: str = "https://token-plan-cn.xiaomimimo.com/v1"
+    # ⚠️ 模型名必须按小米控制台实际提供的代号填写；留空则回退 LLM_MODEL，
+    #    两者都空时工厂会明确报错（不猜默认值）。
+    xiaomi_model: str = ""
 
     # ---------- Reminder ----------
     reminder_channel: str = "terminal"        # serverchan | pushplus | email | terminal
@@ -99,6 +107,12 @@ class Settings:
             llm_model=os.getenv("LLM_MODEL", ""),
             ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
             ollama_model=os.getenv("OLLAMA_MODEL", "qwen2.5:7b"),
+            # 小米 MiMo：key 优先读 XIAOMI_API_KEY，未设时回退通用 LLM_API_KEY
+            xiaomi_api_key=os.getenv("XIAOMI_API_KEY", "") or os.getenv("LLM_API_KEY", ""),
+            xiaomi_base_url=os.getenv(
+                "XIAOMI_BASE_URL", "https://token-plan-cn.xiaomimimo.com/v1"
+            ),
+            xiaomi_model=os.getenv("XIAOMI_MODEL", ""),
             reminder_channel=os.getenv("REMINDER_CHANNEL", "terminal"),
             reminder_channel_key=os.getenv("REMINDER_CHANNEL_KEY", ""),
             reminder_morning_time=os.getenv("REMINDER_MORNING_TIME", "08:30"),

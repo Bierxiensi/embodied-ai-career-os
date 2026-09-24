@@ -319,6 +319,9 @@ class AskResponse(BaseModel):
     confidence: str
     model_name: str
     hit_count: int
+    # 追加字段（不改名不删字段）：标注答案是 LLM 生成的还是规则拼接兜底的。
+    # 用于区分"真回答"与"检索片段堆叠"，避免降级了却看不出来。
+    answer_mode: str = "rule"
 
 
 @router.post("/ask")
@@ -353,6 +356,7 @@ def ask_paper(
         confidence=answer.get("confidence", "low"),
         model_name=answer.get("model_name", ""),
         hit_count=answer.get("hit_count", 0),
+        answer_mode=answer.get("answer_mode", "rule"),
     ))
 
 

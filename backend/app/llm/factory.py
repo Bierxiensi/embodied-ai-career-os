@@ -24,6 +24,7 @@ def get_llm() -> LLMClient:
     - mock（默认）：零依赖模板返回
     - ollama：本地模型（qwen2.5:7b）
     - deepseek：DeepSeek API（OpenAI Compatible）
+    - xiaomi：小米 MiMo（OpenAI Compatible，专属 Base URL）
     - openai_compatible：通用 OpenAI Compatible API（Qwen/Kimi 等）
 
     远程 API 不可用时打 warning 并 fallback 到 MockClient。
@@ -62,6 +63,8 @@ def _cache_key(provider: str) -> str:
     """生成缓存 key。不同 provider + 不同 model 需区分缓存。"""
     if provider == "ollama":
         return f"ollama:{settings.ollama_model}"
+    if provider == "xiaomi":
+        return f"xiaomi:{settings.xiaomi_model or settings.llm_model}"
     if provider in ("deepseek", "openai_compatible"):
         return f"{provider}:{settings.llm_model}"
     return provider
@@ -96,6 +99,25 @@ def _try_build(provider: str) -> LLMClient:
         config.model = config.model or "deepseek-chat"
         return OpenAICompatibleClient(config)
 
+    if provider == "xiaomi":
+        # 小米 MiMo：OpenAI 兼容端点（专属 Base URL 已内置默认值）
+        # ⚠️ key 来自 settings.xiaomi_api_key（其内部已含 LLM_API_KEY 回退），
+        #    必须显式写回 config —— 顶部构造 LLMConfig 时填的是通用 llm_api_key。
+        config.api_key = settings.xiaomi_api_key or config.api_key
+        if not config.api_key:
+            raise ValueError(
+                "小米 MiMo 需要设置 XIAOMI_API_KEY 环境变量（或通用 LLM_API_KEY）"
+            )
+        model = settings.xiaomi_model or settings.llm_model
+        if not model:
+            raise ValueError(
+                "小米 MiMo 需要设置 XIAOMI_MODEL 环境变量（填入小米控制台提供的模型代号）。"
+                "两者皆可：配置好 key 后执行 GET {base_url}/models 可列出可用模型。"
+            )
+        config.base_url = settings.xiaomi_base_url or config.base_url
+        config.model = model
+        return OpenAICompatibleClient(config)
+
     if provider == "openai_compatible":
         if not config.api_key:
             raise ValueError("openai_compatible 需要设置 LLM_API_KEY 环境变量")
@@ -105,5 +127,6 @@ def _try_build(provider: str) -> LLMClient:
 
     # 未知 provider → raise，由 get_llm fallback MockClient（不缓存）
     raise ValueError(
-        f"未知 LLM_PROVIDER '{provider}'。支持：mock / ollama / deepseek / openai_compatible"
+        f"未知 LLM_PROVIDER '{provider}'。"
+        f"支持：mock / ollama / deepseek / xiaomi / openai_compatible"
     )

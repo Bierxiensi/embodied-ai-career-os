@@ -51,13 +51,14 @@ class Citation(TypedDict, total=False):
 class KnowledgeAnswer(TypedDict, total=False):
     """结构化答案（answer_node 产出）。
 
-    Day 3 用规则组答（基于检索 chunks 拼接），
-    Week 2+ 接 LLM 后此结构不变，仅替换 answer 生成逻辑。
+    2026-09-23 起：answer 由 **LLM 优先、规则兜底** 两路生成，结构不变，
+    另加 `answer_mode` 标注实际走的哪条路，避免"降级了但看不出来"。
     """
 
     question: str          # 原问题
     answer: str            # 答案正文
     citations: list[Citation]  # 引用列表（可追溯）
-    confidence: str        # high / medium / low
+    confidence: str        # high / medium / low（恒基于检索质量）
     model_name: str        # 嵌入模型（标识检索来源）
     hit_count: int         # 命中 chunk 数
+    answer_mode: str       # llm（成句回答）/ rule（片段拼接兜底）

@@ -47,6 +47,22 @@ _TMP_ROOT = Path(tempfile.mkdtemp(prefix="career-os-tests-"))
 _TEST_DB = _TMP_ROOT / "test.db"
 os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB.as_posix()}"
 
+# ── LLM 隔离：钉死为 mock，禁止测试依赖开发者本地 .env 的 LLM_PROVIDER ──────────
+#
+# 背景（2026-09-23 实测事故）：`.env` 里把 LLM_PROVIDER 从 mock 换成真实 provider
+# （小米 MiMo）后，全量测试立刻出现 5 个失败：
+#   - tests/test_github_service.py::test_analyze_commit_mock / test_analyze_commit_empty_files
+#   - tests/test_quiz_api.py::test_start_degrades_to_open_when_llm_unavailable（名字就写着
+#     "llm_unavailable"，前提被打破）
+#   - tests/test_quiz_api.py 的另外两例（出题数量/聚合结果随真 LLM 而变）
+# 这些用例是按 **mock 语义**写的，一旦真的连上外部 LLM 就既不稳定（模型输出每次不同）、
+# 又昂贵（每次 ~5-10s）、还依赖网络与额度。
+#
+# 与上面 DATABASE_URL 同理：测试的输入必须完全由测试自己决定。
+# 需要验证真实 provider 装配的用例，请用 monkeypatch 改 settings（见
+# tests/test_llm_factory_providers.py），不要依赖环境变量。
+os.environ["LLM_PROVIDER"] = "mock"
+
 # 开发库绝对路径，供守卫断言比对
 _DEV_DB = (Path(__file__).resolve().parents[1] / "data" / "app.db").resolve()
 

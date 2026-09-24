@@ -11,6 +11,7 @@ Provider 选择（环境变量 LLM_PROVIDER）：
     - mock（默认）：零依赖模板返回
     - ollama：本地模型
     - deepseek：DeepSeek API
+    - xiaomi：小米 MiMo（专属 Base URL，OpenAI 兼容）
     - openai_compatible：通用 OpenAI 兼容 API
 """
 

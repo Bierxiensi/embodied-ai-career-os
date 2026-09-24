@@ -145,8 +145,18 @@ def _split_by_sections(text: str) -> list[tuple[str, str, int]]:
             raw_title = m.group(0).strip().strip(".").strip()
             # 剥离 Markdown # 前缀（## Abstract → Abstract）
             raw_title = re.sub(r"^#{1,6}\s*", "", raw_title)
-            # 去除前导数字/罗马数字编号（1. Introduction → Introduction）
-            raw_title = re.sub(r"^[\dIVXLC]+\.\s*", "", raw_title, flags=re.IGNORECASE)
+            # 去除前导编号（1 Introduction / 1. Introduction / II. METHOD → 去掉编号）
+            #
+            # 🔴 修复（2026-09-23）：原写法为 `^[\dIVXLC]+\.\s*`，**强制要求编号后必须有点**；
+            # 而上面的 _SECTION_PATTERNS 允许「数字 + 可选点 + 空白」（`\d+\.?\s*`），
+            # 于是 PDF 抽取出的无点编号标题（学术论文常态，如 "1 Introduction" / "6 Experiments"）
+            # 会被匹配到、却在这里剥不掉编号 → _normalize_section("1 introduction") 返回 unknown
+            # → 被下面的 `continue` 丢弃。后果：整篇 PDF 只剩无编号的 "Abstract" 一个 section，
+            # 其范围一直延伸到文末，滑窗切成 N 块全部标成 abstract（实测 DPO 论文 147 块中 146 块）。
+            # 正确写法：`\s+` 兜底，既接受 "1. Introduction" 也接受 "1 Introduction"。
+            # 用 `\s+` 而非 `\.?` 是有意的：否则 "Introduction" 开头的 "I"、"Conclusion" 开头的 "C"
+            # 会被 [IVXLC]+ 吃掉（C 是罗马数字 100），把标题本身截断。
+            raw_title = re.sub(r"^(?:\d+|[IVXLC]+)\.?\s+", "", raw_title)
             normalized = _normalize_section(raw_title)
             # 跳过无法标准化的标题（避免误切，保留原文本流）
             if normalized == "unknown":

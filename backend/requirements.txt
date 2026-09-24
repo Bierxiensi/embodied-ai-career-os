@@ -22,6 +22,30 @@ langchain-core>=0.2.0
 # Phase 2：定时任务调度
 apscheduler>=3.10
 
+# Phase 1 Day3：论文 RAG —— PDF 文本抽取（parser.py 硬依赖，缺失则 .pdf 解析降级为空文本）
+pypdf>=4.0
+
+# ============================================================
+# 可选但强烈建议：论文 RAG 的**真语义嵌入**
+# ============================================================
+# 缺失时 embedder 工厂会**静默退回 HashEmbedder**（哈希伪嵌入，无语义）——
+# 表现为「术语独特时检索准（LoRA/QLoRA 5/5），跨论文通用术语靠哈希碰撞串味
+# （问 DPO 会命中 DeepSeekMath）」。这不是报错，是最难发现的那类降级。
+#
+# ⚠️ 不要直接写进本文件的必装区：PyPI 的 torch 默认是 CUDA 构建（2.5GB+）。
+#    本机/无 GPU 环境请用 CPU 源单独装：
+#      pip install torch --index-url https://download.pytorch.org/whl/cpu
+#      pip install sentence-transformers
+#    （本机已装：torch 2.14.0+cpu / sentence-transformers）
+#
+# 🔴 还要设 HF_ENDPOINT：huggingface.co 在部分网络下 502（本机走代理即如此），
+#    必须走国内镜像，否则模型拉不下来 → 又退回 HashEmbedder。见 .env 的 HF_ENDPOINT。
+#
+# 换真嵌入后**必须重建索引**（旧向量按 model_name 隔离，不会自动失效）：
+#   POST /api/paper/index  {"force_rebuild": true}
+#
+# sentence-transformers>=3.0
+
 # 测试：pytest + FastAPI TestClient（tests/ 共 32 个测试文件）
 pytest>=8.0
 httpx>=0.27
