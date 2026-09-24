@@ -8,15 +8,13 @@ import ThemeSwitcher from "@/theme/ThemeSwitcher";
 import { useCareerMode } from "@/lib/careerModeContext";
 
 /** 求职模式下的二级路由（用于 isActive 前缀匹配）。 */
-const JOB_HUNT_ROUTES = ["/jobs", "/jd", "/resume", "/interview", "/reports"];
+const JOB_HUNT_ROUTES = ["/jobs", "/jd", "/resume", "/interview"];
 /** 学习模式下的二级路由。 */
 const LEARN_ROUTES = [
   "/plan",
   "/knowledge",
   "/projects",
   "/questions",
-  "/experiments",
-  "/evidence",
   "/agents",
 ];
 
