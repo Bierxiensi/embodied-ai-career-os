@@ -35,8 +35,6 @@ const SECTIONS: Section[] = [
       { href: "/knowledge", label: "知识库" },
       { href: "/projects", label: "项目" },
       { href: "/questions", label: "题库" },
-      { href: "/experiments", label: "实验" },
-      { href: "/evidence", label: "证据" },
       { href: "/agents", label: "Agent" },
     ],
   },
