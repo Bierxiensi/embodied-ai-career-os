@@ -9,3 +9,4 @@ export { default as Toggle } from "./Toggle";
 export { default as Tooltip } from "./Tooltip";
 export { default as Card } from "./Card";
 export { default as EmptyState } from "./EmptyState";
+export { default as Skeleton } from "./Skeleton";
