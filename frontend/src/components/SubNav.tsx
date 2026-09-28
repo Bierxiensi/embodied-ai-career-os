@@ -37,7 +37,7 @@ export default function SubNav({ skills, title = "概览" }: Props) {
         <span className="text-sm" style={{ color: "var(--text-muted)" }}>
           {dateStr}
         </span>
-        <GenerateTaskButton skills={skills} variant="pill" />
+        <GenerateTaskButton skills={skills} variant="pill" enableAiToggle />
       </div>
     </div>
   );
