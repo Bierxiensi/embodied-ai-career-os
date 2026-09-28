@@ -36,6 +36,8 @@ type Props = {
   /** 当前视角赛道 key（llm / vlm / ai-algo / embodied）。
    * 不传则后端回退「主攻」赛道。 */
   trackKey?: string | null;
+  /** 是否用 LLM 生成（默认 rule）。仅 variant="tile" 显示开关。 */
+  enableAiToggle?: boolean;
 };
 
 type State =
@@ -50,10 +52,12 @@ export default function GenerateTaskButton({
   availableMinutes = 45,
   targetRole,
   trackKey,
+  enableAiToggle = false,
 }: Props) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "idle" });
   const [showCard, setShowCard] = useState(false);
+  const [useAi, setUseAi] = useState(false);
 
   async function handleClick() {
     setState({ kind: "loading" });
@@ -74,6 +78,7 @@ export default function GenerateTaskButton({
         skills: skillInputs,
         energyLevel: "normal",
         persist: true,
+        generator: useAi ? "llm" : "rule",
       });
 
       setState({ kind: "done", result });
@@ -107,6 +112,16 @@ export default function GenerateTaskButton({
   if (variant === "tile") {
     return (
       <div className="flex flex-col" style={{ gap: 6, width: "calc(50% - 6px)" }}>
+        {enableAiToggle ? (
+          <label className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+            <input
+              type="checkbox"
+              checked={useAi}
+              onChange={(e) => setUseAi(e.target.checked)}
+            />
+            AI 生成（5-10 秒，文案不复现）
+          </label>
+        ) : null}
         <button
           type="button"
           onClick={handleClick}
@@ -139,6 +154,7 @@ export default function GenerateTaskButton({
           <span className="text-sm font-semibold text-white">{label}</span>
           <span className="text-xs" style={{ color: "#B8D4F0" }}>
             Planner Agent · 按当前视角规划
+            {useAi ? " · LLM" : " · 规则"}
           </span>
         </button>
         {state.kind === "error" && (

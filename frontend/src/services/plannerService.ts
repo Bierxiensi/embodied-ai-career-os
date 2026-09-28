@@ -42,12 +42,16 @@ export interface PlannerParams {
   energyLevel?: "low" | "normal" | "high";
   currentFocus?: string | null;
   persist?: boolean;
+  /** 任务生成器：rule（默认，毫秒级可复现）| llm（5-10s，AI 生成）。
+   * 2026-09-24 Y10：显式开关，不改后端默认。 */
+  generator?: "rule" | "llm";
 }
 
 /** 调用 Planner Agent 生成任务。 */
 export async function generateTask(params: PlannerParams): Promise<PlannerResult> {
   const body: Record<string, unknown> = {
     available_minutes: params.availableMinutes,
+    generator: params.generator ?? "rule",
     skills: params.skills,
     energy_level: params.energyLevel ?? "normal",
     current_focus: params.currentFocus ?? null,
