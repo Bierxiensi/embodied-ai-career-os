@@ -214,13 +214,15 @@ def list_plan_days(db: Session = Depends(get_db)) -> ApiResponse[list[PlanDayOut
     return ok([PlanDayOut.model_validate(d) for d in days])
 
 
-@router.get("/today")
-def get_today(
-    day: int | None = None, db: Session = Depends(get_db)
-) -> ApiResponse[TodayView]:
-    """获取今日施工单。
+def build_today_payload(day: int | None, db: Session) -> dict:
+    """构建今日施工单数据（纯数据段，供 /api/plan/today 与 /api/today 共用）。
+
+    2026-09-28 抽出：原先是 get_today 路由的内联逻辑。抽出后路由与聚合端点
+    共用同一份构建代码，避免两处口径漂移；返回值即原路由嵌进 ok(...) 的
+    TodayView 序列化形态，路由行为不变。
 
     `day` 可显式指定课程日（用于回看 / 预看某一天）；不传则按日历推导。
+    失败语义不变：day 越界 422、课程日缺失 404（HTTPException 自然抛出）。
     """
 
     today = date.today()
@@ -367,32 +369,44 @@ def get_today(
         LedgerItem(key="days", label="四件套齐全", done=full_days, target=TOTAL_DAYS),
     ]
 
-    return ok(
-        TodayView(
-            day=PlanDayOut.model_validate(plan_day),
-            day_index=day_index,
-            total_days=TOTAL_DAYS,
-            calendar_days_elapsed=elapsed,
-            sprint_start=SPRINT_START,
-            is_before_start=before_start,
-            is_after_end=after_end,
-            tasks=[TaskOut.model_validate(t) for t in tasks],
-            completed_tasks=completed,
-            task_scope=to_task_scope_out(scoped_tasks),
-            excluded_tasks=[
-                to_scoped_task_ref(t, TaskTrackScope.FROZEN)
-                for t in scoped_tasks.frozen_items
-            ],
-            artifacts=[ArtifactOut.model_validate(a) for a in artifacts],
-            artifact_status=status,
-            questions_from_bank=questions_from_bank,
-            missing_kinds=missing,
-            all_done=not missing,
-            ledger=ledger,
-            risk=RiskOut(**risk_result.to_dict()),
-            roi_ranked_tasks=roi_ranked_tasks,
-        )
-    )
+    return TodayView(
+        day=PlanDayOut.model_validate(plan_day),
+        day_index=day_index,
+        total_days=TOTAL_DAYS,
+        calendar_days_elapsed=elapsed,
+        sprint_start=SPRINT_START,
+        is_before_start=before_start,
+        is_after_end=after_end,
+        tasks=[TaskOut.model_validate(t) for t in tasks],
+        completed_tasks=completed,
+        task_scope=to_task_scope_out(scoped_tasks),
+        excluded_tasks=[
+            to_scoped_task_ref(t, TaskTrackScope.FROZEN)
+            for t in scoped_tasks.frozen_items
+        ],
+        artifacts=[ArtifactOut.model_validate(a) for a in artifacts],
+        artifact_status=status,
+        questions_from_bank=questions_from_bank,
+        missing_kinds=missing,
+        all_done=not missing,
+        ledger=ledger,
+        risk=RiskOut(**risk_result.to_dict()),
+        roi_ranked_tasks=roi_ranked_tasks,
+    ).model_dump()
+
+
+@router.get("/today")
+def get_today(
+    day: int | None = None, db: Session = Depends(get_db)
+) -> ApiResponse[TodayView]:
+    """获取今日施工单。
+
+    `day` 可显式指定课程日（用于回看 / 预看某一天）；不传则按日历推导。
+    构建逻辑抽到 build_today_payload（与 /api/today 聚合端点共用），本路由
+    仍返回同一份数据，行为不变。
+    """
+
+    return ok(build_today_payload(day=day, db=db))
 
 
 @router.get("/overview")

@@ -39,6 +39,7 @@ from app.api.reviewer import router as reviewer_router
 from app.api.risk import router as risk_router
 from app.api.skills import router as skills_router
 from app.api.tasks import router as tasks_router
+from app.api.today import router as today_router
 from app.api.tools import router as tools_router
 from app.api.transition import router as transition_router
 from app.agents.registry_setup import setup_default_agents
@@ -112,6 +113,8 @@ app.include_router(reports_router, prefix=api_prefix)
 # 30 天施工执行台：课程脊梁 + 今日施工单 + 四件套（见 docs/platform-direction-30day.md）
 app.include_router(experiments_router, prefix=api_prefix)
 app.include_router(plan_router, prefix=api_prefix)
+# 今日单聚合端点（spec §4.4）：施工单 + 今日日志 + 容量预检一次取齐
+app.include_router(today_router, prefix=api_prefix)
 app.include_router(risk_router, prefix=api_prefix)
 # Phase 3 统一落地页：职业进度 + 当前工作 + 学术与博士（/today 页的数据源之一）
 app.include_router(transition_router, prefix=api_prefix)
