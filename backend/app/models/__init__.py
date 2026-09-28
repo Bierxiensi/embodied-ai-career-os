@@ -14,6 +14,7 @@ from app.models.job_application import JobApplication
 from app.models.job_match import JobMatch
 from app.models.job_posting import JobPosting
 from app.models.learning_log import LearningLog
+from app.models.mastery import MasteryUnit, ReviewCard, ReviewLog, UnitItem
 from app.models.report_log import ReportLog
 from app.models.resume_fact import ResumeFact
 from app.models.resume_version import ResumeVersion
@@ -46,6 +47,7 @@ __all__ = [
     "JobMatch",
     "JobPosting",
     "LearningLog",
+    "MasteryUnit",
     "ReportLog",
     "ResumeFact",
     "ResumeVersion",
@@ -61,8 +63,11 @@ __all__ = [
     "PracticeRecord",
     "Project",
     "QuizSessionQuestion",
+    "ReviewCard",
+    "ReviewLog",
     "Skill",
     "SkillAssessment",
     "SkillDependency",
     "Task",
+    "UnitItem",
 ]

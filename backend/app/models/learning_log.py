@@ -29,6 +29,11 @@ class LearningLog(Base):
         Integer, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True
     )
 
+    # 计划 2：关联掌握单元（Teach-Back/测验自动日志的溯源锚点）
+    unit_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("mastery_units.id", ondelete="SET NULL"), nullable=True
+    )
+
     # 学习内容/产出（纯文本，含反思总结）
     content: Mapped[str] = mapped_column(Text, nullable=False)
 

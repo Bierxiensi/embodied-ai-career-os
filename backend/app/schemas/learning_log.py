@@ -14,6 +14,7 @@ class LearningLogCreate(BaseModel):
     """
 
     task_id: int | None = None
+    unit_id: int | None = None
     content: str = Field(min_length=1, max_length=2000)
     duration_minutes: int | None = Field(default=None, ge=1, le=480)
     artifact_url: str | None = Field(default=None, max_length=500)
@@ -26,6 +27,7 @@ class LearningLogOut(BaseModel):
 
     id: int
     task_id: int | None = None
+    unit_id: int | None = None
     content: str
     duration_minutes: int | None = None
     artifact_url: str | None = None
