@@ -1001,7 +1001,7 @@ def main() -> None:
                 assert row.get("refs") or row.get("evidence_refs"), f"{row} 缺 evidence 引用"
         # 今日聚合可回答「本周补了哪块」的原料：review + logs 齐备
         today = s.get(f"{base}/api/today", timeout=10).json()["data"]
-        assert "review" in today and "learning_logs_today" in today
+        assert "review" in today and "learning_logs_24h" in today
         print("SIGNAL 2: PASS（证据主张带引用，聚合可溯源）")
     finally:
         stop_and_verify(proc, copy_db, fp)

@@ -1174,7 +1174,7 @@ def review_card(
     }
 ```
 
-并把 `review` 加进返回 dict（`today/learning_logs_today/capacity` 之后）。
+并把 `review` 加进返回 dict（`today/learning_logs_24h/capacity` 之后。⚠️ 计划 1 收尾已把 `learning_logs_today` 改名为 `learning_logs_24h`（滚动 24h 口径写实），以 `backend/app/api/today.py` 现状为准）。
 
 `main.py` 挂载：
 
