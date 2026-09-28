@@ -1,7 +1,7 @@
 """单元内容懒生成（spec §3.3）。
 
 纪律（spec §5.1）：
-- 打开才生成；content_hash 命中即返回缓存条目（幂等）。
+- 打开才生成；已有条目即返回（幂等）。content_hash 仅记录生成指纹，升级/重生成路径属后续增强票。
 - LLM 优先，Mock/异常一律降级 rule —— MockClient 的模板文案**绝不**冒充内容
   （同 knowledge answer_node 的 Mock 判定纪律）。
 - generation_mode 落库 + 随 API 返回，UI 必须显示徽标。
@@ -93,7 +93,7 @@ def _generate_rule(unit: MasteryUnit) -> list[dict]:
         f"「{unit.title}」学习包（规则生成）：围绕 {unit.source_ref} 的核心要点展开，"
         f"关联技能 {', '.join(skills) or '未标注'}。"
         "先读摘要建立地图，再用概念卡自测，最后做测验实证掌握。"
-        "本内容由规则模板生成（generation_mode=rule）——待 LLM 可用时重新打开将自动升级。"
+        "本内容由规则模板生成（generation_mode=rule），仅作学习骨架——如需 AI 生成版本，请在 LLM 可用后手动重生成。"
     )
     items = [{"kind": "summary", "body": summary}]
     for skill in skills[:3]:

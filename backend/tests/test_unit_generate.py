@@ -53,3 +53,18 @@ def test_second_open_hits_cache_no_new_items():
         db.query(MasteryUnit).filter_by(id=u.id).delete()
         db.commit()
         db.close()
+
+
+def test_rule_content_makes_no_false_upgrade_promise():
+    db = SessionLocal()
+    try:
+        u = _make_unit(db, ref="paper:996")
+        items = ensure_unit_content(db, u)
+        summary = next(i for i in items if i.kind == "summary")
+        assert "自动升级" not in summary.body  # 承诺未兑现即谎言——禁止出现在用户可见文案
+        assert "generation_mode=rule" in summary.body
+    finally:
+        db.query(UnitItem).filter_by(unit_id=u.id).delete()
+        db.query(MasteryUnit).filter_by(id=u.id).delete()
+        db.commit()
+        db.close()
