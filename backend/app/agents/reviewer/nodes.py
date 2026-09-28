@@ -41,7 +41,7 @@ def _evaluate_with_llm(task: dict, learning_log: dict) -> dict | None:
     artifact_url = learning_log.get("artifact_url", "")
 
     prompt = (
-        "你是具身智能学习导师。评估学生的一次学习成果。\n\n"
+        "你是大模型后训练（Post-Training）学习导师。评估学生的一次学习成果。\n\n"
         f"任务：{task_title}\n"
         f"关联技能：{skill_name}\n"
         f"验收标准：{acceptance}\n"

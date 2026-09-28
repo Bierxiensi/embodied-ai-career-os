@@ -46,7 +46,7 @@ def _analyze_with_llm(target_role: str, skills: list) -> dict | None:
     try:
         llm = get_llm()
         return llm.chat_json([
-            ChatMessage(role="system", content="你是机器人行业猎头和技术面试官。只输出 JSON。"),
+            ChatMessage(role="system", content="你是大模型后训练（LLM Post-Training）方向的招聘专家与技术面试官。只输出 JSON。"),
             ChatMessage(role="user", content=prompt),
         ])
     except Exception:
