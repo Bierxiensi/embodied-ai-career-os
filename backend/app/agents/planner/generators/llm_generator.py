@@ -21,7 +21,7 @@ from app.llm import ChatMessage, get_llm
 
 
 # 技能模板关键词 → 用于 few-shot 示例
-_FEW_SHOT_SKILLS = ["ROS2", "Isaac", "VLA"]
+_FEW_SHOT_SKILLS = ["SFT", "LoRA/QLoRA", "DPO"]
 
 
 def _build_system_prompt() -> str:
@@ -68,7 +68,7 @@ def _build_user_prompt(state: PlannerState) -> str:
 
 可用时间：{state.get('available_minutes', 45)} 分钟
 能量水平：{energy_desc}
-目标岗位：{state.get('target_role', 'Robot AI Engineer')}
+目标岗位：{state.get('target_role', '大模型后训练 / Post-Training 算法工程师（主攻）')}
 {focus_line}{project_context}
 
 当前技能状态（仅列出缺口最大的前几项）：
@@ -76,7 +76,7 @@ def _build_user_prompt(state: PlannerState) -> str:
 
 请根据以上信息，生成今日唯一学习任务。
 输出严格的 JSON 格式，包含以下字段：
-- title: 任务标题（简洁、行动导向，如 "ROS2 Publisher 节点实战"）
+- title: 任务标题（简洁、行动导向，如 "SFT 指令数据集清洗实战"）
 - skill: 关联技能名称
 - objective: 学习目标（一句话描述要达成什么）
 - duration: 预计时长（分钟，不超过可用时间的 90%）
