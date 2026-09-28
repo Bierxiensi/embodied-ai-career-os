@@ -1,4 +1,9 @@
-"""GET /api/today 聚合端点 + 容量预检（spec §2.4/§4.4）。"""
+"""GET /api/today 聚合端点 + 容量预检（spec §2.4/§4.4）。
+
+口径（见 STYLE.md「口径登记」）：响应键 `learning_logs_24h` = 服务端滚动 24h 窗口
+（naive-UTC-safe），**不是**本地日历日的「今日」；UI「今日」= 本地日历日
+（frontend `isToday`）。两者并存、命名各自如实，计划 2 接线时不得混用。
+"""
 
 from datetime import date
 
@@ -80,14 +85,14 @@ def test_today_endpoint_shape():
     body = resp.json()
     assert body["success"] is True
     data = body["data"]
-    for key in ("today", "learning_logs_today", "capacity"):
+    for key in ("today", "learning_logs_24h", "capacity"):
         assert key in data
     assert set(data["capacity"].keys()) == {
         "ok", "available_minutes", "planned_minutes", "shortfall_minutes", "suggestion",
     }
 
 
-def test_learning_logs_today_is_24h_window():
+def test_learning_logs_24h_is_rolling_window():
     from datetime import datetime, timedelta
 
     from app.db.base import SessionLocal
@@ -99,17 +104,13 @@ def test_learning_logs_today_is_24h_window():
         stale = LearningLog(content="stale", created_at=datetime.utcnow() - timedelta(hours=48))
         db.add_all([fresh, stale])
         db.commit()
+        # 断言也在 try 内：断言失败同样要清掉种子行，否则泄漏给后续用例
+        data = client.get("/api/today").json()["data"]
+        contents = [x["content"] for x in data["learning_logs_24h"]]
+        assert "fresh" in contents and "stale" not in contents
     finally:
-        db.close()
-    client = TestClient(app)
-    data = client.get("/api/today").json()["data"]
-    contents = [x["content"] for x in data["learning_logs_today"]]
-    assert "fresh" in contents and "stale" not in contents
-    db = SessionLocal()
-    try:
         db.query(LearningLog).filter(LearningLog.content.in_(["fresh", "stale"])).delete()
         db.commit()
-    finally:
         db.close()
 
 

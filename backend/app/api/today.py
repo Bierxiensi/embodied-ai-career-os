@@ -1,7 +1,9 @@
 """GET /api/today —— 今日单聚合端点（spec §4.4，FreeLingo 式）。
 
-前端一次取齐：今日施工单 + 今日学习日志 + 容量预检。
-各分区独立兜底：辅助数据失败回空，不让整端点 500（spec §5.1）。
+前端一次取齐：今日施工单 + 近 24h 学习日志（`learning_logs_24h`）+ 容量预检。
+防御边界如实：日志区与容量区不依赖 payload 的具体形态（缺字段自兜底、不抛）；
+today 主 payload（/api/plan/today 语义）失败**按设计向外抛**，由全局异常处理
+返回错误响应 —— 本端点不做「各分区独立兜底、不让整端点 500」。
 计划 2 将追加 review 区（SM-2 到期队列）——本版不预埋假字段。
 """
 
@@ -52,13 +54,14 @@ def _planned_minutes(payload: dict) -> int:
 
 @router.get("")
 def get_today(day: int | None = None, db: Session = Depends(get_db)) -> ApiResponse[dict]:
-    """今日聚合：today（施工单/风险/ROI 原样透传）+ 今日日志 + 容量预检。"""
+    """今日聚合：today（施工单/风险/ROI 原样透传）+ 近 24h 日志 + 容量预检。"""
     payload = build_today_payload(day=day, db=db)  # 失败自然抛出（同 /api/plan/today 语义）
 
-    # 「今日日志」= 滚动 24h 窗口，不是 UTC 自然日：created_at 是 naive UTC，
-    # 若按 utcnow().date() 切日历天，本地时区晚间写入的日志会被切掉
-    # （naive-UTC 与本地日错位的陷阱），且跨午夜的「今天」会突然清空。
-    # 滚动窗口对任意时区语义一致；limit(20) 仅是返回条数的安全上限。
+    # `learning_logs_24h` = 滚动 24h 窗口，不是「本地日历日的今日」（命名如实，
+    # 见 STYLE.md 口径登记）：created_at 是 naive UTC，若按 utcnow().date() 切日历天，
+    # 本地时区晚间写入的日志会被切掉（naive-UTC 与本地日错位的陷阱），
+    # 且跨午夜的「今天」会突然清空。滚动窗口对任意时区语义一致；
+    # limit(20) 仅是返回条数的安全上限。
     cutoff = datetime.utcnow() - timedelta(hours=24)
     logs = (
         db.query(LearningLog)
@@ -77,7 +80,7 @@ def get_today(day: int | None = None, db: Session = Depends(get_db)) -> ApiRespo
     return ok(
         {
             "today": payload,
-            "learning_logs_today": logs_out,
+            "learning_logs_24h": logs_out,
             "capacity": capacity,
         }
     )

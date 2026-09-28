@@ -91,9 +91,9 @@ def _timeline_score(deadline: date | None, today: date) -> int:
     """时间窗口分（2026-09-24 X4 修复）：按「窗口距今」分带计分。
 
     旧实现 None→70、≤365 天一律 100，导致不录截止日的排名虚高、
-    一个月内截止的「来不及准备」反而满分。新分带：
+    一个月内截止的「来不及准备」反而满分。新分带（边界与代码一致）：
       None→55 未公布（中性偏保守） | 已过期→20 | <30 天→50 来不及
-      30-270 天→95 黄金窗口（有准备期） | 270-540→75 | 更远→55
+      30-270 天→95 黄金窗口（有准备期，**含第 270 天**） | 271-540 天→75 | >540 天→55
     """
 
     if deadline is None:
@@ -140,6 +140,8 @@ class PhDMatchEngine:
             advisor_in_service: 导师是否愿意带非全/在职。
             application_deadline: 报名截止日（None = 常年/未公布）。
             today: 计算基准日（默认当天，单测可注入）。
+            is_home_school: 是否北航本校「主场」条目（True 时总分乘
+                HOME_SCHOOL_PENALTY=0.85，见 2026-09-24 裁决）。
         """
 
         today = today or date.today()
