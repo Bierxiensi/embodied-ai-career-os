@@ -16,18 +16,25 @@ from app.agents.supervisor.state import SupervisorState
 
 # ===== 意图 → 下游 Agent 映射 =====
 # 集中维护，便于扩展与单测
+# 2026-09-24 收敛（spec §4.3）：每意图最多一个主 Agent；research/career 退出日常编排
+# （按需直调，不进 /api/agent/run 自动链）；新增 ask 意图直达 knowledge。
 INTENT_AGENTS_MAP: dict[str, list[str]] = {
-    "learn": ["research", "planner"],
+    "learn": ["planner"],
     "complete": ["reviewer"],
-    "career": ["career"],
+    "ask": ["knowledge"],
     "unknown": ["planner"],
 }
 
 # ===== 意图关键词（按匹配优先级排列）=====
-# career 优先于 learn：如"成为 X 工程师"应归为职业规划而非学习
-# complete 次之：明确表达完成动作
+# ask 优先级最高：疑问句（什么是/为什么）即使含"学"等词也应归为提问而非学习
+# career 次之：如"成为 X 工程师"应归为职业规划而非学习
+# complete 再次：明确表达完成动作
 # learn 最后兜底学习类
 _INTENT_KEYWORDS: list[tuple[str, list[str]]] = [
+    (
+        "ask",
+        ["论文", "知识库", "什么是", "解释", "为什么", "ask", "what", "why", "explain"],
+    ),
     (
         "career",
         ["成为", "职业", "规划", "转型", "岗位", "career", "goal", "target"],
@@ -56,6 +63,7 @@ def _analyze_intent_llm(user_input: str) -> str | None:
         "- career：职业规划、岗位分析、转型方向、技能缺口、能力评估\n"
         "- learn：学习、练习、实践、做实验、写代码、跑模型\n"
         "- complete：完成任务、提交成果、复盘、回顾、打卡\n"
+        "- ask：知识/论文提问\n"
         "- unknown：无法归类\n\n"
         "返回 JSON：{\"intent\": \"<类别>\", \"confidence\": 0.0-1.0, \"reason\": \"<一句话理由>\"}\n"
         "直接输出 JSON，不要其他文字。"
@@ -68,7 +76,7 @@ def _analyze_intent_llm(user_input: str) -> str | None:
             ChatMessage(role="user", content=prompt),
         ])
         intent = result.get("intent", "")
-        if intent in ("career", "learn", "complete", "unknown"):
+        if intent in ("career", "learn", "complete", "ask", "unknown"):
             return intent
     except Exception:
         pass
@@ -84,7 +92,7 @@ def analyze_intent(state: SupervisorState) -> dict:
         state: 含 user_input
 
     Returns:
-        {"intent": "learn" | "complete" | "career" | "unknown"}
+        {"intent": "learn" | "complete" | "career" | "ask" | "unknown"}
     """
     user_input = (state.get("user_input") or "").strip()
     if not user_input:
@@ -113,7 +121,7 @@ def select_agents(state: SupervisorState) -> dict:
         state: 含 intent
 
     Returns:
-        {"required_agents": ["research", "planner"], ...}
+        {"required_agents": ["planner"], ...}（每意图最多一个主 Agent，spec §4.3）
     """
     intent = state.get("intent", "unknown")
     agents = INTENT_AGENTS_MAP.get(intent, INTENT_AGENTS_MAP["unknown"])

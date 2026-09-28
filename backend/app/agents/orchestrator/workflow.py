@@ -51,6 +51,9 @@ class AgentWorkflow:
     def __init__(self, executor: OrchestratorExecutor | None = None) -> None:
         # 允许注入自定义 executor（如测试 mock），默认用 OrchestratorExecutor
         self._executor = executor or OrchestratorExecutor()
+        # Y9：run() 在 supervisor 决策前落存 user_input，
+        # 供 _run_single_agent → _resolve_input 做意图→参数提取（实例级，非全局）
+        self._last_user_input = ""
 
     def run(
         self,
@@ -77,6 +80,9 @@ class AgentWorkflow:
         if db is not None:
             self._executor = OrchestratorExecutor(db=db)
 
+        # Y9：在 supervisor 决策前落存 user_input，子 agent 输入提取用
+        self._last_user_input = user_input
+
         # 1. Supervisor 决策
         supervisor_result = self._run_supervisor(user_input)
 
@@ -84,10 +90,12 @@ class AgentWorkflow:
         execution_plan: dict = supervisor_result.get("execution_plan", {})
         intent: str = supervisor_result.get("intent", "unknown")
 
-        # 2. 按 plan 顺序执行各 Agent
+        # 停止规则（spec §4.3）：一次会话最多 1 个主 Agent + 可选 1 个 knowledge；
+        # decision-ready 即停——不因能力存在就多派 agent。
+        MAX_AGENTS_PER_RUN = 2
         agent_inputs = agent_inputs or {}
         steps: list[dict] = []
-        for agent_name in required_agents:
+        for agent_name in required_agents[:MAX_AGENTS_PER_RUN]:
             step = self._run_single_agent(agent_name, agent_inputs, db)
             steps.append(step)
 
@@ -148,8 +156,10 @@ class AgentWorkflow:
                 "output": None,
             }
 
-        # 取输入 state：优先用调用方提供的覆盖，否则用默认最小输入
-        input_state = self._resolve_input(agent_name, agent_inputs, db)
+        # 取输入 state：优先用调用方提供的覆盖，其次 user_input 意图提取，最后占位/画像默认
+        input_state = self._resolve_input(
+            agent_name, agent_inputs, db, user_input=self._last_user_input
+        )
 
         try:
             output = self._executor.run(agent_name, input_state)
@@ -167,27 +177,102 @@ class AgentWorkflow:
                 "output": None,
             }
 
+    def _extract_params(self, user_input: str, agent_name: str) -> dict | None:
+        """意图→参数提取（Y9）：从用户话里抽 topic / 可用时长 / 目标技能。
+
+        LLM 优先，失败回退规则；都提取不出返回 None（调用方再走占位兜底）。
+        契约同 supervisor._analyze_intent_llm：任何异常返回 None，不抛出。
+        """
+        text = (user_input or "").strip()
+        if not text:
+            return None
+
+        # ---- 规则兜底：时长 + 主题 ----
+        import re
+
+        minutes = None
+        m = re.search(r"(\d{2,3})\s*(分钟|min|minutes)", text, re.IGNORECASE)
+        if m:
+            minutes = max(5, min(480, int(m.group(1))))
+        topic = None
+        for kw in ("SFT", "LoRA", "QLoRA", "DPO", "GRPO", "RLHF", "PPO", "vLLM", "VLM"):
+            if kw.lower() in text.lower():
+                topic = kw
+                break
+
+        # ---- LLM 优先 ----
+        try:
+            from app.llm import ChatMessage, get_llm
+
+            llm = get_llm()
+            result = llm.chat_json([
+                ChatMessage(role="system", content="你是参数提取器。只输出 JSON。"),
+                ChatMessage(
+                    role="user",
+                    content=(
+                        "从用户输入提取学习参数，主题必须是这些之一："
+                        "SFT/LoRA/QLoRA/DPO/GRPO/RLHF/PPO/vLLM/VLM/其他。\n"
+                        f'用户输入："{text}"\n'
+                        '返回 JSON：{"topic": "<主题或null>", "available_minutes": <int或null>}'
+                    ),
+                ),
+            ])
+            if isinstance(result, dict):
+                topic = result.get("topic") or topic
+                if result.get("available_minutes"):
+                    minutes = max(5, min(480, int(result["available_minutes"])))
+        except Exception:
+            pass
+
+        if minutes is None and topic is None:
+            return None
+        if agent_name == "research":
+            return {"topic": topic or "Post-Training"}
+        if agent_name == "planner":
+            return {"available_minutes": minutes or 45, "skills": self._real_skills()}
+        return {}
+
+    @staticmethod
+    def _real_skills() -> list[dict]:
+        """真实技能画像（前 6 项）→ Planner 的 SkillInput dict。
+
+        SKILL_PROFILE 元素是 SkillProfile dataclass：字段为 name/level/
+        target_level（无 target 字段），而 PlannerState.SkillInput 键是
+        name/level/target，故在此做 target_level → target 的显式映射。
+        """
+        from app.core.skill_profile import SKILL_PROFILE
+
+        return [
+            {"name": s.name, "level": s.level, "target": s.target_level}
+            for s in SKILL_PROFILE[:6]
+        ]
+
     def _resolve_input(
         self,
         agent_name: str,
         agent_inputs: dict[str, dict],
         db: Any = None,
+        user_input: str = "",
     ) -> dict:
-        """解析 Agent 输入 state。
+        """解析 Agent 输入 state（Y9 重写，2026-09-24）。
 
-        优先用调用方提供的覆盖；未提供时用默认最小输入。
-        Day 5 默认输入仅保证 Agent 不报错，业务质量由后续迭代优化。
+        优先级：调用方覆盖 > 意图提取（user_input）> 真实画像默认 > 占位（显式标记）。
+        占位只保证 Agent 不报错，且打 `_input_source=placeholder` 痕迹，
+        不得冒充真实输入（旧实现的 Isaac 占位曾被 Dashboard 当真实活动展示）。
         """
         if agent_name in agent_inputs:
             return agent_inputs[agent_name]
 
-        # 默认最小输入（各 Agent 的必需字段）
-        # reviewer：注入 db 复用请求事务（None 时节点内安全降级，不写库）
-        # task 用合理示例内容（不依赖存在的 task_id），仅触发证据打分逻辑
+        extracted = self._extract_params(user_input, agent_name)
+        if extracted:
+            return extracted
+
+        real_skills = self._real_skills()
         defaults: dict[str, dict] = {
             "planner": {
                 "available_minutes": 45,
-                "skills": [{"name": "Isaac", "level": 0, "target": 4}],
+                "skills": real_skills,
+                "_input_source": "profile_default",
                 # L2 修复：移除 "persist": False。
                 # persist 是 OrchestratorExecutor 的参数而非 state key，
                 # 原值被 PlannerState 静默丢弃；agent_runs 落库由 executor 默认 persist=True 控制。
@@ -195,32 +280,27 @@ class AgentWorkflow:
             "reviewer": {
                 "task": {
                     "id": 0,
-                    "title": "Robot Learning 基础概念入门",
-                    "skill_name": "Isaac",
-                    "acceptance": [
-                        "能描述 Robot Learning 核心问题",
-                        "能区分 Imitation Learning 与 RL",
-                    ],
+                    "title": "Post-Training 概念入门",
+                    "skill_name": "SFT",
+                    "acceptance": ["能描述 SFT 的目标", "能区分 SFT 与 RLHF"],
                 },
                 "learning_log": {
-                    "content": "学习了 Robot Learning 基础概念，阅读了 Imitation "
-                               "Learning 与 Reinforcement Learning 的差异，理解了 "
-                               "State/Action/Reward 基本定义。",
+                    "content": user_input or "（无日志内容）",
                     "duration_minutes": 45,
                     "artifact_url": None,
                 },
                 # S3 修复：透传请求 db，避免节点自建 session；None 时节点安全降级
                 "db": db,
+                "_input_source": "profile_default",
             },
             "career": {
-                "target_role": "Robot AI Engineer",
-                "current_skills": [
-                    {"name": "Isaac", "level": 0, "target": 4},
-                    {"name": "ROS2", "level": 1, "target": 4},
-                ],
+                "target_role": "大模型后训练 / Post-Training 算法工程师（主攻）",
+                "current_skills": real_skills,
+                "_input_source": "profile_default",
             },
             "research": {
-                "topic": "ACT",
+                "topic": "DPO",
+                "_input_source": "placeholder",
             },
         }
         return defaults.get(agent_name, {})
