@@ -26,6 +26,10 @@
  * 后端 `services/readiness`（llm 推进度 67% / 严格达标 23% 是回归锚点）。
  *
  * `?day=N` 可显式查看某一天的施工单（回看 / 预看），不传则按日历推导。
+ *
+ * 结构说明：取数在 try 内、JSX 构造在 try 外 —— react-hooks/error-boundaries
+ * 禁止在 try/catch 内构造 JSX（try 内的渲染错误不会被 catch 捕获）。同
+ * progress/page.tsx 的写法。
  */
 
 import PageHeader from "@/components/PageHeader";
@@ -57,10 +61,20 @@ const ZONE_GRID = {
   gap: 24,
 } as const;
 
-export default async function TodayPage({ searchParams }: PageProps) {
+type LearnData = {
+  today: Awaited<ReturnType<typeof getToday>>;
+  transition: Awaited<ReturnType<typeof getTransitionDashboard>> | null;
+  radar: ReturnType<typeof buildSkillRadar>;
+  learningLogs: Awaited<ReturnType<typeof listLearningLogs>>;
+};
+
+export default async function LearnPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const parsed = sp.day ? Number.parseInt(sp.day, 10) : undefined;
   const day = Number.isFinite(parsed) ? parsed : undefined;
+
+  let data: LearnData | null = null;
+  let loadError: string | null = null;
 
   try {
     // getToday 不兜底：它失败意味着后端整体不可用，直接走错误页。
@@ -76,79 +90,24 @@ export default async function TodayPage({ searchParams }: PageProps) {
 
     // 雷达形态由**当前模式**决定（long_term_transition → 六域；job_hunt → 岗位对齐）。
     // 模式取不到时按非求职期处理（走域视图），因为长期模式是当前默认。
-    const radar = buildSkillRadar({
-      modeKey: transition?.mode.key ?? null,
-      targetRoles: board?.targetRoles ?? null,
-      domains,
-    });
-
-    return (
-      <main className="flex flex-1 flex-col" style={{ background: "var(--surface-canvas)" }}>
-        <div
-          className="mx-auto flex w-full max-w-[1180px] flex-col"
-          style={{ padding: "32px 32px 56px", gap: 24 }}
-        >
-          <PageHeader
-            eyebrow="LEARN · 今天学什么"
-            title="今日学习单"
-            subtitle="关键单元与施工单在上，进度五区在下——学完记得留下实质记录。"
-          />
-
-          {/* 今日施工单：四件套 + 今天学到什么 + 今日任务（今天干什么、做完没有） */}
-          <TodayBoard today={today} learningLogs={learningLogs} />
-
-          {/* ═══ 五区 ═══ */}
-          <div style={ZONE_GRID}>
-            {/* ① 职业进度（赛道双轨就绪度 + 关键节点倒计时） */}
-            {transition ? (
-              <CareerProgressCard
-                progress={transition.careerProgress}
-                mode={transition.mode}
-                asOf={transition.asOf}
-              />
-            ) : null}
-
-            {/* ① 附：技能雷达（R2 六域 / R1 岗位对齐，由模式决定） */}
-            <SkillRadarCard data={radar} />
-
-            {/* ② 当前工作（在职事实 + 在职转型窗口） */}
-            {transition ? <PositionCard position={transition.position} /> : null}
-
-            {/* ③ 学术与博士（答辩倒计时 + 博士申请进度） */}
-            {transition ? <AcademicProgressCard academic={transition.academic} /> : null}
-
-            {/* ④ 今日 ROI 排名（RoiTaskList 自带空态；字段缺失=老响应才整块跳过） */}
-            {today.roiRankedTasks ? <RoiTaskList tasks={today.roiRankedTasks} /> : null}
-
-            {/* ⑤ 七维风险雷达（老响应无 risk 时跳过，向后兼容） */}
-            {today.risk ? <RiskRadar risk={today.risk} /> : null}
-          </div>
-
-          {/* ①–③ 依赖 /api/transition/dashboard；它不可用时如实说明，不静默少三区 */}
-          {transition ? null : (
-            <div
-              className="text-xs"
-              style={{
-                padding: 12,
-                color: "var(--accent-danger)",
-                background: "var(--accent-danger-soft)",
-                border: "1px solid var(--accent-danger)",
-                borderRadius: "var(--radius-md)",
-              }}
-            >
-              职业进度 / 当前工作 / 学术与博士三区未加载：/api/transition/dashboard 不可用。
-              其余区块正常显示。
-            </div>
-          )}
-        </div>
-      </main>
-    );
+    data = {
+      today,
+      transition,
+      radar: buildSkillRadar({
+        modeKey: transition?.mode.key ?? null,
+        targetRoles: board?.targetRoles ?? null,
+        domains,
+      }),
+      learningLogs,
+    };
   } catch (err) {
-    const message =
+    loadError =
       err instanceof ApiError
         ? err.message
         : "无法连接后端服务，请确认 FastAPI 已启动（127.0.0.1:8000）";
+  }
 
+  if (loadError !== null || !data) {
     return (
       <main
         className="flex flex-1 items-center justify-center"
@@ -164,10 +123,10 @@ export default async function TodayPage({ searchParams }: PageProps) {
           }}
         >
           <h1 className="text-lg font-semibold" style={{ color: "var(--accent-danger)" }}>
-            今日施工单加载失败
+            今日学习单加载失败
           </h1>
           <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-            {message}
+            {loadError}
           </p>
           <p className="mt-4 text-xs" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
             若提示课程日不存在，请先初始化课程脊梁：
@@ -178,4 +137,68 @@ export default async function TodayPage({ searchParams }: PageProps) {
       </main>
     );
   }
+
+  const { today, transition, radar, learningLogs } = data;
+
+  return (
+    <main className="flex flex-1 flex-col" style={{ background: "var(--surface-canvas)" }}>
+      <div
+        className="mx-auto flex w-full max-w-[1180px] flex-col"
+        style={{ padding: "32px 32px 56px", gap: 24 }}
+      >
+        <PageHeader
+          eyebrow="LEARN · 今天学什么"
+          title="今日学习单"
+          subtitle="关键单元与施工单在上，进度五区在下——学完记得留下实质记录。"
+        />
+
+        {/* 今日施工单：四件套 + 今天学到什么 + 今日任务（今天干什么、做完没有） */}
+        <TodayBoard today={today} learningLogs={learningLogs} />
+
+        {/* ═══ 五区 ═══ */}
+        <div style={ZONE_GRID}>
+          {/* ① 职业进度（赛道双轨就绪度 + 关键节点倒计时） */}
+          {transition ? (
+            <CareerProgressCard
+              progress={transition.careerProgress}
+              mode={transition.mode}
+              asOf={transition.asOf}
+            />
+          ) : null}
+
+          {/* ① 附：技能雷达（R2 六域 / R1 岗位对齐，由模式决定） */}
+          <SkillRadarCard data={radar} />
+
+          {/* ② 当前工作（在职事实 + 在职转型窗口） */}
+          {transition ? <PositionCard position={transition.position} /> : null}
+
+          {/* ③ 学术与博士（答辩倒计时 + 博士申请进度） */}
+          {transition ? <AcademicProgressCard academic={transition.academic} /> : null}
+
+          {/* ④ 今日 ROI 排名（RoiTaskList 自带空态；字段缺失=老响应才整块跳过） */}
+          {today.roiRankedTasks ? <RoiTaskList tasks={today.roiRankedTasks} /> : null}
+
+          {/* ⑤ 七维风险雷达（老响应无 risk 时跳过，向后兼容） */}
+          {today.risk ? <RiskRadar risk={today.risk} /> : null}
+        </div>
+
+        {/* ①–③ 依赖 /api/transition/dashboard；它不可用时如实说明，不静默少三区 */}
+        {transition ? null : (
+          <div
+            className="text-xs"
+            style={{
+              padding: 12,
+              color: "var(--accent-danger)",
+              background: "var(--accent-danger-soft)",
+              border: "1px solid var(--accent-danger)",
+              borderRadius: "var(--radius-md)",
+            }}
+          >
+            职业进度 / 当前工作 / 学术与博士三区未加载：/api/transition/dashboard 不可用。
+            其余区块正常显示。
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }
