@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import GlobalNav from "@/components/GlobalNav";
+import CommandPaletteMount from "@/components/ui/CommandPaletteMount";
 import { Sidebar } from "@/components/ui";
 import { CareerModeProvider } from "@/lib/careerModeContext";
+import { PALETTE_ITEMS, PRIMARY_NAV } from "@/lib/nav";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import "./globals.css";
 
@@ -76,6 +78,8 @@ export default function RootLayout({
               <Sidebar sections={SIDEBAR_SECTIONS} />
               <main style={{ flex: 1, minWidth: 0 }}>{children}</main>
             </div>
+            {/* 命令面板：Ctrl/Cmd+K；低频入口收敛于此（nav.ts 单一真源） */}
+            <CommandPaletteMount primary={PRIMARY_NAV} palette={PALETTE_ITEMS} />
           </CareerModeProvider>
         </ThemeProvider>
       </body>

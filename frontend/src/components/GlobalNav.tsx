@@ -6,22 +6,18 @@ import { usePathname } from "next/navigation";
 import ModeSwitcher from "@/components/ModeSwitcher";
 import ThemeSwitcher from "@/theme/ThemeSwitcher";
 import { useCareerMode } from "@/lib/careerModeContext";
+import { PRIMARY_NAV } from "@/lib/nav";
 
 /** 求职模式下的二级路由（用于 isActive 前缀匹配）。 */
 const JOB_HUNT_ROUTES = ["/jobs", "/jd", "/resume", "/interview"];
-/** 学习模式下的二级路由。 */
-const LEARN_ROUTES = [
-  "/plan",
-  "/knowledge",
-  "/projects",
-  "/questions",
-  "/agents",
-];
+/** 三问入口（学/习/证）——数据源为 nav.ts 单一真源，高亮按前缀匹配。 */
+const LEARN_ROUTES = PRIMARY_NAV.map((n) => n.href);
 
-/** 全局导航栏 — 顶栏 4 个一级入口，随 CareerMode 动态调整。
+/** 全局导航栏 — 三问三入口（学/习/证，nav.ts 单一真源），随 CareerMode 联动求职入口。
  *
- * 求职模式：今日 | 求职 | 学习 | 概览
- * 长期模式：今日 | 学习 | 概览（隐藏求职入口）
+ * 求职模式：学 | 习 | 证 | 求职
+ * 长期模式：学 | 习 | 证（隐藏求职入口）
+ * 低频入口收敛到 CommandPalette + /stages（见 lib/nav.ts）。
  */
 export default function GlobalNav() {
   const pathname = usePathname();
@@ -30,18 +26,17 @@ export default function GlobalNav() {
 
   const isJobHunt = modeKey === "job_hunt";
 
-  // 按模式决定显示哪些链接
+  // 三问三入口来自 nav.ts；求职入口随模式显隐（模式联动保留）
   const links = [
-    { href: "/today", label: "今日" },
-    ...(isJobHunt ? [{ href: "/jobs", label: "求职" }] : []),
-    { href: "/plan", label: "学习" },
-    { href: "/phd", label: "博士" },
+    ...PRIMARY_NAV,
+    ...(isJobHunt ? [{ href: "/jobs", label: "求职", hint: "投递看板（归档线）" }] : []),
   ];
 
   const isActive = (href: string) => {
-    if (href === "/today") return pathname === href || pathname === "/";
+    // / 与旧 /today 均落到 /learn
+    if (href === "/learn" && (pathname === "/" || pathname === "/today")) return true;
     if (href === "/jobs") return JOB_HUNT_ROUTES.some((p) => pathname.startsWith(p));
-    if (href === "/plan") return LEARN_ROUTES.some((p) => pathname.startsWith(p));
+    if (LEARN_ROUTES.includes(href)) return pathname.startsWith(href);
     return pathname === href;
   };
 
@@ -73,6 +68,7 @@ export default function GlobalNav() {
             <Link
               key={l.href}
               href={l.href}
+              title={l.hint}
               className={`text-xs font-medium no-underline ${
                 isActive(l.href) ? "text-white" : "text-[#787880]"
               }`}
