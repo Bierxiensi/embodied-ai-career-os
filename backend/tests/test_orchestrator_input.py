@@ -55,6 +55,21 @@ def test_intent_map_narrowed_and_ask_reaches_knowledge():
     assert analyze_intent({"user_input": "什么是 DPO"})["intent"] == "ask"
 
 
+def test_knowledge_receives_question():
+    from app.agents.orchestrator.workflow import AgentWorkflow
+
+    wf = AgentWorkflow()
+    state = wf._resolve_input("knowledge", {}, user_input="什么是 DPO")
+    assert state.get("question") == "什么是 DPO"
+
+
+def test_ask_keyword_word_boundary_no_task_false_positive():
+    from app.agents.supervisor.nodes import analyze_intent
+
+    assert analyze_intent({"user_input": "什么是 self-attention"})["intent"] == "ask"
+    assert analyze_intent({"user_input": "完成这个 task"})["intent"] != "ask"
+
+
 def test_stop_rule_caps_agents_per_run(monkeypatch):
     """停止规则：即使误配 required_agents 很长，单次 run 最多执行 2 个 agent。"""
     wf = AgentWorkflow()

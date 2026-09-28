@@ -187,6 +187,12 @@ class AgentWorkflow:
         if not text:
             return None
 
+        # knowledge：问题原文直透（检索节点自行预处理）。
+        # 放在 topic/时长提取之前，保证不论是否抽出参数都返回 question，
+        # 否则 ask→knowledge 链路拿到空 question，永远答"未在知识库中找到"。
+        if agent_name == "knowledge":
+            return {"question": text}
+
         # ---- 规则兜底：时长 + 主题 ----
         import re
 

@@ -12,6 +12,8 @@ analyze_intent 节点实现，其余节点与图结构不变。
 
 from __future__ import annotations
 
+import re
+
 from app.agents.supervisor.state import SupervisorState
 
 # ===== 意图 → 下游 Agent 映射 =====
@@ -48,6 +50,19 @@ _INTENT_KEYWORDS: list[tuple[str, list[str]]] = [
         ["学习", "学", "练习", "实践", "learn", "study", "practice"],
     ),
 ]
+
+
+def _keyword_matches(keyword: str, text_lower: str) -> bool:
+    """意图关键词匹配（全意图类统一）。
+
+    ASCII 字母关键词按词边界匹配：避免 "ask" 子串命中 "task"、
+    "done" 命中 "donate" 这类词内嵌入。
+    CJK 等非 ASCII 关键词（"什么是"/"完成"）无词边界概念，保持子串匹配。
+    """
+    kw = keyword.lower()
+    if kw.isascii() and kw.isalpha():
+        return re.search(r"\b" + re.escape(kw) + r"\b", text_lower) is not None
+    return kw in text_lower
 
 
 def _analyze_intent_llm(user_input: str) -> str | None:
@@ -103,10 +118,10 @@ def analyze_intent(state: SupervisorState) -> dict:
     if llm_result is not None:
         return {"intent": llm_result}
 
-    # Fallback: 规则关键词匹配
+    # Fallback: 规则关键词匹配（ASCII 词边界 / CJK 子串）
     user_input_lower = user_input.lower()
     for intent, keywords in _INTENT_KEYWORDS:
-        if any(kw.lower() in user_input_lower for kw in keywords):
+        if any(_keyword_matches(kw, user_input_lower) for kw in keywords):
             return {"intent": intent}
 
     return {"intent": "unknown"}
