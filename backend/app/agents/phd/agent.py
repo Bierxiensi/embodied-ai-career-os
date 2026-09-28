@@ -77,18 +77,26 @@ class PhDMatchResult:
 
 
 def _timeline_score(deadline: date | None, today: date) -> int:
-    """时间窗口分：距离截止日越近越高；本轮已错过给低分（等下一年）。"""
+    """时间窗口分（2026-09-24 X4 修复）：按「窗口距今」分带计分。
+
+    旧实现 None→70、≤365 天一律 100，导致不录截止日的排名虚高、
+    一个月内截止的「来不及准备」反而满分。新分带：
+      None→55 未公布（中性偏保守） | 已过期→20 | <30 天→50 来不及
+      30-270 天→95 黄金窗口（有准备期） | 270-540→75 | 更远→55
+    """
 
     if deadline is None:
-        return 70  # 常年招生 / 未公布 → 中性偏积极
+        return 55
     days = (deadline - today).days
     if days < 0:
         return 20
-    if days <= 365:
-        return 100
-    if days <= 730:
-        return 80
-    return 60
+    if days < 30:
+        return 50
+    if days <= 270:
+        return 95
+    if days <= 540:
+        return 75
+    return 55
 
 
 class PhDMatchEngine:

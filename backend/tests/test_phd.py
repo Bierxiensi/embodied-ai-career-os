@@ -44,18 +44,19 @@ def test_engine_high_fit():
     assert res.dimensions["geo"] == 100
     assert res.dimensions["publication_match"] == 100
     assert res.dimensions["in_service_friendly"] == 100
-    assert res.dimensions["timeline"] == 70  # 常年招生
+    assert res.dimensions["timeline"] == 55  # 未公布（X4 新分带：中性偏保守）
     expected = int(round(
         WEIGHTS["direction_fit"] * 100
         + WEIGHTS["institution_tier"] * 92
         + WEIGHTS["geo"] * 100
         + WEIGHTS["publication_match"] * 100
         + WEIGHTS["in_service_friendly"] * 100
-        + WEIGHTS["timeline"] * 70
+        + WEIGHTS["timeline"] * 55
     ))
-    assert res.overall == expected == 94
+    assert res.overall == expected == 92
     assert res.grade == "A"
-    assert res.gaps == []
+    # X4 新分带 55 < gap 阈值 60：未公布截止日计入 timeline gap
+    assert [g["dimension"] for g in res.gaps] == ["timeline"]
 
 
 def test_engine_low_fit_flags_gaps():
@@ -98,7 +99,7 @@ def test_engine_low_fit_flags_gaps():
 
 
 def test_engine_timeline_band():
-    """时间窗口分带：年内 100 / 两年内 80 / 更远 60 / 已错过 20 / 未知 70。"""
+    """时间窗口分带（X4 新分带）：黄金窗口 95 / 两年内 75 / 更远 55 / 已错过 20 / 未公布 55。"""
 
     base = date(2026, 9, 20)
     def tl(deadline):
@@ -107,11 +108,11 @@ def test_engine_timeline_band():
             min_publication="none", target_in_service=True,
             advisor_in_service=False, application_deadline=deadline, today=base,
         ).dimensions["timeline"]
-    assert tl(date(2027, 3, 1)) == 100   # 年内
-    assert tl(date(2028, 1, 1)) == 80    # 两年内
-    assert tl(date(2030, 1, 1)) == 60    # 更远
+    assert tl(date(2027, 3, 1)) == 95    # 黄金窗口（162 天）
+    assert tl(date(2028, 1, 1)) == 75    # 两年内（468 天）
+    assert tl(date(2030, 1, 1)) == 55    # 更远
     assert tl(date(2025, 1, 1)) == 20    # 已错过
-    assert tl(None) == 70                # 未知
+    assert tl(None) == 55                # 未公布
 
 
 # ============================================================
