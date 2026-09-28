@@ -83,11 +83,13 @@ def get_skill_graph(db: Session = Depends(get_db)) -> ApiResponse[SkillGraphOut]
     return ok(SkillGraphOut(**payload))
 
 
-@router.patch("/{skill_id}")
+@router.patch("/{skill_id}", include_in_schema=False)
 def patch_skill(
     skill_id: int, payload: SkillPatch, db: Session = Depends(get_db)
 ) -> ApiResponse[SkillOut]:
-    """更新技能等级或能力证明。
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由（仅测试调用，spec §4.6）。
+
+    更新技能等级或能力证明。
 
     仅开放 level / evidence，避免误改 name/category/target_level（目标架构稳定）。
     未来 Reviewer Agent 通过此接口回写等级。

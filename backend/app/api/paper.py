@@ -98,11 +98,13 @@ class IngestResponse(BaseModel):
     index_model: str = ""        # Day 5：嵌入模型名
 
 
-@router.post("/ingest")
+@router.post("/ingest", include_in_schema=False)
 def ingest_paper(
     payload: IngestRequest, db: Session = Depends(get_db)
 ) -> ApiResponse[IngestResponse]:
-    """导入论文：解析 → 分块 → 摘要 → 持久化 → 索引（Day 5 一体化）。
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    导入论文：解析 → 分块 → 摘要 → 持久化 → 索引（Day 5 一体化）。
 
     Day 5 起 ingest 自动建 RAG 索引，无需再手动调 /api/paper/index。
     auto_index=False 可关闭（批量 ingest 后统一索引场景）。
@@ -170,11 +172,13 @@ class IndexResponse(BaseModel):
     model_name: str
 
 
-@router.post("/index")
+@router.post("/index", include_in_schema=False)
 def build_paper_index(
     payload: IndexRequest, db: Session = Depends(get_db)
 ) -> ApiResponse[IndexResponse]:
-    """构建向量索引：扫描 paper_chunks → 嵌入 → 入库。
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    构建向量索引：扫描 paper_chunks → 嵌入 → 入库。
 
     默认增量构建（跳过已索引）；force_rebuild=True 时清空重建。
     """
@@ -383,11 +387,13 @@ class CompareResponse(BaseModel):
     project_relations: dict[str, list[str]]
 
 
-@router.post("/compare")
+@router.post("/compare", include_in_schema=False)
 def compare_papers_endpoint(
     payload: CompareRequest, db: Session = Depends(get_db)
 ) -> ApiResponse[CompareResponse]:
-    """多论文对比：字段级差异矩阵 + 共性 + 差异 + 项目关联。
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    多论文对比：字段级差异矩阵 + 共性 + 差异 + 项目关联。
 
     基于 Day 1 的结构化摘要（Paper.method/dataset/contribution/relation）
     做横向对比，无需 LLM。

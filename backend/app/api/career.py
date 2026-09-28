@@ -26,11 +26,13 @@ def get_career(db: Session = Depends(get_db)) -> ApiResponse[CareerOut]:
     return ok(CareerOut.model_validate(career))
 
 
-@router.put("")
+@router.put("", include_in_schema=False)
 def upsert_career(
     payload: CareerUpdate, db: Session = Depends(get_db)
 ) -> ApiResponse[CareerOut]:
-    """更新或创建职业目标。
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    更新或创建职业目标。
 
     单用户系统：若存在则更新第一条，否则创建。
     """

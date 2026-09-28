@@ -94,11 +94,13 @@ def list_tasks(
 
 
 
-@router.post("")
+@router.post("", include_in_schema=False)
 def create_task(
     payload: TaskCreate, db: Session = Depends(get_db)
 ) -> ApiResponse[TaskOut]:
-    """创建任务。
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    创建任务。
 
     若 skill_name 提供且能在 skills 表匹配，自动回填 skill_id 外键。
     """

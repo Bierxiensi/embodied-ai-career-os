@@ -1,4 +1,7 @@
-"""Milestone API 路由。CRUD + 从 milestone 生成关联任务。"""
+"""DEPRECATED（2026-09-24 收敛）：登记式建档写端点收口（spec §4.2/D5），保数据不删路由。
+
+Milestone API 路由。CRUD + 从 milestone 生成关联任务。
+"""
 
 from __future__ import annotations
 
@@ -18,7 +21,7 @@ router = APIRouter(tags=["milestones"])
 
 # ---- Milestone CRUD ----
 
-@router.post("/projects/{project_id}/milestones")
+@router.post("/projects/{project_id}/milestones", include_in_schema=False)
 def create_milestone(
     project_id: int,
     payload: MilestoneCreate,
@@ -43,7 +46,7 @@ def create_milestone(
     return ok(MilestoneOut.model_validate(m), message="Milestone created")
 
 
-@router.patch("/milestones/{milestone_id}")
+@router.patch("/milestones/{milestone_id}", include_in_schema=False)
 def patch_milestone(
     milestone_id: int,
     payload: MilestonePatch,
@@ -85,7 +88,7 @@ def patch_milestone(
     return ok(MilestoneOut.model_validate(m), message="Milestone updated")
 
 
-@router.delete("/milestones/{milestone_id}")
+@router.delete("/milestones/{milestone_id}", include_in_schema=False)
 def delete_milestone(
     milestone_id: int, db: Session = Depends(get_db)
 ) -> ApiResponse[None]:
@@ -128,7 +131,7 @@ def _task_to_dict(t: Task) -> dict:
     }
 
 
-@router.post("/milestones/{milestone_id}/tasks")
+@router.post("/milestones/{milestone_id}/tasks", include_in_schema=False)
 def generate_tasks_from_milestone(
     milestone_id: int,
     req: GenerateTasksRequest,

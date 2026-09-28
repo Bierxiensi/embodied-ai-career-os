@@ -1,4 +1,7 @@
-"""Dashboard 聚合端点。返回项目进度等顶层数据。"""
+"""DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+Dashboard 聚合端点。返回项目进度等顶层数据。
+"""
 
 from __future__ import annotations
 
@@ -11,7 +14,7 @@ from app.models.milestone import Milestone
 from app.models.project import Project
 from app.schemas.project import MilestoneOut, ProjectOut
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+router = APIRouter(prefix="/dashboard", tags=["dashboard"], include_in_schema=False)
 
 
 @router.get("")

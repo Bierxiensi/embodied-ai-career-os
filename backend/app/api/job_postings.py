@@ -1,4 +1,6 @@
-"""岗位池 API（Batch 1 核心）。
+"""DEPRECATED（2026-09-24 收敛）：归档线登记式写端点收口（spec D2/D5），保数据不删路由。
+
+岗位池 API（Batch 1 核心）。
 
 - POST   /api/job-postings              录入 / 批量录入 JD（自动解析技能 + 自动匹配）
 - GET    /api/job-postings              岗位池（带匹配结果，可按 tier/grade/track/status 过滤）
@@ -60,7 +62,7 @@ def _match_and_store(db: Session, posting: JobPosting, skill_levels: dict[str, i
     return match
 
 
-@router.post("")
+@router.post("", include_in_schema=False)
 def create_postings(
     payload: JobPostingCreate | list[JobPostingCreate],
     db: Session = Depends(get_db),
@@ -156,7 +158,7 @@ def list_postings(
     return ok([o.model_dump() for o in out])
 
 
-@router.post("/{posting_id}/match")
+@router.post("/{posting_id}/match", include_in_schema=False)
 def recompute_match(posting_id: int, db: Session = Depends(get_db)):
     """重算并存储某岗位的匹配（幂等）。技能等级变化后调用此接口刷新。"""
     posting = db.query(JobPosting).filter(JobPosting.id == posting_id).first()
@@ -170,7 +172,7 @@ def recompute_match(posting_id: int, db: Session = Depends(get_db)):
     return ok(JobPostingOut.from_rows(posting, match).model_dump(), "已重算匹配")
 
 
-@router.delete("/{posting_id}")
+@router.delete("/{posting_id}", include_in_schema=False)
 def delete_posting(posting_id: int, db: Session = Depends(get_db)):
     """删除岗位（级联删除其匹配记录）。"""
     posting = db.query(JobPosting).filter(JobPosting.id == posting_id).first()

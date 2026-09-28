@@ -1,4 +1,7 @@
-"""工具桥接 API 路由。"""
+"""DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+工具桥接 API 路由。
+"""
 
 from __future__ import annotations
 
@@ -12,7 +15,7 @@ from app.models.task import Task
 from app.services.tools.prompts import generate_tool_prompt
 from app.services.tools.context import generate_context_pack
 
-router = APIRouter(prefix="/tools", tags=["tools"])
+router = APIRouter(prefix="/tools", tags=["tools"], include_in_schema=False)
 
 
 class PromptRequest(BaseModel):

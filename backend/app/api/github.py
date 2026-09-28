@@ -1,4 +1,7 @@
-"""GitHub API 路由。"""
+"""DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由（待计划 3 接线，接线时可取消标记）。
+
+GitHub API 路由。
+"""
 
 from __future__ import annotations
 
@@ -37,7 +40,7 @@ def list_suggestions() -> ApiResponse[list[SuggestionOut]]:
     return ok([SuggestionOut(**it) for it in items])
 
 
-@router.post("/suggestions/{suggestion_id}/confirm")
+@router.post("/suggestions/{suggestion_id}/confirm", include_in_schema=False)
 def confirm(suggestion_id: str, req: ConfirmRequest) -> ApiResponse[dict]:
     """确认一条 commit 建议的关联技能。"""
     ok_flag = confirm_suggestion(suggestion_id, req.skill)
@@ -46,7 +49,7 @@ def confirm(suggestion_id: str, req: ConfirmRequest) -> ApiResponse[dict]:
     return ok({"id": suggestion_id, "skill": req.skill, "status": "confirmed"})
 
 
-@router.post("/suggestions/{suggestion_id}/reject")
+@router.post("/suggestions/{suggestion_id}/reject", include_in_schema=False)
 def reject(suggestion_id: str) -> ApiResponse[dict]:
     """驳回一条 commit 建议。"""
     ok_flag = reject_suggestion(suggestion_id)
@@ -55,7 +58,7 @@ def reject(suggestion_id: str) -> ApiResponse[dict]:
     return ok({"id": suggestion_id, "status": "rejected"})
 
 
-@router.post("/sync")
+@router.post("/sync", include_in_schema=False)
 def manual_sync() -> ApiResponse[dict]:
     """手动触发 GitHub 同步。"""
     count = sync_new_commits()

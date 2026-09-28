@@ -81,11 +81,14 @@ def switch_career_mode(
     )
 
 
-@router.get("/transitions")
+@router.get("/transitions", include_in_schema=False)
 def list_mode_transitions(
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[ModeTransitionOut]]:
-    """模式切换历史，最近的在最前。"""
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    模式切换历史，最近的在最前。
+    """
 
     rows = career_mode_service.list_transitions(db)
     return ok([ModeTransitionOut.model_validate(row) for row in rows])

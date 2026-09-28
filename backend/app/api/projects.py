@@ -1,4 +1,7 @@
-"""Project API 路由。CRUD + 详情含 milestones 进度。"""
+"""DEPRECATED（2026-09-24 收敛）：登记式建档写端点收口（spec §4.2/D5），保数据不删路由（readme 保存保持活跃）。
+
+Project API 路由。CRUD + 详情含 milestones 进度。
+"""
 
 from __future__ import annotations
 
@@ -72,7 +75,7 @@ def list_projects(
     return ok(out)
 
 
-@router.post("")
+@router.post("", include_in_schema=False)
 def create_project(
     payload: ProjectCreate, db: Session = Depends(get_db)
 ) -> ApiResponse[ProjectOut]:
@@ -121,7 +124,7 @@ def get_project(
     })
 
 
-@router.patch("/{project_id}")
+@router.patch("/{project_id}", include_in_schema=False)
 def patch_project(
     project_id: int, payload: ProjectPatch, db: Session = Depends(get_db)
 ) -> ApiResponse[ProjectOut]:
@@ -194,7 +197,7 @@ def save_project_readme(
     )
 
 
-@router.delete("/{project_id}")
+@router.delete("/{project_id}", include_in_schema=False)
 def delete_project(
     project_id: int, db: Session = Depends(get_db)
 ) -> ApiResponse[None]:

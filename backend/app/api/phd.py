@@ -1,4 +1,6 @@
-"""博士模块 API 路由（Phase 1）。
+"""DEPRECATED（2026-09-24 收敛）：归档线登记式写端点收口（spec D2/D5），保数据不删路由。
+
+博士模块 API 路由（Phase 1）。
 
 端点：
   GET   /api/phd/directions             研究方向列表
@@ -56,7 +58,7 @@ def list_directions(
     return ok([ResearchDirectionOut.model_validate(r) for r in rows])
 
 
-@router.post("/directions")
+@router.post("/directions", include_in_schema=False)
 def create_direction(
     payload: ResearchDirectionCreate, db: Session = Depends(get_db)
 ) -> ApiResponse[ResearchDirectionOut]:
@@ -92,7 +94,7 @@ def list_targets(
     return ok([PhDTargetOut.model_validate(r) for r in rows])
 
 
-@router.post("/targets")
+@router.post("/targets", include_in_schema=False)
 def create_target(
     payload: PhDTargetCreate, db: Session = Depends(get_db)
 ) -> ApiResponse[PhDTargetOut]:
@@ -113,7 +115,7 @@ def get_target(
     return ok(PhDTargetOut.model_validate(row))
 
 
-@router.patch("/targets/{target_id}")
+@router.patch("/targets/{target_id}", include_in_schema=False)
 def patch_target(
     target_id: int, payload: PhDTargetPatch, db: Session = Depends(get_db)
 ) -> ApiResponse[PhDTargetOut]:
@@ -127,7 +129,7 @@ def patch_target(
     return ok(PhDTargetOut.model_validate(row), message="target updated")
 
 
-@router.delete("/targets/{target_id}")
+@router.delete("/targets/{target_id}", include_in_schema=False)
 def delete_target(
     target_id: int, db: Session = Depends(get_db)
 ) -> ApiResponse[dict]:
@@ -170,7 +172,7 @@ def list_advisors(
     return ok([_enrich_advisor(r, targets.get(r.target_id)) for r in rows])
 
 
-@router.post("/advisors")
+@router.post("/advisors", include_in_schema=False)
 def create_advisor(
     payload: PhDAdvisorCreate, db: Session = Depends(get_db)
 ) -> ApiResponse[PhDAdvisorOut]:
@@ -195,7 +197,7 @@ def get_advisor(
     return ok(_enrich_advisor(row, target))
 
 
-@router.patch("/advisors/{advisor_id}")
+@router.patch("/advisors/{advisor_id}", include_in_schema=False)
 def patch_advisor(
     advisor_id: int, payload: PhDAdvisorPatch, db: Session = Depends(get_db)
 ) -> ApiResponse[PhDAdvisorOut]:
@@ -210,7 +212,7 @@ def patch_advisor(
     return ok(_enrich_advisor(row, target), message="advisor updated")
 
 
-@router.delete("/advisors/{advisor_id}")
+@router.delete("/advisors/{advisor_id}", include_in_schema=False)
 def delete_advisor(
     advisor_id: int, db: Session = Depends(get_db)
 ) -> ApiResponse[dict]:
@@ -258,7 +260,7 @@ def _compute_and_store(row: PhDAdvisor, db: Session) -> dict:
     return match_json
 
 
-@router.post("/advisors/{advisor_id}/match")
+@router.post("/advisors/{advisor_id}/match", include_in_schema=False)
 def match_advisor(
     advisor_id: int, db: Session = Depends(get_db)
 ) -> ApiResponse[dict]:
@@ -272,7 +274,7 @@ def match_advisor(
     return ok(match_json, message="match computed")
 
 
-@router.post("/advisors/match-all")
+@router.post("/advisors/match-all", include_in_schema=False)
 def match_all_advisors(db: Session = Depends(get_db)) -> ApiResponse[dict]:
     """重算全部导师的六维匹配（批量）。"""
 

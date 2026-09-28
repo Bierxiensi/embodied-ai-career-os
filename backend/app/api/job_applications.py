@@ -1,4 +1,7 @@
-"""求职投递 API。CRUD + 漏斗统计。"""
+"""DEPRECATED（2026-09-24 收敛）：归档线登记式写端点收口（spec D2/D5），保数据不删路由。
+
+求职投递 API。CRUD + 漏斗统计。
+"""
 
 from __future__ import annotations
 
@@ -30,7 +33,7 @@ def list_applications(db: Session = Depends(get_db)):
     return ok([JobApplicationOut.model_validate(r) for r in rows])
 
 
-@router.post("")
+@router.post("", include_in_schema=False)
 def create_application(payload: JobApplicationCreate, db: Session = Depends(get_db)):
     """新增投递记录。"""
     row = JobApplication(**payload.model_dump())
@@ -40,7 +43,7 @@ def create_application(payload: JobApplicationCreate, db: Session = Depends(get_
     return ok(JobApplicationOut.model_validate(row), "已添加投递记录")
 
 
-@router.patch("/{application_id}")
+@router.patch("/{application_id}", include_in_schema=False)
 def patch_application(
     application_id: int, payload: JobApplicationPatch, db: Session = Depends(get_db)
 ):
@@ -57,7 +60,7 @@ def patch_application(
     return ok(JobApplicationOut.model_validate(row), "已更新")
 
 
-@router.delete("/{application_id}")
+@router.delete("/{application_id}", include_in_schema=False)
 def delete_application(application_id: int, db: Session = Depends(get_db)):
     """删除投递记录。"""
     row = db.query(JobApplication).filter(JobApplication.id == application_id).first()

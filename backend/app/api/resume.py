@@ -1,4 +1,6 @@
-"""简历线 API（Batch 2 核心）。
+"""DEPRECATED（2026-09-24 收敛）：归档线登记式写端点收口（spec D2/D5），保数据不删路由。
+
+简历线 API（Batch 2 核心）。
 
 端点：
 - GET    /api/resume                  简历版本列表
@@ -90,7 +92,7 @@ def list_versions(db: Session = Depends(get_db)):
     return ok([ResumeVersionOut.model_validate(r).model_dump() for r in rows])
 
 
-@router.post("/versions")
+@router.post("/versions", include_in_schema=False)
 def create_version(payload: ResumeVersionCreate, db: Session = Depends(get_db)):
     """新建简历版本。is_primary=True 时互斥其它版本。"""
     if payload.is_primary:
@@ -115,7 +117,7 @@ def get_version(version_id: int, db: Session = Depends(get_db)):
     return ok(ResumeVersionOut.model_validate(v).model_dump())
 
 
-@router.patch("/versions/{version_id}")
+@router.patch("/versions/{version_id}", include_in_schema=False)
 def patch_version(version_id: int, payload: ResumeVersionPatch, db: Session = Depends(get_db)):
     v = db.query(ResumeVersion).filter(ResumeVersion.id == version_id).first()
     if not v:
@@ -139,7 +141,7 @@ def patch_version(version_id: int, payload: ResumeVersionPatch, db: Session = De
     return ok(ResumeVersionOut.model_validate(v).model_dump(), "已更新版本")
 
 
-@router.delete("/versions/{version_id}")
+@router.delete("/versions/{version_id}", include_in_schema=False)
 def delete_version(version_id: int, db: Session = Depends(get_db)):
     v = db.query(ResumeVersion).filter(ResumeVersion.id == version_id).first()
     if not v:
@@ -151,7 +153,7 @@ def delete_version(version_id: int, db: Session = Depends(get_db)):
 
 # ───────────────────────────── 解析 / 诊断 ─────────────────────────────
 
-@router.post("/parse")
+@router.post("/parse", include_in_schema=False)
 def parse_resume(payload: ResumeParseIn, db: Session = Depends(get_db)):
     """简历 md → 结构化 claims（抽取即可校验的 claim 列表）。"""
     from app.agents.resume.engine import extract_claims
@@ -160,7 +162,7 @@ def parse_resume(payload: ResumeParseIn, db: Session = Depends(get_db)):
     return ok({"claims": claims, "count": len(claims)})
 
 
-@router.post("/diagnose")
+@router.post("/diagnose", include_in_schema=False)
 def diagnose(payload: ResumeDiagnoseIn, db: Session = Depends(get_db)):
     """防虚构诊断。
 
@@ -200,7 +202,7 @@ def list_facts(db: Session = Depends(get_db)):
     return ok([ResumeFactOut.model_validate(r).model_dump() for r in rows])
 
 
-@router.post("/facts")
+@router.post("/facts", include_in_schema=False)
 def create_fact(payload: ResumeFactCreate, db: Session = Depends(get_db)):
     """新增一条事实锚点（防虚构依据）。"""
     f = ResumeFact(
@@ -218,7 +220,7 @@ def create_fact(payload: ResumeFactCreate, db: Session = Depends(get_db)):
     return ok(ResumeFactOut.model_validate(f).model_dump(), "已新增事实锚点")
 
 
-@router.delete("/facts/{fact_id}")
+@router.delete("/facts/{fact_id}", include_in_schema=False)
 def delete_fact(fact_id: int, db: Session = Depends(get_db)):
     """删除事实锚点。"""
     f = db.query(ResumeFact).filter(ResumeFact.id == fact_id).first()

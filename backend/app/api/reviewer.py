@@ -47,11 +47,13 @@ class ReviewerResult(BaseModel):
     updated_skill: dict         # 更新后的技能状态
 
 
-@router.post("/review")
+@router.post("/review", include_in_schema=False)
 def review_task(
     req: ReviewerRequest, db: Session = Depends(get_db)
 ) -> ApiResponse[ReviewerResult]:
-    """完成任务并复盘：Task→done + LearningLog + Reviewer Agent + Skill Update。
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    完成任务并复盘：Task→done + LearningLog + Reviewer Agent + Skill Update。
 
     事务保证：全链路成功才提交，任一步骤失败回滚。
     """

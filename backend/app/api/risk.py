@@ -1,4 +1,6 @@
-"""七维风险雷达 API（Phase 2）。
+"""DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+七维风险雷达 API（Phase 2）。
 
 GET /api/risk —— 取数 + compute_risk，返回 RiskOut。
 纯规则，无 LLM 依赖，LLM 未配置时全功能可用。
@@ -32,7 +34,7 @@ from app.models.task import Task
 from app.schemas.risk import RiskOut
 from app.services.readiness.service import primary_role
 
-router = APIRouter(prefix="/risk", tags=["risk"])
+router = APIRouter(prefix="/risk", tags=["risk"], include_in_schema=False)
 
 
 def _main_track():

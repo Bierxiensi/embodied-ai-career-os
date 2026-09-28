@@ -101,9 +101,12 @@ def get_schedule():
     return ok(payload.model_dump())
 
 
-@router.post("/{kind}/send")
+@router.post("/{kind}/send", include_in_schema=False)
 def send(kind: str, force: bool = Query(default=False, description="已发送是否强制重推")):
-    """生成并推送一份报告（幂等：同 period_key 已发送则跳过，除非 force）。"""
+    """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
+
+    生成并推送一份报告（幂等：同 period_key 已发送则跳过，除非 force）。
+    """
     _check_kind(kind)
     result = send_report(kind, force=force)
     payload = SendResultOut.model_validate(result)
