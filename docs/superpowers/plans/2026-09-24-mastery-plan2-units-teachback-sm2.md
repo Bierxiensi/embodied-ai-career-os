@@ -440,7 +440,10 @@ def schedule(state: CardState, rating: str) -> CardState:
         ef = _clamp_ef(ef - 0.15)
         streak = 0
     elif rating == "good":
-        if interval < 1:
+        # 首评阶梯（与计划初稿不同——初稿 `elif interval < 3` 与自带测试矛盾：
+        # 初始 interval=1.0 时首次 good 会跳到 3.0。实现按测试意图修正为
+        # 「streak==0 且 interval≤1 → 保持 1 天」，其余分支与初稿一致。）
+        if streak == 0 and interval <= 1.0:
             interval = 1.0
         elif interval < 3:
             interval = 3.0
