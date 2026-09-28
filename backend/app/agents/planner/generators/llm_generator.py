@@ -131,15 +131,16 @@ def _validate_and_fill(task_dict: dict, state: PlannerState) -> TaskOutput:
 
     return TaskOutput(
         title=task_dict.get("title") or f"{skill} 学习任务",
-        skill=task_dict.get("skill") or skill or "Robot AI",
-        objective=task_dict.get("objective") or f"围绕 {skill or 'Robot AI'} 进行项目驱动学习",
+        skill=task_dict.get("skill") or skill or "Post-Training",
+        objective=task_dict.get("objective")
+        or f"围绕 {skill or 'Post-Training'} 进行项目驱动学习",
         duration=min(
             int(task_dict.get("duration", available)),
             available,
         ),
         difficulty=task_dict.get("difficulty") or "beginner",
         acceptance=task_dict.get("acceptance") or [
-            f"完成 {skill or 'Robot AI'} 相关实践",
+            f"完成 {skill or 'Post-Training'} 相关实践",
             "代码提交 Git",
         ],
         resources=task_dict.get("resources") or ["官方文档", "GitHub"],
