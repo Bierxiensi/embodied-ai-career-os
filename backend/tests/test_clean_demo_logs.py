@@ -23,3 +23,11 @@ def test_real_log_not_matched():
 def test_same_day_real_content_not_matched():
     # 同日但内容不含演示指纹 → 不删（宁可漏删，不可错删）
     assert not is_demo_log("手写 SFT trainer 笔记", datetime(2026, 9, 10, 23, 0, 0))
+
+
+def test_other_day_with_fingerprint_not_matched():
+    # 其他日期 + 含指纹 → 不删（双条件缺一不可的对称侧）
+    assert not is_demo_log(
+        "复盘：ROS2 publisher 那次的教训还适用",
+        datetime(2026, 9, 11, 23, 0, 0),
+    )

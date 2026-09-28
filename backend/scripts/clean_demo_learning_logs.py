@@ -19,6 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.core.config import settings  # noqa: E402
 from app.db.base import SessionLocal  # noqa: E402
 from app.models.learning_log import LearningLog  # noqa: E402
 
@@ -31,13 +32,31 @@ def is_demo_log(content: str, created_at: datetime) -> bool:
     return created_at.date() == DEMO_DAY and DEMO_FINGERPRINT in (content or "")
 
 
+def _db_path_from_url(url: str) -> Path:
+    """从 settings.database_url 解析 sqlite 文件路径（与会话实际写入的库一致）。
+
+    解析规则对齐 backend/tests/conftest.py::_sqlite_path：剥离 `sqlite:///` 前缀，
+    相对路径按 backend/ 解析。非 sqlite 或 :memory: 直接报错 —— 此时无法安全备份，
+    宁可中止也不猜路径。
+    """
+    if not url.startswith("sqlite"):
+        raise SystemExit(f"DATABASE_URL 非 sqlite，无法定位库文件备份：{url!r}")
+    raw = url.split("sqlite:///", 1)[-1]
+    if not raw or raw.startswith(":memory:"):
+        raise SystemExit(f"DATABASE_URL 为内存库，无库文件可备份：{url!r}")
+    p = Path(raw)
+    if not p.is_absolute():
+        p = Path(__file__).resolve().parents[1] / p
+    return p.resolve()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--yes", action="store_true", help="确认删除（先备份库文件）")
     parser.add_argument("--dry-run", action="store_true", help="只统计不删除")
     args = parser.parse_args()
 
-    db_path = Path(__file__).resolve().parents[1] / "data" / "app.db"
+    db_path = _db_path_from_url(settings.database_url)
     db = SessionLocal()
     try:
         rows = db.query(LearningLog).all()
