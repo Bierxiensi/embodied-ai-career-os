@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from app.agents.phd.agent import PhDMatchEngine
+from app.agents.phd.agent import PhDMatchEngine, _is_home_school
 from app.db.base import Base, SessionLocal, engine
 from app.models.phd import PhDAdvisor, PhDTarget, ResearchDirection
 
@@ -116,7 +116,7 @@ ADVISORS = [
     {"institution": "北京航空航天大学（本校）", "name": "北航·本校导师（自动化/AI/机器人，待确认）",
      "title": "教授", "research_area": "视具体导师方向",
      "recruiting": True, "in_service_friendly": True,
-     "notes": "本校在读主场优势，优先联系确认非全名额"},
+     "notes": "2026-09-24 裁决：保留但降权（HOME_SCHOOL_PENALTY），申请季前最终裁决；非全名额需确认"},
     {"institution": "中国石油大学（北京）", "name": "中石大·自动化/智能控制方向导师（待确认）",
      "title": "副教授", "research_area": "自动化控制 / 智能控制",
      "recruiting": True, "in_service_friendly": True,
@@ -196,6 +196,9 @@ def seed() -> None:
                 target_in_service=target.in_service_friendly if target else False,
                 advisor_in_service=adv.in_service_friendly,
                 application_deadline=target.application_deadline if target else None,
+                is_home_school=_is_home_school(
+                    target.institution if target else "", adv.name or ""
+                ),
             )
             adv.match_json = {
                 "overall": int(res.overall),

@@ -24,7 +24,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.agents.phd.agent import PhDMatchEngine
+from app.agents.phd.agent import PhDMatchEngine, _is_home_school
 from app.core.response import ApiResponse, ok
 from app.db.base import get_db
 from app.models.phd import PhDAdvisor, PhDTarget, ResearchDirection
@@ -242,6 +242,9 @@ def _compute_and_store(row: PhDAdvisor, db: Session) -> dict:
         target_in_service=target.in_service_friendly if target else False,
         advisor_in_service=row.in_service_friendly,
         application_deadline=target.application_deadline if target else None,
+        is_home_school=_is_home_school(
+            target.institution if target else "", row.name or ""
+        ),
     )
     match_json = {
         "overall": res.overall,

@@ -66,6 +66,17 @@ _HINTS: dict[str, str] = {
 }
 
 
+# 2026-09-24 裁决：北航本校「保留但降权」——本校主场优势此前隐含在备注里，
+# 现显式化为总分乘子；申请季前（26 秋）用户可再裁决是否撤销。
+HOME_SCHOOL_PENALTY = 0.85
+
+
+def _is_home_school(institution: str, name: str) -> bool:
+    """机构/导师条目是否为北航本校（主场条目）。"""
+    text = f"{institution or ''} {name or ''}"
+    return "北航" in text and "本校" in text
+
+
 @dataclass
 class PhDMatchResult:
     """一次博士机会六维匹配结果。"""
@@ -115,6 +126,7 @@ class PhDMatchEngine:
         advisor_in_service: bool,
         application_deadline: date | None,
         today: date | None = None,
+        is_home_school: bool = False,
     ) -> PhDMatchResult:
         """计算六维匹配结果。
 
@@ -151,6 +163,8 @@ class PhDMatchEngine:
         }
 
         overall = int(round(sum(WEIGHTS[k] * dimensions[k] for k in WEIGHTS)))
+        if is_home_school:
+            overall = int(round(overall * HOME_SCHOOL_PENALTY))
         overall = max(0, min(100, overall))
         grade = grade_of(overall)
 
