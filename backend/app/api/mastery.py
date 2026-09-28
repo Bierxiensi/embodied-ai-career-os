@@ -53,6 +53,22 @@ def list_units(day_seq: int | None = None, db: Session = Depends(get_db)) -> Api
     return ok([_unit_out(u, []) for u in units])
 
 
+def _rule_judge(reference: str, user: str) -> bool:
+    """规则判定：参考答案核心词被覆盖即对（宽松但不放水）。
+
+    无参考答案、或核心词表被过滤成空（首两词均 <2 字符）→ 一律判错，
+    杜绝 `all([])` 恒真把任意答案放行的漏洞。
+    """
+    ref = reference.strip().lower()
+    if not ref:
+        return False
+    user_norm = user.strip().lower()
+    if ref in user_norm:
+        return True
+    keywords = [w for w in ref.replace("/", " ").split()[:2] if len(w) >= 2]
+    return bool(keywords) and all(w in user_norm for w in keywords)
+
+
 @router.get("/units/{unit_id}")
 def get_unit(unit_id: int, db: Session = Depends(get_db)) -> ApiResponse[UnitOut]:
     unit = db.get(MasteryUnit, unit_id)
@@ -70,12 +86,7 @@ def answer_item(
     if item is None or item.unit_id != unit_id:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    user = payload.answer.strip().lower()
-    ref = (item.answer or "").strip().lower()
-    # 规则判定：参考答案的核心词被覆盖即算对（宽松但不放水）；无参考答案视为错
-    correct = bool(ref) and (ref in user or all(
-        w in user for w in ref.replace("/", " ").split()[:2] if len(w) >= 2
-    ))
+    correct = _rule_judge(item.answer or "", payload.answer)
 
     verified = item.is_verified
     card_id = None
@@ -100,6 +111,7 @@ def answer_item(
                 created_at=datetime.now(timezone.utc),
             )
             db.add(card)
+        db.flush()  # 自增主键 flush 时才分配：首答建卡也要拿到真实 card_id
         card_id = card.id
 
     db.commit()

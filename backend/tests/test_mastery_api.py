@@ -135,3 +135,34 @@ def test_review_card_flow():
         db.commit()
     finally:
         db.close()
+
+
+def test_first_answer_returns_card_id():
+    # 首答建卡时 card_id 不得为 None（契约：answer → review 链路可接）
+    uid = _first_unit_id()
+    opened = client.get(f"/api/mastery/units/{uid}").json()["data"]
+    quiz = next(i for i in opened["items"] if i["kind"] == "quiz_q")
+    # 清掉该题可能已有的卡，确保走"首次建卡"路径
+    from app.db.base import SessionLocal
+    from app.models.mastery import ReviewCard
+
+    db = SessionLocal()
+    try:
+        db.query(ReviewCard).filter_by(source_item_id=quiz["id"]).delete()
+        db.commit()
+    finally:
+        db.close()
+    r = client.post(
+        f"/api/mastery/units/{uid}/answer",
+        json={"item_id": quiz["id"], "answer": "参考答案原文见 rationale"},
+    ).json()["data"]
+    assert r["card_id"] is not None
+
+
+def test_vacuous_reference_never_judges_correct():
+    from app.api.mastery import _rule_judge  # 若判定是内联逻辑，抽出同名纯函数再测
+
+    assert _rule_judge("ab", "cd") is False  # 参考词表为空 → 永不判对
+    # 真·空词表：首两词均 <2 字符被过滤 → all([]) 恒真漏洞不得复现
+    assert _rule_judge("a b", "any answer at all") is False
+    assert _rule_judge("", "anything") is False  # 无参考答案 → 永不判对
