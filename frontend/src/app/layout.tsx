@@ -4,7 +4,7 @@ import GlobalNav from "@/components/GlobalNav";
 import CommandPaletteMount from "@/components/ui/CommandPaletteMount";
 import { Sidebar } from "@/components/ui";
 import { CareerModeProvider } from "@/lib/careerModeContext";
-import { PALETTE_ITEMS, PRIMARY_NAV } from "@/lib/nav";
+import { PALETTE_ITEMS, PRIMARY_NAV, SIDEBAR_GROUP_ORDER } from "@/lib/nav";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import "./globals.css";
 
@@ -19,40 +19,13 @@ export const metadata: Metadata = {
   description: "AI 驱动的求职作战与能力成长操作系统（Multi-Agent）",
 };
 
-/** 全局侧边栏分区 — 常驻于所有页面左侧。 */
-const SIDEBAR_SECTIONS = [
-  {
-    label: "求职",
-    items: [
-      { href: "/jobs", label: "作战看板" },
-      { href: "/jobs/pool", label: "岗位池" },
-      { href: "/jobs/applications", label: "投递管理" },
-      { href: "/resume", label: "简历" },
-      { href: "/interview", label: "面试准备" },
-    ],
-  },
-  {
-    label: "学习",
-    items: [
-      { href: "/plan", label: "施工计划" },
-      { href: "/questions", label: "题库练习" },
-      { href: "/knowledge", label: "知识库" },
-      { href: "/projects", label: "项目" },
-    ],
-  },
-  {
-    label: "博士",
-    items: [
-      { href: "/phd", label: "申请追踪" },
-    ],
-  },
-  {
-    label: "系统",
-    items: [
-      { href: "/agents", label: "Agent 工作台" },
-    ],
-  },
-];
+/** 全局侧边栏分区 — 低频入口的分组渲染，**同源于 nav.ts 的 PALETTE_ITEMS**
+ * （不另存第二份入口表：新增入口只改 PALETTE_ITEMS.group）。
+ * 顶栏仍是 PRIMARY_NAV 三问（GlobalNav），/knowledge 不作为主入口出现。 */
+const SIDEBAR_SECTIONS = SIDEBAR_GROUP_ORDER.map((group) => ({
+  label: group,
+  items: PALETTE_ITEMS.filter((item) => item.group === group),
+})).filter((section) => section.items.length > 0);
 
 /**
  * Root layout — GlobalNav + Sidebar live here, not in individual pages.

@@ -6,12 +6,14 @@ import { usePathname } from "next/navigation";
 import ModeSwitcher from "@/components/ModeSwitcher";
 import ThemeSwitcher from "@/theme/ThemeSwitcher";
 import { useCareerMode } from "@/lib/careerModeContext";
-import { PRIMARY_NAV } from "@/lib/nav";
+import { PALETTE_ITEMS, PRIMARY_NAV } from "@/lib/nav";
 
 /** 求职模式下的二级路由（用于 isActive 前缀匹配）。 */
 const JOB_HUNT_ROUTES = ["/jobs", "/jd", "/resume", "/interview"];
 /** 三问入口（学/习/证）——数据源为 nav.ts 单一真源，高亮按前缀匹配。 */
 const LEARN_ROUTES = PRIMARY_NAV.map((n) => n.href);
+/** 求职入口 —— 同样取自 PALETTE_ITEMS（nav.ts 单一真源），不再手写 label/hint。 */
+const JOB_NAV_ITEM = PALETTE_ITEMS.find((p) => p.href === "/jobs");
 
 /** 全局导航栏 — 三问三入口（学/习/证，nav.ts 单一真源），随 CareerMode 联动求职入口。
  *
@@ -29,7 +31,7 @@ export default function GlobalNav() {
   // 三问三入口来自 nav.ts；求职入口随模式显隐（模式联动保留）
   const links = [
     ...PRIMARY_NAV,
-    ...(isJobHunt ? [{ href: "/jobs", label: "求职", hint: "投递看板（归档线）" }] : []),
+    ...(isJobHunt && JOB_NAV_ITEM ? [JOB_NAV_ITEM] : []),
   ];
 
   const isActive = (href: string) => {
