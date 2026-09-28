@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -21,24 +23,31 @@ router = APIRouter(prefix="/today", tags=["today"])
 
 
 def _planned_minutes(payload: dict) -> int:
-    """今日计划分钟：取 plan_days.est_minutes（施工单 payload 里唯一的真实
-    「当日计划分钟」字段）；缺失时回退 tasks.duration 求和，再缺回退 0。
+    """今日计划分钟：口径 =「今天的任务总时长 vs 今日可学预算」。
+
+    优先取当日任务 `tasks[].duration` 求和（任务列表非空时）。只有**无任务**
+    才回退 `day.est_minutes` —— plan_30d 的 est_minutes 是整日课程估计
+    （180–420 分钟），拿它做容量预检会永远 ok=False，徽章成了永久噪音；
+    两者皆缺回退 0。
 
     容量预检绝不因字段缺失抛错（spec §2.4 前置预检不能把端点打挂）。
     """
+    tasks = payload.get("tasks") or []
+    if tasks:
+        total = 0
+        for t in tasks:
+            try:
+                total += int(t.get("duration") or 0)
+            except (TypeError, ValueError, AttributeError):
+                continue
+        return max(0, total)
     try:
         est = (payload.get("day") or {}).get("est_minutes")
         if est is not None:
             return max(0, int(est))
     except (TypeError, ValueError):
         pass
-    total = 0
-    for t in payload.get("tasks") or []:
-        try:
-            total += int(t.get("duration") or 0)
-        except (TypeError, ValueError, AttributeError):
-            continue
-    return max(0, total)
+    return 0
 
 
 @router.get("")
@@ -46,8 +55,14 @@ def get_today(day: int | None = None, db: Session = Depends(get_db)) -> ApiRespo
     """今日聚合：today（施工单/风险/ROI 原样透传）+ 今日日志 + 容量预检。"""
     payload = build_today_payload(day=day, db=db)  # 失败自然抛出（同 /api/plan/today 语义）
 
+    # 「今日日志」= 滚动 24h 窗口，不是 UTC 自然日：created_at 是 naive UTC，
+    # 若按 utcnow().date() 切日历天，本地时区晚间写入的日志会被切掉
+    # （naive-UTC 与本地日错位的陷阱），且跨午夜的「今天」会突然清空。
+    # 滚动窗口对任意时区语义一致；limit(20) 仅是返回条数的安全上限。
+    cutoff = datetime.utcnow() - timedelta(hours=24)
     logs = (
         db.query(LearningLog)
+        .filter(LearningLog.created_at >= cutoff)
         .order_by(LearningLog.created_at.desc())
         .limit(20)
         .all()

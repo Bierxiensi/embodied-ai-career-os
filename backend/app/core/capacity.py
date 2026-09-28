@@ -36,6 +36,11 @@ def assert_plan_capacity(
     `planned_minutes` 容错：None / 0 均按 0 处理，缺字段不得让端点 500。
     """
     available = available_minutes if available_minutes is not None else daily_study_minutes()
+    if available <= 0:
+        # 非正预算不能进下面的向上取整除法（否则 ZeroDivisionError /
+        # 负天数）。回退到默认每日预算（daily_study_minutes 已钳制 ≥60），
+        # 保证 suggestion 永远给出可执行的天数。
+        available = daily_study_minutes()
     planned = max(0, int(planned_minutes or 0))
     shortfall = max(0, planned - available)
     ok = shortfall == 0
