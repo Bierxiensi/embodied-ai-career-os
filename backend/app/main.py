@@ -27,6 +27,7 @@ from app.api.job_postings import router as job_postings_router
 from app.api.reports import router as reports_router
 from app.api.resume import router as resume_router
 from app.api.learning_logs import router as learning_logs_router
+from app.api.mastery import router as mastery_router
 from app.api.dashboard import router as dashboard_router
 from app.api.milestones import router as milestones_router
 from app.api.paper import router as paper_router
@@ -115,6 +116,8 @@ app.include_router(experiments_router, prefix=api_prefix)
 app.include_router(plan_router, prefix=api_prefix)
 # 今日单聚合端点（spec §4.4）：施工单 + 今日日志 + 容量预检一次取齐
 app.include_router(today_router, prefix=api_prefix)
+# 掌握单元双环（spec §3.3/§4.5）：单元懒生成 + 答题实证 + SM-2 复习推进
+app.include_router(mastery_router, prefix=api_prefix)
 app.include_router(risk_router, prefix=api_prefix)
 # Phase 3 统一落地页：职业进度 + 当前工作 + 学术与博士（/today 页的数据源之一）
 app.include_router(transition_router, prefix=api_prefix)

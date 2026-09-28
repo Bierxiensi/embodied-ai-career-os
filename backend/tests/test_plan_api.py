@@ -293,7 +293,9 @@ def test_all_four_kinds_makes_day_complete():
 
     assert _days(after) == _days(before) + 1
 
-    _clear_artifacts(day_id)
+    # 传 seq 不是 plan_day.id（helper 口径见其 docstring）：日历课程日被更早的
+    # 模块先种下时 id≠seq，传 id 会清错天/404 并残留四件套污染后续总账断言。
+    _clear_artifacts(2)
 
 
 def test_artifact_invalid_kind_is_422():

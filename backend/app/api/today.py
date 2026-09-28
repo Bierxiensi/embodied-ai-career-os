@@ -4,12 +4,12 @@
 防御边界如实：日志区与容量区不依赖 payload 的具体形态（缺字段自兜底、不抛）；
 today 主 payload（/api/plan/today 语义）失败**按设计向外抛**，由全局异常处理
 返回错误响应 —— 本端点不做「各分区独立兜底、不让整端点 500」。
-计划 2 将追加 review 区（SM-2 到期队列）——本版不预埋假字段。
+计划 2 追加 review 区（SM-2 到期队列，`due_count` + 至多 10 张 `due_cards`）。
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -19,7 +19,9 @@ from app.core.capacity import assert_plan_capacity, daily_study_minutes
 from app.core.response import ApiResponse, ok
 from app.db.base import get_db
 from app.models.learning_log import LearningLog
+from app.models.mastery import ReviewCard
 from app.schemas.learning_log import LearningLogOut
+from app.schemas.mastery import ReviewCardOut
 
 router = APIRouter(prefix="/today", tags=["today"])
 
@@ -77,10 +79,24 @@ def get_today(day: int | None = None, db: Session = Depends(get_db)) -> ApiRespo
         available_minutes=daily_study_minutes(),
     )
 
+    # review 区：SM-2 到期队列（active 且 due_at 已过），按到期时间升序取前 10 展示，
+    # due_count 是全量到期数（展示截断 ≠ 队列长度）。due_at 比较用 aware UTC ——
+    # SQLite 存取会把 aware/naive 都规整成同口径字符串，两侧一致即可比。
+    now = datetime.now(timezone.utc)
+    due_q = db.query(ReviewCard).filter(
+        ReviewCard.card_status == "active", ReviewCard.due_at <= now
+    )
+    due_cards = due_q.order_by(ReviewCard.due_at).limit(10).all()
+    review = {
+        "due_count": due_q.count(),
+        "due_cards": [ReviewCardOut.model_validate(c) for c in due_cards],
+    }
+
     return ok(
         {
             "today": payload,
             "learning_logs_24h": logs_out,
             "capacity": capacity,
+            "review": review,
         }
     )

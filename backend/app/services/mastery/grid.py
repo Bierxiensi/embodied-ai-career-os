@@ -33,7 +33,7 @@ def _skills_for_title(title: str) -> list[str]:
     return []
 
 
-def build_unit_specs(papers: list[tuple[int, str]]) -> list[dict]:
+def build_unit_specs(papers: list[tuple[str, str]]) -> list[dict]:
     """纯函数：papers 为 (id, title) 列表。返回 UnitSpec 列表。"""
     specs: list[dict] = []
     for d in PLAN_30D:
