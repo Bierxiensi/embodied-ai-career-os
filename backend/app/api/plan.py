@@ -567,11 +567,13 @@ def set_progress(
     )
 
 
-@router.post("/artifacts")
+@router.post("/artifacts", include_in_schema=False)
 def create_artifact(
     payload: ArtifactCreate, db: Session = Depends(get_db)
 ) -> ApiResponse[ArtifactOut]:
-    """勾选一件产出（代码 / 笔记 / 面试题 / commit）。
+    """DEPRECATED（2026-09-29 预算裁决，spec D5）：布尔登记式四件套——保数据不删路由，UI 随计划 2 Task 8 撤。
+
+    勾选一件产出（代码 / 笔记 / 面试题 / commit）。
 
     P0 为手工记录，auto_verified 恒为 False。
     P2 起 commit 由 GitHub 按日期自动归集、questions 由题库条数自动判定。
@@ -594,11 +596,13 @@ def create_artifact(
     return ok(ArtifactOut.model_validate(artifact), message=f"已记录 {payload.kind}")
 
 
-@router.delete("/artifacts/{artifact_id}")
+@router.delete("/artifacts/{artifact_id}", include_in_schema=False)
 def delete_artifact(
     artifact_id: int, db: Session = Depends(get_db)
 ) -> ApiResponse[dict]:
-    """取消勾选（删除一条产出记录）。
+    """DEPRECATED（2026-09-29 预算裁决，spec D5）：布尔登记式四件套——保数据不删路由，UI 随计划 2 Task 8 撤。
+
+    取消勾选（删除一条产出记录）。
 
     四件套是"今天交了什么"的记录，误勾需要能撤销。
     与 Task 不同，这里允许删除 —— 它不承载历史决策依据（P2 起才承载，届时改软删）。

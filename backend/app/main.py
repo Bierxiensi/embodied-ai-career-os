@@ -40,6 +40,7 @@ from app.api.reviewer import router as reviewer_router
 from app.api.risk import router as risk_router
 from app.api.skills import router as skills_router
 from app.api.tasks import router as tasks_router
+from app.api.teach_back import router as teach_back_router
 from app.api.today import router as today_router
 from app.api.tools import router as tools_router
 from app.api.transition import router as transition_router
@@ -118,6 +119,8 @@ app.include_router(plan_router, prefix=api_prefix)
 app.include_router(today_router, prefix=api_prefix)
 # 掌握单元双环（spec §3.3/§4.5）：单元懒生成 + 答题实证 + SM-2 复习推进
 app.include_router(mastery_router, prefix=api_prefix)
+# Teach-Back 口述回收（spec §4.2）：判定 + 自动学习日志 + 错项入 SM-2
+app.include_router(teach_back_router, prefix=api_prefix)
 app.include_router(risk_router, prefix=api_prefix)
 # Phase 3 统一落地页：职业进度 + 当前工作 + 学术与博士（/today 页的数据源之一）
 app.include_router(transition_router, prefix=api_prefix)
