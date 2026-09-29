@@ -58,6 +58,10 @@ def test_complete_writes_learning_log_auto():
         assert log.duration_minutes == 15
         assert db.query(LearningLog).count() == before + 1
 
+        # 口述过判 → 实证（与 answer 路径统一语义，is_verified 必须落库）
+        db.refresh(item)
+        assert item.is_verified is True
+
         db.query(ReviewCard).filter_by(source_item_id=item.id).delete()
         db.query(UnitItem).filter_by(id=item.id).delete()
         db.query(MasteryUnit).filter_by(id=u.id).delete()

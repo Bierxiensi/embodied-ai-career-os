@@ -99,13 +99,14 @@ export type ReviewCardT = {
   cardStatus: "active" | "fixed";
 };
 
-export async function listDueCards(): Promise<ReviewCardT[]> {
-  const data = await apiClient.get<{ review?: { due_cards: Array<{
+/** 到期卡列表 + 真实到期总数：due_cards 后端截断（至多 10 张），due_count 才是队列长度。 */
+export async function listDueCards(): Promise<{ cards: ReviewCardT[]; dueCount: number }> {
+  const data = await apiClient.get<{ review?: { due_count?: number; due_cards: Array<{
     id: number; front: string; back: string; due_at: string;
     interval_days: number; ef: number; lapse_count: number;
     good_streak: number; card_status: "active" | "fixed";
   }> } }>("/api/today");
-  return (data.review?.due_cards ?? []).map((c) => ({
+  const cards = (data.review?.due_cards ?? []).map((c) => ({
     id: c.id,
     front: c.front,
     back: c.back,
@@ -116,6 +117,7 @@ export async function listDueCards(): Promise<ReviewCardT[]> {
     goodStreak: c.good_streak,
     cardStatus: c.card_status,
   }));
+  return { cards, dueCount: data.review?.due_count ?? 0 };
 }
 
 export async function reviewCard(

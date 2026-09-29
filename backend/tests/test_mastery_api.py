@@ -73,22 +73,107 @@ def test_units_list_and_open_lazy_generates():
         assert "answer" not in item  # 防提前看答案
 
 
+def _seed_quiz_unit(title: str, ref: str) -> tuple[int, int, str]:
+    """自建已知参考答案的单元+测验题：闭卷实证必须由测试自己掌握答案，
+    不依赖懒生成内容（否则「答对→实证」只能断言 200，钉不住语义）。"""
+    from datetime import datetime, timezone
+
+    from app.db.base import SessionLocal
+    from app.models.mastery import MasteryUnit, UnitItem
+
+    db = SessionLocal()
+    try:
+        u = MasteryUnit(
+            source_type="resource", source_ref=ref, title=title,
+            skill_ids='["DPO"]', day_seq=None, generation_mode="rule",
+            content_hash=None, status="opened", created_at=datetime.now(timezone.utc),
+        )
+        db.add(u)
+        db.commit()
+        db.refresh(u)
+        item = UnitItem(
+            unit_id=u.id, kind="quiz_q",
+            body="DPO 绕过什么显式组件？", answer="奖励模型", rationale="BT 隐式奖励",
+        )
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+        return u.id, item.id, item.answer
+    finally:
+        db.close()
+
+
+def _cleanup_unit(unit_id: int) -> None:
+    from app.db.base import SessionLocal
+    from app.models.mastery import ReviewCard, UnitItem
+
+    db = SessionLocal()
+    try:
+        item_ids = [i.id for i in db.query(UnitItem).filter_by(unit_id=unit_id).all()]
+        for iid in item_ids:
+            db.query(ReviewCard).filter_by(source_item_id=iid).delete()
+        db.query(UnitItem).filter_by(unit_id=unit_id).delete()
+        from app.models.mastery import MasteryUnit
+
+        db.query(MasteryUnit).filter_by(id=unit_id).delete()
+        db.commit()
+    finally:
+        db.close()
+
+
 def test_answer_correct_marks_verified_and_creates_card():
-    uid = _first_unit_id()
+    # 真·闭卷实证：用自建题的已知参考答案走规则判定 → verified 置位 + 建卡 + 落库翻真
+    uid, iid, reference = _seed_quiz_unit("实证语义单元", "unit_test:verified")
     opened = client.get(f"/api/mastery/units/{uid}").json()["data"]
-    quiz = next(i for i in opened["items"] if i["kind"] == "quiz_q")
-    # 答案未知 → 先打错一次，验证不置位
-    r1 = client.post(
+    quiz = next(i for i in opened["items"] if i["id"] == iid)
+    assert quiz["is_verified"] is False  # 起点：未实证
+
+    r = client.post(
         f"/api/mastery/units/{uid}/answer",
-        json={"item_id": quiz["id"], "answer": "完全不相关的答案"},
+        json={"item_id": iid, "answer": reference},  # 参考答案原文 → 规则判定必过
     ).json()["data"]
-    assert r1["correct"] is False and r1["verified"] is False
-    # 拿 rationale 对齐再答（开卷不算：这里直接用参考答案原文，判定应通过）
-    r2 = client.post(
+    assert r["correct"] is True
+    assert r["verified"] is True
+    assert r["card_id"] is not None  # 答对建卡：answer → review 链路可接
+
+    # 重新 GET 单元：is_verified 必须已翻真（不是只在 answer 响应里说说）
+    reopened = client.get(f"/api/mastery/units/{uid}").json()["data"]
+    after = next(i for i in reopened["items"] if i["id"] == iid)
+    assert after["is_verified"] is True
+
+    # 答错不得实证（同一判定口径的反面）
+    uid2, iid2, _ = _seed_quiz_unit("未实证单元", "unit_test:unverified")
+    r_bad = client.post(
+        f"/api/mastery/units/{uid2}/answer",
+        json={"item_id": iid2, "answer": "完全不相关的答案"},
+    ).json()["data"]
+    assert r_bad["correct"] is False and r_bad["verified"] is False
+
+    _cleanup_unit(uid)
+    _cleanup_unit(uid2)
+
+
+def test_wrong_answer_creates_mistake_card():
+    # spec §4.1 三源之「mistake 错题」：答错建的卡不得再被标成 concept
+    uid, iid, _ = _seed_quiz_unit("错题来源单元", "unit_test:mistake-source")
+    r = client.post(
         f"/api/mastery/units/{uid}/answer",
-        json={"item_id": quiz["id"], "answer": "参考答案原文见 rationale"},
-    )
-    assert r2.status_code == 200  # 判定逻辑允许任何答案串，correct 由规则/LLM 判
+        json={"item_id": iid, "answer": "完全不相关的答案"},
+    ).json()["data"]
+    assert r["correct"] is False and r["card_id"] is not None
+
+    from app.db.base import SessionLocal
+    from app.models.mastery import ReviewCard
+
+    db = SessionLocal()
+    try:
+        card = db.query(ReviewCard).filter_by(source_item_id=iid).first()
+        assert card is not None, "答错必须建卡"
+        assert card.source == "mistake"
+    finally:
+        db.close()
+
+    _cleanup_unit(uid)
 
 
 def test_review_card_flow():

@@ -103,7 +103,7 @@ def answer_item(
         if card is None:
             card = ReviewCard(
                 source_item_id=item.id,
-                source="concept",
+                source="concept" if correct else "mistake",  # spec §4.1 三源：概念派生/错题
                 front=item.body,
                 back=item.answer or "",
                 due_at=datetime.now(timezone.utc),

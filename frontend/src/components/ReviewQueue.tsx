@@ -15,14 +15,21 @@ const RATINGS = [
 
 export default function ReviewQueue() {
   const [cards, setCards] = useState<ReviewCardT[]>([]);
+  const [dueCount, setDueCount] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // 数据拉取走 promise 回调（react-hooks/set-state-in-effect：effect 内不得同步 setState）
   function refresh(): Promise<void> {
     return listDueCards()
-      .then((list) => setCards(list))
-      .catch(() => setCards([]))
+      .then(({ cards: list, dueCount: count }) => {
+        setCards(list);
+        setDueCount(count);
+      })
+      .catch(() => {
+        setCards([]);
+        setDueCount(0);
+      })
       .then(() => {
         setFlipped(false);
       });
@@ -50,7 +57,12 @@ export default function ReviewQueue() {
       className="flex flex-col"
       style={{ gap: 12, padding: 24, background: "var(--surface-card)", borderRadius: "var(--radius-lg)" }}
     >
-      <h2 className="text-base font-semibold">今日复习（{cards.length} 张到期）</h2>
+      <h2 className="text-base font-semibold">今日复习（{dueCount} 张到期）</h2>
+      {dueCount > cards.length ? (
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          显示前 {cards.length} 张
+        </p>
+      ) : null}
       {cards.length === 0 ? (
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
           复习队列已清空——做完今天的掌握单元后，概念卡会自动入队。
