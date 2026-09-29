@@ -79,7 +79,7 @@ python -c "
 import io
 t = io.open(r'docs/试用错题集.md', encoding='utf-8').read()
 assert '## 每日体感' in t and '## 每周五自查' in t and '## 问题条目' in t
-assert t.count('|------|') >= 2          # 两张表的分隔行
+assert sum(1 for l in t.splitlines() if l.startswith('|') and set(l) <= set('|-')) >= 2  # 两张表的分隔行（仅 | 与 - 的行）
 assert '- [2026-10-01]' in t             # 格式示例在
 assert t.count('```') >= 2               # 示例在围栏内（成对围栏）
 print('scaffold OK')
