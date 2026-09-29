@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
-import os
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 
 from app.core.config import settings
 from app.services.github.client import GitHubClient
@@ -16,23 +16,33 @@ logger = logging.getLogger(__name__)
 
 
 def _load_last_sync() -> datetime | None:
-    """从文件读取上次同步时间。"""
-    path = settings.github_last_sync_file
-    if os.path.exists(path):
+    """从文件读取上次同步时间（纯 ISO 时间串）。
+
+    兼容旧版 JSON 包装格式 `{"last_sync": "..."}`——历史水位不因格式切换丢失。
+    """
+    path = Path(settings.github_last_sync_file)
+    if not path.exists():
+        return None
+    try:
+        raw = path.read_text(encoding="utf-8").strip()
         try:
-            with open(path) as f:
-                ts = json.load(f).get("last_sync", "")
-                if ts:
-                    return datetime.fromisoformat(ts)
-        except Exception:
-            pass
-    return None
+            ts = json.loads(raw).get("last_sync", "")  # 旧版 JSON 包装
+        except (json.JSONDecodeError, AttributeError):
+            ts = raw  # 纯 ISO 文本（当前格式）
+        return datetime.fromisoformat(ts) if ts else None
+    except Exception:
+        return None
 
 
 def _save_last_sync(dt: datetime) -> None:
-    """保存本次同步时间。"""
-    with open(settings.github_last_sync_file, "w") as f:
-        json.dump({"last_sync": dt.isoformat()}, f)
+    """水位落盘：backend/.github_last_sync 存纯 ISO aware UTC 时间串。
+
+    路径沿用模块既有约定（settings.github_last_sync_file → backend/ 根，见
+    config._BACKEND_ROOT），避免相对路径随 cwd 失真。
+    """
+    path = Path(settings.github_last_sync_file)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(dt.isoformat(), encoding="utf-8")
 
 
 def sync_new_commits() -> int:
@@ -68,9 +78,11 @@ def sync_new_commits() -> int:
         logger.error("GitHub sync 失败，水位未推进: %s", e)
         sync_ok = False
 
-    # 仅成功完成同步才推进水位，失败时保留旧水位以便下次重试
+    # 仅成功完成同步才推进水位，失败时保留旧水位以便下次重试。
+    # 水位落盘（此前从未产出，"同步从未产出"无法诊断）——spec §4.5：
+    # backend/.github_last_sync = 纯 ISO aware UTC 时间串。
     if sync_ok:
-        _save_last_sync(datetime.utcnow())
+        _save_last_sync(datetime.now(timezone.utc))
 
     if total_new > 0:
         logger.info("GitHub sync: %d new suggestions", total_new)
