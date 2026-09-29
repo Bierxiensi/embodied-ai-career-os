@@ -8,7 +8,7 @@
  *   ④ 今日 ROI  RoiTaskList（today.roiRankedTasks）
  *   ⑤ 风险雷达  RiskRadar（today.risk）
  *
- * 上方另有「今日施工单」（TodayBoard）：四件套勾选 + 今日任务 + 任务状态。
+ * 上方另有「今日施工单」（TodayBoard）：完成度三选一 + 今日任务 + 任务状态。
  * 它是"今天做什么"，五区是"我到哪里了" —— 一屏之内既给动作也给方位。
  *
  * 为什么收口到一页：
@@ -21,6 +21,9 @@
  *   getToday(day)            → /api/plan/today            （④⑤ + 施工单）
  *   getSkillDomains()        → /api/skills/domains        （①的 R2 雷达）
  *   getJobHuntBoard()        → /api/job-hunt              （①的 R1 雷达兜底）
+ *   listUnits+getUnit        → /api/mastery/units         （完成度三选一的"测验过"派生，
+ *                                                          依赖 today.day.seq，故串在 getToday 之后；
+ *                                                          兜底 null，挂了只少一枚派生依据）
  *
  * 口径纪律：就绪度数字**不得**在前端重算 —— 与 /jobs 页同源，唯一权威在
  * 后端 `services/readiness`（llm 推进度 67% / 严格达标 23% 是回归锚点）。
@@ -34,6 +37,7 @@
 
 import PageHeader from "@/components/PageHeader";
 import TodayBoard from "@/components/TodayBoard";
+import TodayUnit from "@/components/TodayUnit";
 import CareerProgressCard from "@/components/CareerProgressCard";
 import PositionCard from "@/components/PositionCard";
 import AcademicProgressCard from "@/components/AcademicProgressCard";
@@ -47,8 +51,10 @@ import { getToday } from "@/services/planService";
 import { getSkillDomains } from "@/services/skillService";
 import { buildSkillRadar } from "@/services/skillRadarService";
 import { getTransitionDashboard } from "@/services/transitionService";
+import { getUnit, listUnits } from "@/services/masteryService";
+import type { MasteryUnit } from "@/types";
 
-export const dynamic = "force-dynamic"; // 四件套与任务状态需实时
+export const dynamic = "force-dynamic"; // 完成度三选一与任务状态需实时
 
 type PageProps = {
   searchParams: Promise<{ day?: string }>;
@@ -66,6 +72,8 @@ type LearnData = {
   transition: Awaited<ReturnType<typeof getTransitionDashboard>> | null;
   radar: ReturnType<typeof buildSkillRadar>;
   learningLogs: Awaited<ReturnType<typeof listLearningLogs>>;
+  /** 今日掌握单元（完成度三选一的"测验过"派生依据）。取不到 = null。 */
+  unit: MasteryUnit | null;
 };
 
 export default async function LearnPage({ searchParams }: PageProps) {
@@ -88,6 +96,13 @@ export default async function LearnPage({ searchParams }: PageProps) {
       listLearningLogs().catch(() => []),
     ]);
 
+    // 今日掌握单元：依赖 today.day.seq，只能串在 getToday 之后（计划 2）。
+    // 与辅助端点同规矩兜底 null —— 挂了只少一枚派生依据，整页照常。
+    // getUnit 是必需的：list_units 返回的 items 恒空，内容（含懒生成）在详情接口。
+    const unit = await listUnits(today.day.seq)
+      .then((list) => (list.length > 0 ? getUnit(list[0].id) : null))
+      .catch(() => null);
+
     // 雷达形态由**当前模式**决定（long_term_transition → 六域；job_hunt → 岗位对齐）。
     // 模式取不到时按非求职期处理（走域视图），因为长期模式是当前默认。
     data = {
@@ -99,6 +114,7 @@ export default async function LearnPage({ searchParams }: PageProps) {
         domains,
       }),
       learningLogs,
+      unit,
     };
   } catch (err) {
     loadError =
@@ -138,7 +154,7 @@ export default async function LearnPage({ searchParams }: PageProps) {
     );
   }
 
-  const { today, transition, radar, learningLogs } = data;
+  const { today, transition, radar, learningLogs, unit } = data;
 
   return (
     <main className="flex flex-1 flex-col" style={{ background: "var(--surface-canvas)" }}>
@@ -152,8 +168,11 @@ export default async function LearnPage({ searchParams }: PageProps) {
           subtitle="关键单元与施工单在上，进度五区在下——学完记得留下实质记录。"
         />
 
-        {/* 今日施工单：四件套 + 今天学到什么 + 今日任务（今天干什么、做完没有） */}
-        <TodayBoard today={today} learningLogs={learningLogs} />
+        {/* 今日关键单元：学→测→Teach-Back（计划 2） */}
+        <TodayUnit daySeq={today.day.seq} />
+
+        {/* 今日施工单：完成度三选一 + 今天学到什么 + 今日任务（今天干什么、做完没有） */}
+        <TodayBoard today={today} learningLogs={learningLogs} unit={unit} />
 
         {/* ═══ 五区 ═══ */}
         <div style={ZONE_GRID}>

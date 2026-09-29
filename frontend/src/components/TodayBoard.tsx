@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import LearningLogCard from "@/components/LearningLogCard";
 import ResourceList from "@/components/ResourceList";
-import { createArtifact, deleteArtifact } from "@/services/planService";
+import TodayCompletion from "@/components/TodayCompletion";
 import { updateTaskStatus } from "@/services/taskService";
-import { syncCommits } from "@/services/experimentService";
-import { ARTIFACT_META } from "@/types";
-import type { ArtifactKind, LearningLog, Task, TodayView } from "@/types";
+import type { LearningLog, MasteryUnit, Task, TodayView } from "@/types";
 
 type Props = {
   today: TodayView;
-  /** 学习日志（"今天学到什么"的内容位）。由 today/page.tsx 取好下发 */
+  /** 学习日志（"今天学到什么"的内容位）。由 learn/page.tsx 取好下发 */
   learningLogs?: LearningLog[];
+  /** 今日掌握单元（可选）。由 learn/page.tsx 服务端取好下发，
+   * 供完成度三选一派生"测验实证过"（计划 2）。 */
+  unit?: MasteryUnit | null;
 };
 
 const TRACK_LABEL: Record<string, string> = {
@@ -58,21 +59,18 @@ function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }
  * 这是把平台从「展示」变「学习」的那一页 —— 它回答三个问题：
  *   1. 今天第几天       → 顶部 Day 条
  *   2. 今天干什么       → 学习目标 / 验收标准 / 今日任务
- *   3. 今天做完没有     → 四件套勾选（缺哪几项一目了然）
+ *   3. 今天做完没有     → 完成度三选一（测验过 / Teach-Back 过 / 证据挂上）
  *
- * 四件套是本页的核心机制：现在的 Task.status 是人为切换的、没有客观标准，
- * 所以"完成"没有约束力；四件套（代码/笔记/面试题/commit）是可核验的。
- * P0 为手工一键勾选；P2 起 commit 由 GitHub 自动归集、面试题由题库条数判定。
+ * 完成判据（spec §3.2）不再是四件套布尔勾选 —— 勾选没有约束力、可手点。
+ * TodayCompletion 从真实记录派生：unit 的 isVerified、Teach-Back 学习日志、
+ * 带 artifactUrl 的证据。四件套后端端点不动（撤 UI 留数据，spec D5）。
  */
-export default function TodayBoard({ today, learningLogs = [] }: Props) {
+export default function TodayBoard({ today, learningLogs = [], unit = null }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
   const { day } = today;
-  const missing = today.missingKinds;
-  const doneCount = ARTIFACT_META.length - missing.length;
   const viewingOtherDay = day.seq !== today.dayIndex;
 
   /** 执行一次异步动作：锁定 → 刷新 → 解锁。失败时把 message 透到界面。 */
@@ -88,22 +86,6 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
     } finally {
       setPending(null);
     }
-  }
-
-  /** 点击四件套：已交则取消，未交则记录。 */
-  function toggleArtifact(kind: ArtifactKind, existingId?: string) {
-    const meta = ARTIFACT_META.find((m) => m.kind === kind);
-    if (existingId) {
-      void run(`artifact-${kind}`, () => deleteArtifact(existingId));
-      return;
-    }
-    void run(`artifact-${kind}`, () =>
-      createArtifact({
-        planDayId: day.id,
-        kind,
-        title: `Day ${day.seq} · ${meta?.label ?? kind}`,
-      })
-    );
   }
 
   // 口径提示文案：只在"确实有任务被排除"或"有未归类任务"时出现，
@@ -203,160 +185,18 @@ export default function TodayBoard({ today, learningLogs = [] }: Props) {
         </Notice>
       )}
 
-      {/* ═══════ 今天做完没有：四件套 ═══════ */}
-      <div className="flex flex-col" style={{ ...cardStyle, gap: 16 }}>
-        <SectionTitle
-          hint={
-            missing.length === 0
-              ? "今天的四件东西都交齐了"
-              : `还差 ${missing.length} 项 · 已交 ${doneCount}/4`
-          }
-        >
-          今天做完没有
-        </SectionTitle>
+      {/* ═══════ 今天做完没有：完成度三选一（spec §3.2）═══════
+          不是布尔勾选：从 unit 实证状态 + 学习日志派生，不可手点。 */}
+      <TodayCompletion unit={unit} logs={learningLogs} />
 
-        <div className="flex flex-wrap" style={{ gap: 10 }}>
-          {ARTIFACT_META.map((meta) => {
-            const count = today.artifactStatus[meta.kind] ?? 0;
-            const done = count > 0;
-            const isPending = pending === `artifact-${meta.kind}`;
-            return (
-              <button
-                key={meta.kind}
-                aria-pressed={done}
-                disabled={isPending}
-                onClick={() =>
-                  toggleArtifact(meta.kind, done ? today.artifacts.find((a) => a.kind === meta.kind)?.id : undefined)
-                }
-                className="flex flex-1 flex-col items-start"
-                style={{
-                  gap: 4,
-                  minWidth: 140,
-                  padding: "14px 16px",
-                  borderRadius: "var(--radius-md)",
-                  border: `1px solid ${done ? "var(--accent-success)" : "var(--border-default)"}`,
-                  background: done ? "var(--accent-success-soft)" : "var(--color-item-bg)",
-                  cursor: isPending ? "wait" : "pointer",
-                  opacity: isPending ? 0.6 : 1,
-                  textAlign: "left",
-                }}
-              >
-                <span className="flex items-center" style={{ gap: 6 }}>
-                  <span
-                    className="inline-flex items-center justify-center"
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 4,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      background: done ? "var(--accent-success)" : "var(--surface-card)",
-                      border: done ? "none" : "1px solid var(--border-default)",
-                      color: done ? "var(--text-inverse)" : "transparent",
-                    }}
-                  >
-                    ✓
-                  </span>
-                  <span
-                    className="text-[13px] font-semibold"
-                    style={{
-                      color: done ? "var(--accent-success)" : "var(--text-primary)",
-                    }}
-                  >
-                    {meta.label}
-                  </span>
-                </span>
-                <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                  {done ? `已交 ${count} 条` : meta.hint}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {today.artifacts.length > 0 && (
-          <div className="flex flex-wrap" style={{ gap: 8 }}>
-            {today.artifacts.map((a) => (
-              <span
-                key={a.id}
-                className="inline-flex items-center"
-                style={{
-                  gap: 6,
-                  padding: "4px 10px",
-                  borderRadius: "var(--radius-pill)",
-                  background: "var(--color-item-bg)",
-                  border: "1px solid var(--border-default)",
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                }}
-              >
-                {a.title ?? a.kind}
-                <button
-                  onClick={() => toggleArtifact(a.kind, a.id)}
-                  disabled={pending !== null}
-                  title="移除"
-                  className="border-none"
-                  style={{
-                    background: "transparent",
-                    cursor: "pointer",
-                    color: "var(--text-muted)",
-                    fontSize: 12,
-                    lineHeight: 1,
-                    padding: 0,
-                  }}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center justify-between" style={{ gap: 10 }}>
-          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-            P2：commit 已从 GitHub 按日期自动归集（auto-verified）；面试题由题库当日条数判定
-            {today.questionsFromBank > 0 && ` · 今日题库 ${today.questionsFromBank} 题`}。
-          </span>
-          <button
-            disabled={pending === "sync"}
-            onClick={() =>
-              void run("sync", async () => {
-                const r = await syncCommits();
-                setSyncMsg(
-                  r.skipped
-                    ? `跳过：${r.reason ?? "未配置 GITHUB_TOKEN"}`
-                    : `已归集 ${r.synced} 条 commit${r.error ? `（${r.error}）` : ""}`,
-                );
-              })
-            }
-            className="border-none text-xs font-medium"
-            style={{
-              padding: "6px 12px",
-              borderRadius: "var(--radius-pill)",
-              background: "var(--color-violet-soft)",
-              color: "var(--color-violet)",
-              cursor: pending === "sync" ? "wait" : "pointer",
-            }}
-          >
-            {pending === "sync" ? "同步中…" : "同步 GitHub commits"}
-          </button>
-        </div>
-
-        {syncMsg && (
-          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {syncMsg}
-          </span>
-        )}
-
-        {error && (
-          <span className="text-xs" style={{ color: "var(--accent-danger)" }}>
-            {error}
-          </span>
-        )}
-      </div>
+      {error && (
+        <span className="text-xs" style={{ color: "var(--accent-danger)" }}>
+          {error}
+        </span>
+      )}
 
       {/* ═══════ 今天学到什么（内容位）═══════
-          四件套只记"勾没勾"，这里记"到底做了什么" —— 记录系统与成长系统的分界。 */}
+          完成度记"做没做到"，这里记"到底做了什么" —— 记录系统与成长系统的分界。 */}
       <LearningLogCard logs={learningLogs} />
 
       {/* ═══════ 今天干什么 ═══════ */}

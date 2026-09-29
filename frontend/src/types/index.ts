@@ -1600,3 +1600,37 @@ export interface LearningLog {
   /** ISO 8601 UTC（service 层已补 Z，可直接 new Date()） */
   createdAt: string;
 }
+
+// ============================================================
+// 掌握单元（计划 2：学 → 测 → Teach-Back 双环）—— /api/mastery 系列
+// ============================================================
+
+/** 掌握单元（spec §3.3）。 */
+export type UnitItem = {
+  id: number;
+  unitId: number;
+  kind: "summary" | "concept_card" | "quiz_q" | "exercise" | "flashcard";
+  body: string;
+  isVerified: boolean;
+  verifiedAt: string | null;
+};
+
+export type MasteryUnit = {
+  id: number;
+  sourceType: string;
+  sourceRef: string;
+  title: string;
+  skillIds: string[];
+  daySeq: number | null;
+  generationMode: "llm" | "rule";
+  status: string;
+  items: UnitItem[];
+};
+
+export type AnswerResult = {
+  itemId: number;
+  correct: boolean;
+  verified: boolean;
+  rationale: string | null;
+  cardId: number | null;
+};
