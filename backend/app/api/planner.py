@@ -28,7 +28,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.agents.planner.graph import build_planner_graph
-from app.core.response import ApiResponse, ok
+from app.core.capacity import assert_plan_capacity, daily_study_minutes
+from app.core.response import ApiResponse, fail, ok
 from app.core.target_roles import TECH_BLACKLIST, TARGET_ROLES, TargetRole
 from app.db.base import get_db
 from app.models.agent_run import AgentRun
@@ -278,6 +279,16 @@ def generate_task(
     available_minutes = req.available_minutes
     if track is not None and track.frozen:
         available_minutes = min(available_minutes, FROZEN_TRACK_MAX_MINUTES)
+
+    # 容量预检（spec §2.4/§5.1）：按实际将要生成的分钟数（冻结赛道已钳制）
+    # 对照单日预算，超限**显式拒绝**并给最短可行周期——禁止静默截断。
+    # 放在请求校验之后、图执行之前，超限请求不消耗任何生成开销。
+    check = assert_plan_capacity(
+        planned_minutes=available_minutes,
+        available_minutes=daily_study_minutes(),
+    )
+    if not check["ok"]:
+        return fail(check["suggestion"])  # 显式拒绝 + 最短可行周期，禁止静默截断（spec §2.4/§5.1）
 
     # V2: 解析项目上下文
     project_context = ""
