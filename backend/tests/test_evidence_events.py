@@ -94,3 +94,79 @@ def test_derived_writeback_never_lowers_gate():
             db.rollback()
         finally:
             db.close()
+
+
+def test_event_promoted_gate_visible_in_evidence_responses():
+    """事件晋级后的**有效门值**必须出现在两个 evidence 响应里（不只写库）。
+
+    背景（review Critical）：/skills/evidence 与 /skills/{id}/evidence 在
+    ``max(derived, stored)`` 写回后仍返回裸派生 ``ev["gate_level"]`` ——
+    事件脊柱（quiz/teachback/commit → skills.evidence_gate）从不参与
+    compute_skill_evidence，导致 EvidenceGateList 显示 未入门/L1 而 DB 已是 L2，
+    与同页 PortfolioPanel 矛盾。本测试 pin：两条响应路径的 ``evidence_gate``
+    都等于 DB 有效值。
+    """
+    from fastapi.testclient import TestClient
+
+    from app.core.evidence import compute_skill_evidence
+    from app.main import app
+    from app.models.skill import Skill
+
+    db = SessionLocal()
+    original = None
+    try:
+        skill = db.query(Skill).filter_by(name="DPO").first()
+        if skill is None:  # 无种子技能时跳过（与 _gate_of 同口径）
+            return
+        original = skill.evidence_gate
+
+        # 派生值（事件脊柱不参与 compute_skill_evidence —— 与实现细节无关）
+        derived = int(compute_skill_evidence(skill.name, db)["gate_level"])
+        # 经事件通道晋级（写库唯一通道是 apply 层）：至少到 2，且能抬则
+        # 严格高于派生值 —— 这样"返回裸派生值"的坏实现必然与 DB 值不同，
+        # 本测试才真能 pin 住 Critical（否则 stored==derived 时两版实现同过）。
+        target = max(2, derived + 1)
+        kind = {1: "quiz_verified", 2: "commit", 3: "experiment", 4: "comparison_report"}[
+            min(target, 4)
+        ]
+        r = record_evidence_event(db, skill.name, kind, f"pin-gate-resp:{kind}")
+        # 同级幂等：门已在位时 applied=False 是合法 no-op（见 signal3 口径）
+        assert r["applied"] or r["to_gate"] >= min(target, 4), f"事件未晋级：{r!r}"
+        db.commit()  # 结束写事务，放行下面 TestClient 事务的读
+
+        db.refresh(skill)
+        db_gate = int(skill.evidence_gate or 0)
+        assert db_gate >= 2, f"事件晋级后 DB 门值 {db_gate} < 2"
+
+        client = TestClient(app)
+        # 路径 1：GET /api/skills/evidence（列表）
+        resp = client.get("/api/skills/evidence")
+        assert resp.status_code == 200
+        rows = resp.json()["data"]
+        hit = next((row for row in rows if row["id"] == skill.id), None)
+        assert hit is not None, f"列表响应缺技能 {skill.name!r}"
+        assert int(hit["evidence_gate"]) == db_gate, (
+            f"列表响应 evidence_gate={hit['evidence_gate']!r} ≠ DB {db_gate}"
+            f"（派生 {derived} —— 响应须返回有效值 max(派生, 存储)）"
+        )
+        assert int(hit["evidence_gate"]) >= 2, "事件晋级后的门值在列表响应里不可见"
+
+        # 路径 2：GET /api/skills/{id}/evidence（单条）
+        resp2 = client.get(f"/api/skills/{skill.id}/evidence")
+        assert resp2.status_code == 200
+        single = resp2.json()["data"]
+        assert int(single["evidence_gate"]) == db_gate, (
+            f"单条响应 evidence_gate={single['evidence_gate']!r} ≠ DB {db_gate}"
+            f"（派生 {derived} —— 响应须返回有效值 max(派生, 存储)）"
+        )
+        assert int(single["evidence_gate"]) >= 2, "事件晋级后的门值在单条响应里不可见"
+    finally:
+        try:
+            sk = db.query(Skill).filter_by(name="DPO").first()
+            if sk is not None:
+                sk.evidence_gate = original
+            db.commit()
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()

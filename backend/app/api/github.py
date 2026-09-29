@@ -3,7 +3,8 @@
 活跃流程（capture-first：系统起草 → 人确认 → append-only 落库）：
 
 - ``GET /suggestions``：**Proposal 草稿的唯一来源**——GitHub 同步起草的待确认
-  commit 建议（前端 githubService.getSuggestions 消费）。
+  commit 建议（前端 githubService 已存在但尚无 UI 调用方——半确认 UI 为 plan-3
+  后票据；当前为 backend-only 接线）。
 - ``POST /suggestions/{id}/confirm``：半确认写路径。状态置 confirmed 的同时经
   ``record_evidence_event`` 追加 ``commit:{sha}`` 证据事件（evidence_gate → L2），
   结果以 ``evidence`` 字段随响应返回（只追加不改名）。

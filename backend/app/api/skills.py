@@ -124,13 +124,16 @@ def list_evidence(db: Session = Depends(get_db)) -> ApiResponse[list[dict]]:
         # 只升不降：事件/人工抬高的 gate 不得被推导值抹平（evidence_events 不变量）
         if s.evidence_gate != ev["gate_level"]:
             s.evidence_gate = max(int(s.evidence_gate or 0), int(ev["gate_level"]))
+        # 响应返回**有效值**（写回后的 s.evidence_gate = max(派生, 存储)），
+        # 不是裸派生值——否则事件晋级（quiz/teachback/commit → evidence_gate）
+        # 在本页 EvidenceGateList 上不可见，与 PortfolioPanel（读 DB）矛盾。
         out.append(
             {
                 "id": s.id,
                 "name": s.name,
                 "level": s.level,
                 "target_level": s.target_level,
-                "evidence_gate": ev["gate_level"],
+                "evidence_gate": int(s.evidence_gate or 0),
                 "evidence": ev["evidence"],
             }
         )
@@ -159,7 +162,8 @@ def skill_evidence(skill_id: int, db: Session = Depends(get_db)) -> ApiResponse[
             "name": skill.name,
             "level": skill.level,
             "target_level": skill.target_level,
-            "evidence_gate": ev["gate_level"],
+            # 有效值（写回后 = max(派生, 存储)），与 /skills/evidence 同口径
+            "evidence_gate": int(skill.evidence_gate or 0),
             "evidence": ev["evidence"],
         }
     )
