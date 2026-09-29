@@ -25,6 +25,7 @@ from app.schemas.mastery import (
     UnitItemOut,
     UnitOut,
 )
+from app.services.evidence_events import record_evidence_event
 from app.services.mastery.generate import ensure_unit_content
 
 router = APIRouter(prefix="/mastery", tags=["mastery"])
@@ -94,6 +95,9 @@ def answer_item(
         item.is_verified = True
         item.verified_at = datetime.now(timezone.utc)
         verified = True
+        unit = db.get(MasteryUnit, unit_id)
+        for skill_name in json.loads(unit.skill_ids or "[]"):
+            record_evidence_event(db, skill_name, "quiz_verified", f"unit_item:{item.id}")
 
     if item.kind in ("quiz_q", "flashcard", "concept_card"):
         card = (

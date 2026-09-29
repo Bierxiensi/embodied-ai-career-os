@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +14,7 @@ from app.core.sm2 import initial_card
 from app.db.base import get_db
 from app.models.learning_log import LearningLog
 from app.models.mastery import MasteryUnit, ReviewCard, UnitItem
+from app.services.evidence_events import record_evidence_event
 from app.services.mastery.teachback import judge_answer
 
 router = APIRouter(prefix="/teach-back", tags=["teach-back"])
@@ -54,6 +56,8 @@ def complete(
         if passed and not item.is_verified:
             item.is_verified = True
             item.verified_at = datetime.now(timezone.utc)
+            for skill_name in json.loads(unit.skill_ids or "[]"):
+                record_evidence_event(db, skill_name, "teachback_pass", f"unit_item:{item.id}")
         if not passed:
             # 一题一卡：先按 source_item_id 查已有卡（与 mastery 首答路径一致），
             # 已有卡不重复建（quiz 答错 + teach-back 答错同一 item 只留 1 张）
