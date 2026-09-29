@@ -6,9 +6,12 @@
 2. **不新增平行权威域**：策略单一真源在 `backend/app/core/` 纯函数层（skill_profile /
    target_roles / plan_30d / capacity / evidence）；改口径改这里，不在业务层各存一份。
 3. **加端点前先问**：能否并入三类 intake（学习回收 / 半自动事实 / 主动登记）？
-   能并就并。活跃写端点预算 **≤25**（口径=OpenAPI 文档面；隐藏但 UI 仍调用的写端点由
-   「撤表单」支线清偿，见 superpowers 台账），同口径内只减不增
-   （`test_active_write_endpoints.py` 守）。
+   能并就并。活跃写端点预算 **≤25**（口径=OpenAPI 文档面），同口径内只减不增
+   （`test_active_write_endpoints.py` 守）。**隐藏但 UI 仍调用**的写端点不再挂
+   「撤表单」支线清偿账：同一文件的 `HIDDEN_BUT_LIVE` 显式清单逐条登记
+   （端点 → 一行为什么留着），并有测试钉死清单键集——以后要多一个 schema 外
+   且前端还在打的写口，必须同时改清单与该键集断言；撤表单后按该文件 docstring
+   的 grep 配方重算键集（撤 UI 但留数据的 service 函数零 importer，不算 live）。
 4. **写死在前端文案里的数字是负债**：写"资源均来自资源锁"，不写"这 N 类"。
 5. **降级必须可见**：LLM/嵌入/生成任一降级，UI 必须有徽标（answer_mode / generation_mode 同款）。
 6. **拒绝线**（明文不做）：自动投递/爬虫反指纹、Gmail 全量授权、AGPL 代码复制、
