@@ -1,5 +1,11 @@
 "use client";
 
+/** 简历线看板（/resume）—— 2026-09-29 撤表单：归档线只读。
+ *
+ * 版本 / 事实锚点的登记与删除写表单已收起（数据保留）；
+ * 防虚构诊断为非持久化工具（POST /api/resume/diagnose 实时计算不写库），继续可用。
+ */
+
 import { useEffect, useState } from "react";
 import type {
   FactCategory,
@@ -9,15 +15,7 @@ import type {
   ResumeVersion,
   SkillLineReport,
 } from "@/types";
-import {
-  createFact,
-  createVersion,
-  deleteFact,
-  deleteVersion,
-  diagnose,
-  listFacts,
-  listVersions,
-} from "@/services/resumeService";
+import { diagnose } from "@/services/resumeService";
 import { listPostings } from "@/services/jdService";
 import SkillLinesCard from "@/components/SkillLinesCard";
 
@@ -139,45 +137,24 @@ export default function ResumeBoard({
   initialFacts,
   initialSkillLines = null,
 }: Props) {
-  const [versions, setVersions] = useState<ResumeVersion[]>(initialVersions);
-  const [facts, setFacts] = useState<ResumeFact[]>(initialFacts);
+  const versions = initialVersions;
+  const facts = initialFacts;
   const [postings, setPostings] = useState<JobPosting[]>([]);
   const [skillLines] = useState<SkillLineReport | null>(initialSkillLines);
 
-  const [md, setMd] = useState("");
+  // 诊断框初值：主版本（或首个版本）原文 —— 惰性初始化，避免 effect 内同步 setState
+  const [md, setMd] = useState(() => {
+    const primary = initialVersions.find((v) => v.isPrimary) || initialVersions[0];
+    return primary?.contentMd ?? "";
+  });
   const [selectedPostingId, setSelectedPostingId] = useState<string>("");
   const [diagnosis, setDiagnosis] = useState<ResumeDiagnosis | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // 新建版本表单
-  const [showVerForm, setShowVerForm] = useState(false);
-  const [verForm, setVerForm] = useState({
-    name: "",
-    targetTier: 1 as 1 | 2 | 3,
-    isPrimary: false,
-    contentMd: "",
-  });
-
-  // 新增事实表单
-  const [showFactForm, setShowFactForm] = useState(false);
-  const [factForm, setFactForm] = useState({
-    category: "work" as FactCategory,
-    title: "",
-    org: "",
-    facts: "",
-    source: "",
-  });
-
-  // 拉岗位池（供 JD 定向诊断下拉），并默认载入主版本内容
+  // 拉岗位池（供 JD 定向诊断下拉）
   useEffect(() => {
     listPostings().then(setPostings).catch(() => setPostings([]));
-    const primary = initialVersions.find((v) => v.isPrimary) || initialVersions[0];
-    if (primary?.contentMd) setMd(primary.contentMd);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const refreshVersions = async () => setVersions(await listVersions());
-  const refreshFacts = async () => setFacts(await listFacts());
 
   async function handleDiagnose() {
     if (!md.trim()) {
@@ -195,63 +172,6 @@ export default function ResumeBoard({
       alert("诊断失败：" + (e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function handleCreateVersion() {
-    if (!verForm.name.trim()) return;
-    try {
-      await createVersion({
-        name: verForm.name,
-        targetTier: verForm.targetTier,
-        isPrimary: verForm.isPrimary,
-        contentMd: verForm.contentMd || null,
-      });
-      alert("已新建简历版本");
-      setVerForm({ name: "", targetTier: 1, isPrimary: false, contentMd: "" });
-      setShowVerForm(false);
-      await refreshVersions();
-    } catch (e) {
-      alert("新建失败：" + (e instanceof Error ? e.message : String(e)));
-    }
-  }
-
-  async function handleDeleteVersion(id: string) {
-    if (!confirm("确认删除该版本？")) return;
-    try {
-      await deleteVersion(id);
-      await refreshVersions();
-    } catch (e) {
-      alert("删除失败：" + (e instanceof Error ? e.message : String(e)));
-    }
-  }
-
-  async function handleCreateFact() {
-    if (!factForm.title.trim()) return;
-    try {
-      await createFact({
-        category: factForm.category,
-        title: factForm.title,
-        org: factForm.org || null,
-        facts: factForm.facts.split("\n").map((s) => s.trim()).filter(Boolean),
-        source: factForm.source || null,
-      });
-      alert("已新增事实锚点");
-      setFactForm({ category: "work", title: "", org: "", facts: "", source: "" });
-      setShowFactForm(false);
-      await refreshFacts();
-    } catch (e) {
-      alert("新增失败：" + (e instanceof Error ? e.message : String(e)));
-    }
-  }
-
-  async function handleDeleteFact(id: string) {
-    if (!confirm("确认删除该事实锚点？删除后依赖它的简历 claim 会重新变红")) return;
-    try {
-      await deleteFact(id);
-      await refreshFacts();
-    } catch (e) {
-      alert("删除失败：" + (e instanceof Error ? e.message : String(e)));
     }
   }
 
@@ -307,30 +227,18 @@ export default function ResumeBoard({
         {/* 技能行（附证据）—— P4：简历的可写内容直接来自证据链 */}
         {skillLines && <SkillLinesCard report={skillLines} />}
 
-        {/* 版本列表 + 新建 */}
+        {/* 版本列表（只读；「载入」只写本地诊断框，不落库） */}
         <div style={cardStyle}>
           <div className="flex items-center justify-between">
             <h2 style={sectionTitleStyle}>简历版本</h2>
-            <button
-              onClick={() => setShowVerForm((v) => !v)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "var(--radius-pill)",
-                border: "1px solid var(--accent-primary)",
-                background: showVerForm ? "var(--accent-primary)" : "transparent",
-                color: showVerForm ? "var(--text-inverse)" : "var(--accent-primary)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {showVerForm ? "收起" : "＋ 新建版本"}
-            </button>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              归档线只读 · 登记入口已收起
+            </span>
           </div>
 
           <div className="flex flex-col" style={{ gap: 8, marginTop: 14 }}>
             {versions.length === 0 ? (
-              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>暂无版本，点击「＋ 新建版本」创建。</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>暂无版本（归档线只读，数据保留）。</p>
             ) : (
               versions.map((v) => {
                 const tier = TIER_META[v.targetTier] ?? TIER_META[2];
@@ -358,51 +266,11 @@ export default function ResumeBoard({
                     >
                       载入
                     </button>
-                    <button onClick={() => handleDeleteVersion(v.id)} title="删除" style={iconBtn}>×</button>
                   </div>
                 );
               })
             )}
           </div>
-
-          {showVerForm ? (
-            <div className="flex flex-col" style={{ gap: 10, marginTop: 14 }}>
-              <div className="flex" style={{ gap: 10, flexWrap: "wrap" }}>
-                <input
-                  placeholder="版本名（如 LLM 主攻版）*"
-                  value={verForm.name}
-                  onChange={(e) => setVerForm({ ...verForm, name: e.target.value })}
-                  style={inputStyle}
-                />
-                <select
-                  value={String(verForm.targetTier)}
-                  onChange={(e) => setVerForm({ ...verForm, targetTier: Number(e.target.value) as 1 | 2 | 3 })}
-                  style={inputStyle}
-                >
-                  <option value={1}>梯队 1 · 主攻</option>
-                  <option value={2}>梯队 2 · 卡位</option>
-                  <option value={3}>梯队 3 · 保底</option>
-                </select>
-                <label className="flex items-center" style={{ gap: 6, fontSize: 13, color: "var(--text-secondary)" }}>
-                  <input
-                    type="checkbox"
-                    checked={verForm.isPrimary}
-                    onChange={(e) => setVerForm({ ...verForm, isPrimary: e.target.checked })}
-                  />
-                  设为主版本
-                </label>
-              </div>
-              <textarea
-                placeholder="简历 md 原文（bullet 行会被逐条校验）"
-                value={verForm.contentMd}
-                onChange={(e) => setVerForm({ ...verForm, contentMd: e.target.value })}
-                style={{ ...inputStyle, minHeight: 120, resize: "vertical", width: "100%" }}
-              />
-              <div className="flex" style={{ gap: 10, justifyContent: "flex-end" }}>
-                <button onClick={handleCreateVersion} style={primaryBtn}>新建版本</button>
-              </div>
-            </div>
-          ) : null}
         </div>
 
         {/* 防虚构诊断 */}
@@ -522,28 +390,21 @@ export default function ResumeBoard({
           ) : null}
         </div>
 
-        {/* 事实锚点库 */}
+        {/* 事实锚点库（只读展示，2026-09-29 撤表单） */}
         <div style={cardStyle}>
           <div className="flex items-center justify-between">
             <h2 style={sectionTitleStyle}>事实锚点库（防虚构依据）</h2>
-            <button
-              onClick={() => setShowFactForm((v) => !v)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "var(--radius-pill)",
-                border: "1px solid var(--accent-primary)",
-                background: showFactForm ? "var(--accent-primary)" : "transparent",
-                color: showFactForm ? "var(--text-inverse)" : "var(--accent-primary)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {showFactForm ? "收起" : "＋ 新增事实"}
-            </button>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              归档线只读 · 登记入口已收起
+            </span>
           </div>
 
           <div className="flex flex-col" style={{ gap: 16, marginTop: 14 }}>
+            {facts.length === 0 ? (
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                暂无事实锚点（归档线只读，数据保留）。
+              </p>
+            ) : null}
             {factsByCat.map((g) => {
               const meta = FACT_CATEGORY_META[g.cat];
               return (
@@ -565,8 +426,6 @@ export default function ResumeBoard({
                           <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{f.title}</span>
                           {f.org ? <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{f.org}</span> : null}
                           {f.source ? <Pill label={f.source} color="var(--text-muted)" soft="var(--color-zinc-100)" /> : null}
-                          <div style={{ flex: 1 }} />
-                          <button onClick={() => handleDeleteFact(f.id)} title="删除" style={iconBtn}>×</button>
                         </div>
                         {f.facts.length > 0 ? (
                           <div className="flex flex-wrap" style={{ gap: 6, marginTop: 6 }}>
@@ -593,49 +452,6 @@ export default function ResumeBoard({
               );
             })}
           </div>
-
-          {showFactForm ? (
-            <div className="flex flex-col" style={{ gap: 10, marginTop: 14 }}>
-              <div className="flex" style={{ gap: 10, flexWrap: "wrap" }}>
-                <select
-                  value={factForm.category}
-                  onChange={(e) => setFactForm({ ...factForm, category: e.target.value as FactCategory })}
-                  style={inputStyle}
-                >
-                  {(Object.keys(FACT_CATEGORY_META) as FactCategory[]).map((c) => (
-                    <option key={c} value={c}>{FACT_CATEGORY_META[c].label}</option>
-                  ))}
-                </select>
-                <input
-                  placeholder="主题 *（如 标书审核 Agent）"
-                  value={factForm.title}
-                  onChange={(e) => setFactForm({ ...factForm, title: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder="机构 / 来源（可选）"
-                  value={factForm.org}
-                  onChange={(e) => setFactForm({ ...factForm, org: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder="来源说明（可选）"
-                  value={factForm.source}
-                  onChange={(e) => setFactForm({ ...factForm, source: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <textarea
-                placeholder="可陈述事实，每行一条（如：覆盖率 56%→90%）"
-                value={factForm.facts}
-                onChange={(e) => setFactForm({ ...factForm, facts: e.target.value })}
-                style={{ ...inputStyle, minHeight: 90, resize: "vertical", width: "100%", fontFamily: "var(--font-mono, monospace)", fontSize: 12 }}
-              />
-              <div className="flex" style={{ gap: 10, justifyContent: "flex-end" }}>
-                <button onClick={handleCreateFact} style={primaryBtn}>新增事实</button>
-              </div>
-            </div>
-          ) : null}
         </div>
 
         <footer style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", paddingTop: 8 }}>

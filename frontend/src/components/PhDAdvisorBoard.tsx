@@ -1,13 +1,17 @@
 "use client";
 
+/** 博士导师匹配看板（/phd）—— 2026-09-29 撤表单：归档线只读。
+ *
+ * 保留「重算全部匹配」（POST /api/phd/advisors/match-all，重算缓存非登记）；
+ * 联系标记 / 删除等登记写口已收起，导师数据只读展示、数据保留。
+ */
+
 import { useMemo, useState } from "react";
 
 import {
   DIM_LABELS,
   matchAllAdvisors,
   getPhdAdvisors,
-  patchPhdAdvisor,
-  deletePhdAdvisor,
   type PhDAdvisorDTO,
   type ResearchDirectionDTO,
   type PhDMatchDTO,
@@ -78,15 +82,9 @@ function MatchRing({ match }: { match: PhDMatchDTO }) {
 function AdvisorCard({
   a,
   dirMap,
-  busy,
-  onToggleContacted,
-  onDelete,
 }: {
   a: PhDAdvisorDTO;
   dirMap: Record<string, string>;
-  busy: boolean;
-  onToggleContacted: (a: PhDAdvisorDTO) => void;
-  onDelete: (a: PhDAdvisorDTO) => void;
 }) {
   const cd = countdownLabel(a.application_deadline);
   const match = a.match_json;
@@ -211,61 +209,27 @@ function AdvisorCard({
         </p>
       )}
 
-      {/* 操作区：主页 / 联系标记 / 删除 */}
+      {/* 只读区：主页 / 联系状态（2026-09-29 撤表单：标记与删除入口已收起） */}
       <div
-        className="flex items-center justify-between"
-        style={{ gap: 8, borderTop: "1px solid var(--border-subtle)", paddingTop: 10 }}
+        className="flex items-center"
+        style={{ gap: 10, borderTop: "1px solid var(--border-subtle)", paddingTop: 10 }}
       >
-        <div className="flex items-center" style={{ gap: 10, minWidth: 0 }}>
-          {a.homepage && (
-            <a
-              href={a.homepage}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] no-underline"
-              style={{ color: "var(--accent-primary)" }}
-            >
-              主页 ↗
-            </a>
-          )}
-          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-            {a.contacted
-              ? `已联系${a.contact_date ? ` · ${a.contact_date.slice(0, 10)}` : ""}`
-              : "未联系"}
-          </span>
-        </div>
-        <div className="flex items-center" style={{ gap: 10, flexShrink: 0 }}>
-          <button
-            onClick={() => onToggleContacted(a)}
-            disabled={busy}
-            className="text-[11px] font-medium"
-            style={{
-              color: "var(--accent-primary)",
-              background: "transparent",
-              border: "none",
-              cursor: busy ? "default" : "pointer",
-              opacity: busy ? 0.5 : 1,
-              padding: 0,
-            }}
+        {a.homepage && (
+          <a
+            href={a.homepage}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] no-underline"
+            style={{ color: "var(--accent-primary)" }}
           >
-            {a.contacted ? "取消联系标记" : "标记已联系"}
-          </button>
-          <button
-            onClick={() => onDelete(a)}
-            disabled={busy}
-            className="text-[11px] font-medium"
-            style={{
-              color: "var(--accent-danger)",
-              background: "transparent",
-              border: "none",
-              cursor: busy ? "default" : "pointer",
-              opacity: busy ? 0.5 : 1,
-              padding: 0,
-            }}
-          >
-            删除
-          </button>
-        </div>
+            主页 ↗
+          </a>
+        )}
+        <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+          {a.contacted
+            ? `已联系${a.contact_date ? ` · ${a.contact_date.slice(0, 10)}` : ""}`
+            : "未联系"}
+        </span>
       </div>
     </div>
   );
@@ -280,7 +244,6 @@ export default function PhDAdvisorBoard({
 }) {
   const [advisors, setAdvisors] = useState<PhDAdvisorDTO[]>(initialAdvisors);
   const [loading, setLoading] = useState(false);
-  const [busyId, setBusyId] = useState<number | null>(null);
 
   /* 录入面板 router.refresh() 后，server 端会带新的 initialAdvisors 下来；
    * useState 初值只在挂载时生效，故在渲染期同步（React 官方 adjust-state-during-render 模式）。 */
@@ -318,33 +281,6 @@ export default function PhDAdvisorBoard({
     }
   };
 
-  /** 切换联系状态；首次标记时补写 contact_date（取消标记保留历史日期）。 */
-  const onToggleContacted = async (a: PhDAdvisorDTO) => {
-    setBusyId(a.id);
-    try {
-      const contacted = !a.contacted;
-      await patchPhdAdvisor(a.id, {
-        contacted,
-        contact_date:
-          contacted && !a.contact_date ? new Date().toISOString() : a.contact_date,
-      });
-      await refreshAdvisors();
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const onDelete = async (a: PhDAdvisorDTO) => {
-    if (!window.confirm(`确认删除导师「${a.name}」？此操作不可恢复。`)) return;
-    setBusyId(a.id);
-    try {
-      await deletePhdAdvisor(a.id);
-      await refreshAdvisors();
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   return (
     <main className="min-h-full" style={{ background: "var(--surface-canvas)", padding: "20px 24px" }}>
       <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
@@ -379,7 +315,7 @@ export default function PhDAdvisorBoard({
           className="text-sm"
           style={{ color: "var(--text-muted)", padding: 24, background: "var(--surface-card)", borderRadius: 16 }}
         >
-          暂无导师数据。用上方「录入」面板添加院校机会与导师，录完后点「重算全部匹配」。
+          暂无导师数据（归档线只读，登记入口已收起，数据保留）。
         </div>
       ) : (
         <div
@@ -387,14 +323,7 @@ export default function PhDAdvisorBoard({
           style={{ gap: 14, gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))" }}
         >
           {sorted.map((a) => (
-            <AdvisorCard
-              key={a.id}
-              a={a}
-              dirMap={dirMap}
-              busy={busyId === a.id}
-              onToggleContacted={onToggleContacted}
-              onDelete={onDelete}
-            />
+            <AdvisorCard key={a.id} a={a} dirMap={dirMap} />
           ))}
         </div>
       )}

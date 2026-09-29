@@ -1,20 +1,18 @@
 "use client";
 
+/** 岗位池看板（/jobs/pool）—— 2026-09-29 撤表单：归档线只读。
+ *
+ * 录入 / 删除 / 重算匹配的写表单已收起（写口不在本页暴露），
+ * 只保留统计、匹配列表与详情的只读展示；数据保留。
+ */
+
 import { useState } from "react";
 import type {
   DimensionScores,
   JobPosting,
   JobPoolStats,
   MatchGrade,
-  PostingTier,
 } from "@/types";
-import {
-  createPosting,
-  deletePosting,
-  getPoolStats,
-  listPostings,
-  recomputeMatch,
-} from "@/services/jdService";
 
 /* ───────────────────────── 元数据 ───────────────────────── */
 
@@ -65,17 +63,6 @@ const sectionTitleStyle: React.CSSProperties = {
   fontWeight: 600,
   color: "var(--text-primary)",
   letterSpacing: "-0.01em",
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--border-default)",
-  background: "var(--surface-card)",
-  fontSize: 13,
-  color: "var(--text-primary)",
-  outline: "none",
-  minWidth: 140,
 };
 
 /* ───────────────────────── 小组件 ───────────────────────── */
@@ -149,83 +136,9 @@ type Props = {
 };
 
 export default function JDBoard({ initialPostings, initialStats }: Props) {
-  const [postings, setPostings] = useState<JobPosting[]>(initialPostings);
-  const [stats, setStats] = useState<JobPoolStats>(initialStats);
-  const [busy, setBusy] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const postings = initialPostings;
+  const stats = initialStats;
   const [expandId, setExpandId] = useState<string | null>(null);
-
-  const [form, setForm] = useState({
-    company: "",
-    title: "",
-    track: "llm",
-    tier: 1 as PostingTier,
-    city: "",
-    salaryRange: "",
-    source: "",
-    education: "",
-    minYears: "",
-    paperRequired: false,
-    jdText: "",
-  });
-
-  const refresh = async () => {
-    const [ps, st] = await Promise.all([listPostings(), getPoolStats()]);
-    setPostings(ps);
-    setStats(st);
-  };
-
-  async function handleCreate() {
-    if (!form.company.trim() || !form.title.trim()) return;
-    setBusy(true);
-    try {
-      const res = await createPosting({
-        company: form.company,
-        title: form.title,
-        track: form.track,
-        tier: form.tier,
-        city: form.city || null,
-        salaryRange: form.salaryRange || null,
-        source: form.source || null,
-        education: form.education || null,
-        minYears: form.minYears ? Number(form.minYears) : null,
-        paperRequired: form.paperRequired,
-        jdText: form.jdText || null,
-      });
-      let msg = `已录入 ${res.count} 条岗位`;
-      if (res.skipped.length) msg += `，跳过重复 ${res.skipped.length} 条`;
-      alert(msg);
-      setForm({
-        company: "", title: "", track: "llm", tier: 1, city: "", salaryRange: "",
-        source: "", education: "", minYears: "", paperRequired: false, jdText: "",
-      });
-      setShowForm(false);
-      await refresh();
-    } catch (e) {
-      alert("录入失败：" + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleRematch(id: string) {
-    try {
-      await recomputeMatch(id);
-      await refresh();
-    } catch (e) {
-      alert("重算失败：" + (e instanceof Error ? e.message : String(e)));
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("确认删除该岗位？")) return;
-    try {
-      await deletePosting(id);
-      await refresh();
-    } catch (e) {
-      alert("删除失败：" + (e instanceof Error ? e.message : String(e)));
-    }
-  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -248,7 +161,7 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
             岗位池 · JD 匹配
           </h1>
           <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
-            录 JD 即得 A/B/C/D 评级与差距 · 纯规则评分（技术栈40 / 项目25 / 学历年限15 / 科研10 / 行业10），可解释不盲投
+            已录入 JD 的 A/B/C/D 评级与差距 · 纯规则评分（技术栈40 / 项目25 / 学历年限15 / 科研10 / 行业10），可解释不盲投
           </p>
         </div>
 
@@ -272,138 +185,17 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
           </div>
         </div>
 
-        {/* Entry form toggle */}
-        <div style={cardStyle}>
-          <div className="flex items-center justify-between">
-            <h2 style={sectionTitleStyle}>录入 JD</h2>
-            <button
-              onClick={() => setShowForm((v) => !v)}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "var(--radius-pill)",
-                border: "1px solid var(--accent-primary)",
-                background: showForm ? "var(--accent-primary)" : "transparent",
-                color: showForm ? "var(--text-inverse)" : "var(--accent-primary)",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {showForm ? "收起" : "＋ 新增 JD"}
-            </button>
-          </div>
-
-          {showForm ? (
-            <div className="flex flex-col" style={{ gap: 10, marginTop: 14 }}>
-              <div className="flex" style={{ gap: 10, flexWrap: "wrap" }}>
-                <input
-                  placeholder="公司 *"
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder="岗位名 *"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  style={inputStyle}
-                />
-                <select
-                  value={form.track}
-                  onChange={(e) => setForm({ ...form, track: e.target.value })}
-                  style={inputStyle}
-                >
-                  {Object.entries(TRACK_LABEL).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
-                <select
-                  value={String(form.tier)}
-                  onChange={(e) => setForm({ ...form, tier: Number(e.target.value) as PostingTier })}
-                  style={inputStyle}
-                >
-                  <option value={1}>梯队 1 · 主攻</option>
-                  <option value={2}>梯队 2 · 卡位</option>
-                  <option value={3}>梯队 3 · 保底</option>
-                </select>
-                <input
-                  placeholder="城市"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder="薪资 如 36-45K"
-                  value={form.salaryRange}
-                  onChange={(e) => setForm({ ...form, salaryRange: e.target.value })}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder="来源 Boss/内推/猎聘"
-                  value={form.source}
-                  onChange={(e) => setForm({ ...form, source: e.target.value })}
-                  style={inputStyle}
-                />
-                <select
-                  value={form.education}
-                  onChange={(e) => setForm({ ...form, education: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option value="">学历要求（不限）</option>
-                  <option value="本科">本科</option>
-                  <option value="硕士">硕士</option>
-                  <option value="博士">博士</option>
-                </select>
-                <input
-                  placeholder="经验年数 如 3"
-                  value={form.minYears}
-                  onChange={(e) => setForm({ ...form, minYears: e.target.value })}
-                  style={{ ...inputStyle, width: 120 }}
-                />
-                <label className="flex items-center" style={{ gap: 6, fontSize: 13, color: "var(--text-secondary)" }}>
-                  <input
-                    type="checkbox"
-                    checked={form.paperRequired}
-                    onChange={(e) => setForm({ ...form, paperRequired: e.target.checked })}
-                  />
-                  要求论文
-                </label>
-              </div>
-              <textarea
-                placeholder="粘贴 JD 全文（系统自动抽取技能关键词并计算匹配；留空则技术栈维度记 0）"
-                value={form.jdText}
-                onChange={(e) => setForm({ ...form, jdText: e.target.value })}
-                style={{ ...inputStyle, minHeight: 120, resize: "vertical", width: "100%" }}
-              />
-              <div className="flex" style={{ gap: 10, justifyContent: "flex-end" }}>
-                <button
-                  onClick={handleCreate}
-                  disabled={busy}
-                  style={{
-                    padding: "8px 20px",
-                    borderRadius: "var(--radius-pill)",
-                    border: "none",
-                    background: "var(--accent-primary)",
-                    color: "var(--text-inverse)",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: busy ? "not-allowed" : "pointer",
-                    opacity: busy ? 0.6 : 1,
-                  }}
-                >
-                  {busy ? "匹配中…" : "录入并匹配"}
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </div>
-
         {/* List */}
         <div style={cardStyle}>
-          <h2 style={{ ...sectionTitleStyle, marginBottom: 14 }}>岗位列表（按匹配分降序）</h2>
+          <div className="flex items-center justify-between">
+            <h2 style={sectionTitleStyle}>岗位列表（按匹配分降序）</h2>
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              归档线只读 · 登记入口已收起
+            </span>
+          </div>
           {postings.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-              岗位池为空，点击「＋ 新增 JD」录入第一条。
+              岗位池为空（归档线只读，数据保留）。
             </p>
           ) : (
             <div className="flex flex-col" style={{ gap: 8 }}>
@@ -450,22 +242,6 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
                       ) : (
                         <Pill label="未匹配" color="var(--text-muted)" soft="var(--color-zinc-100)" />
                       )}
-                      <div className="flex items-center" style={{ gap: 6 }}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleRematch(p.id); }}
-                          title="重算匹配"
-                          style={iconBtn}
-                        >
-                          ↻
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
-                          title="删除"
-                          style={iconBtn}
-                        >
-                          ×
-                        </button>
-                      </div>
                     </div>
 
                     {/* Detail */}
@@ -496,16 +272,6 @@ export default function JDBoard({ initialPostings, initialStats }: Props) {
 }
 
 /* ───────────────────────── 匹配详情 ───────────────────────── */
-
-const iconBtn: React.CSSProperties = {
-  border: "none",
-  background: "transparent",
-  color: "var(--text-muted)",
-  cursor: "pointer",
-  fontSize: 16,
-  lineHeight: 1,
-  padding: "2px 6px",
-};
 
 function MatchDetail({ posting }: { posting: JobPosting }) {
   const dims = posting.dimensionScores;

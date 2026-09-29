@@ -2,20 +2,15 @@
 
 /** 投递管理看板（/jobs/applications）。
 
- * 功能：漏斗统计 / 新增投递 / 状态流转 / 删除
- * 数据来源：/api/job-applications (CRUD)
+ * 功能：漏斗统计 / 投递记录只读展示（2026-09-29 撤表单：登记与状态流转收起）
+ * 数据来源：/api/job-applications（只读 GET；写口留在阶段页之外，见 STYLE.md 不变量 3）
  *
  * 从 JobsBoard 中提取并增强，独立页面更宽敞。
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import type { JobAppStatus, JobApplication, JobApplicationCreate } from "@/types";
-import {
-  createApplication,
-  deleteApplication,
-  updateApplication,
-} from "@/services/jobHuntService";
+import type { JobAppStatus, JobApplication } from "@/types";
 
 /* ───────────────────────── 常量 ───────────────────────── */
 
@@ -26,8 +21,6 @@ const APP_STATUS_META: Record<JobAppStatus, { label: string; color: string; soft
   offer: { label: "已拿offer", color: "var(--accent-success)", soft: "var(--accent-success-soft)" },
   rejected: { label: "已挂", color: "var(--accent-danger)", soft: "var(--accent-danger-soft)" },
 };
-
-const STATUS_ORDER: JobAppStatus[] = ["applied", "screening", "interview", "offer", "rejected"];
 
 const TRACK_LABEL: Record<string, string> = {
   agent: "Agent",
@@ -45,23 +38,6 @@ const cardStyle: React.CSSProperties = {
   borderRadius: "var(--radius-lg)",
 };
 
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 600,
-  color: "var(--text-primary)",
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  border: "1px solid var(--border-default)",
-  borderRadius: "var(--radius-md)",
-  background: "var(--surface-card)",
-  fontSize: 13,
-  color: "var(--text-primary)",
-  flex: "1 1 140px",
-  minWidth: 120,
-};
-
 /* ───────────────────────── 组件 ───────────────────────── */
 
 export default function ApplicationsBoard({
@@ -69,20 +45,7 @@ export default function ApplicationsBoard({
 }: {
   initialApplications: JobApplication[];
 }) {
-  const [apps, setApps] = useState<JobApplication[]>(initialApplications);
-  const [showForm, setShowForm] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState<JobApplicationCreate>({
-    company: "",
-    role: "",
-    track: "other",
-    source: null,
-    status: "applied",
-    salaryRange: null,
-    appliedAt: null,
-    nextAction: null,
-    notes: null,
-  });
+  const apps = initialApplications;
 
   /* ── 漏斗统计（纯前端，从 apps 实时计算） ── */
   const funnel = useMemo(() => {
@@ -102,55 +65,6 @@ export default function ApplicationsBoard({
       responseRate: apps.length ? Math.round((responded / apps.length) * 100) : 0,
     };
   }, [apps]);
-
-  /* ── 新增投递 ── */
-  const handleCreate = useCallback(async () => {
-    if (!form.company.trim() || !form.role.trim()) return;
-    setBusy(true);
-    try {
-      const created = await createApplication(form);
-      setApps((prev) => [created, ...prev]);
-      setForm({
-        company: "",
-        role: "",
-        track: "other",
-        source: null,
-        status: "applied",
-        salaryRange: null,
-        appliedAt: null,
-        nextAction: null,
-        notes: null,
-      });
-      setShowForm(false);
-    } catch (e) {
-      console.error("新增投递失败:", e);
-    } finally {
-      setBusy(false);
-    }
-  }, [form]);
-
-  /* ── 状态流转 ── */
-  const handleStatusChange = useCallback(
-    async (id: string, newStatus: JobAppStatus) => {
-      try {
-        const updated = await updateApplication(id, { status: newStatus });
-        setApps((prev) => prev.map((a) => (a.id === id ? updated : a)));
-      } catch (e) {
-        console.error("更新状态失败:", e);
-      }
-    },
-    []
-  );
-
-  /* ── 删除 ── */
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      await deleteApplication(id);
-      setApps((prev) => prev.filter((a) => a.id !== id));
-    } catch (e) {
-      console.error("删除失败:", e);
-    }
-  }, []);
 
   return (
     <div
@@ -192,127 +106,18 @@ export default function ApplicationsBoard({
           <FunnelStat label="回复率" value={`${funnel.responseRate}%`} color="var(--accent-primary)" />
         </div>
 
-        {/* 新增按钮 */}
-        <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+        {/* 记录数（归档线只读：登记入口已收起） */}
+        <div className="flex items-center" style={{ marginBottom: 14 }}>
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            共 {apps.length} 条记录
+            共 {apps.length} 条记录 · 归档线只读，登记入口已收起
           </span>
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            style={{
-              padding: "6px 14px",
-              borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--accent-primary)",
-              background: showForm ? "var(--accent-primary)" : "transparent",
-              color: showForm ? "var(--text-inverse)" : "var(--accent-primary)",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {showForm ? "收起" : "＋ 新增投递"}
-          </button>
         </div>
-
-        {/* 新增表单 */}
-        {showForm ? (
-          <div
-            className="flex flex-col"
-            style={{
-              gap: 10,
-              padding: 16,
-              marginBottom: 16,
-              background: "var(--color-zinc-100)",
-              borderRadius: "var(--radius-md)",
-            }}
-          >
-            <div className="flex" style={{ gap: 10, flexWrap: "wrap" }}>
-              <input
-                placeholder="公司 *"
-                value={form.company}
-                onChange={(e) => setForm({ ...form, company: e.target.value })}
-                style={inputStyle}
-              />
-              <input
-                placeholder="岗位 *"
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                style={inputStyle}
-              />
-              <select
-                value={form.track}
-                onChange={(e) => setForm({ ...form, track: e.target.value })}
-                style={inputStyle}
-              >
-                {Object.entries(TRACK_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-              <input
-                placeholder="来源（Boss/内推/猎聘…）"
-                value={form.source ?? ""}
-                onChange={(e) => setForm({ ...form, source: e.target.value })}
-                style={inputStyle}
-              />
-              <input
-                placeholder="薪资范围 如 36-42K"
-                value={form.salaryRange ?? ""}
-                onChange={(e) => setForm({ ...form, salaryRange: e.target.value })}
-                style={inputStyle}
-              />
-              <input
-                type="date"
-                value={form.appliedAt ?? ""}
-                onChange={(e) => setForm({ ...form, appliedAt: e.target.value || null })}
-                style={inputStyle}
-              />
-              <select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value as JobAppStatus })}
-                style={inputStyle}
-              >
-                {STATUS_ORDER.map((s) => (
-                  <option key={s} value={s}>
-                    {APP_STATUS_META[s].label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <input
-              placeholder="下一步动作（如 9/12 前发感谢信）"
-              value={form.nextAction ?? ""}
-              onChange={(e) => setForm({ ...form, nextAction: e.target.value })}
-              style={inputStyle}
-            />
-            <div className="flex" style={{ gap: 10, justifyContent: "flex-end" }}>
-              <button
-                onClick={handleCreate}
-                disabled={busy}
-                style={{
-                  padding: "8px 20px",
-                  borderRadius: "var(--radius-pill)",
-                  border: "none",
-                  background: "var(--accent-primary)",
-                  color: "var(--text-inverse)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: busy ? "not-allowed" : "pointer",
-                  opacity: busy ? 0.6 : 1,
-                }}
-              >
-                {busy ? "添加中…" : "添加记录"}
-              </button>
-            </div>
-          </div>
-        ) : null}
 
         {/* 投递列表 */}
         <div className="flex flex-col" style={{ gap: 8 }}>
           {apps.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: 24 }}>
-              暂无投递记录，点击「＋ 新增投递」开始跟踪。
+              暂无投递记录（归档线只读，数据保留）。
             </p>
           ) : (
             apps.map((a) => {
@@ -371,32 +176,6 @@ export default function ApplicationsBoard({
                   >
                     {meta.label}
                   </span>
-                  <select
-                    value={a.status}
-                    onChange={(e) => handleStatusChange(a.id, e.target.value as JobAppStatus)}
-                    style={{ ...inputStyle, width: 110, padding: "4px 8px", fontSize: 12 }}
-                  >
-                    {STATUS_ORDER.map((s) => (
-                      <option key={s} value={s}>
-                        {APP_STATUS_META[s].label}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => handleDelete(a.id)}
-                    title="删除"
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      color: "var(--text-muted)",
-                      cursor: "pointer",
-                      fontSize: 16,
-                      lineHeight: 1,
-                      padding: "2px 6px",
-                    }}
-                  >
-                    ×
-                  </button>
                 </div>
               );
             })
