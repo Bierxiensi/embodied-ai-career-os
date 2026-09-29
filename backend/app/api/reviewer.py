@@ -3,8 +3,9 @@
 Day7 闭环核心入口：一次请求完成全链路。
   1. Task 状态 → done
   2. 写入 LearningLog
-  3. 执行 Reviewer Agent（LangGraph 5 节点）
-  4. 产出 SkillAssessment + 更新 Skill + 记录 agent_runs
+  3. 执行 Reviewer Agent（LangGraph 5 节点，只读提案）
+  4. 契约裁决：verdict != "pass" → fail-closed 不落库（applied=False）
+  5. pass → apply_review_proposal 落库（写库唯一通道，spec §4.3）+ 记录 agent_runs
 
 前端只需一个 POST，避免多步调用与状态不一致。
 """
@@ -19,9 +20,12 @@ from app.agents.reviewer.graph import build_reviewer_graph
 from app.core.response import ApiResponse, ok
 from app.db.base import get_db
 from app.models.learning_log import LearningLog
+from app.models.skill import Skill
+from app.models.skill_assessment import SkillAssessment
 from app.models.task import Task
 from app.schemas.assessment import SkillAssessmentOut
 from app.schemas.learning_log import LearningLogOut
+from app.services.evidence_events import apply_review_proposal
 
 router = APIRouter(prefix="/reviewer", tags=["reviewer"])
 
@@ -38,24 +42,18 @@ class ReviewerRequest(BaseModel):
     artifact_url: str | None = Field(default=None, max_length=500)
 
 
-class ReviewerResult(BaseModel):
-    """Reviewer 评估结果。"""
-
-    task: dict                  # 完成的任务
-    learning_log: LearningLogOut  # 创建的学习日志
-    assessment: SkillAssessmentOut  # 技能评估记录
-    updated_skill: dict         # 更新后的技能状态
-
-
 @router.post("/review", include_in_schema=False)
 def review_task(
     req: ReviewerRequest, db: Session = Depends(get_db)
-) -> ApiResponse[ReviewerResult]:
+) -> ApiResponse[dict]:
     """DEPRECATED（2026-09-24 收敛）：零前端消费，保数据不删路由。
 
-    完成任务并复盘：Task→done + LearningLog + Reviewer Agent + Skill Update。
+    完成任务并复盘：Task→done + LearningLog + Reviewer Agent（只读提案）
+    + 契约裁决 + apply_review_proposal 落库。
 
-    事务保证：全链路成功才提交，任一步骤失败回滚。
+    事务分两段（spec §4.3 写库唯一通道）：
+      - record_agent_run 节点提交 Task/LearningLog/AgentRun（事实与 tracing）；
+      - SkillAssessment / skill 等级只经 apply_review_proposal 提交。
     """
 
     # 1. 查任务，校验存在性
@@ -76,7 +74,7 @@ def review_task(
     db.add(log)
     db.flush()  # 取自增 ID，供 Reviewer 读取
 
-    # 4. 执行 Reviewer Agent（db 通过 state 注入，节点内完成 DB 写入）
+    # 4. 执行 Reviewer Agent（节点只读：产出契约 review，不写技能状态）
     #    task / learning_log 序列化为 dict 传入
     task_dict = {
         "id": task.id,
@@ -101,17 +99,44 @@ def review_task(
     # 5. record_agent_run 节点已 commit，此处刷新关联对象
     db.refresh(log)
 
-    # 6. 取 SkillAssessment（本任务最新一条，由 apply_skill_update 节点写入）
-    #    按 task_id 过滤，避免返回别的任务的评估；
-    #    无记录时兜底返回空评估（reason 标注原因），而非 model_validate(None) 抛 500。
-    from app.models.skill_assessment import SkillAssessment
+    # 6. 契约裁决 + 落库：非 pass 一律 fail-closed（含 review 缺失/verdict 非法）
+    review = result.get("review")
+    if not isinstance(review, dict):
+        review = {"verdict": "block", "error": "contract:missing_review"}
+    if review.get("verdict") != "pass":
+        if review.get("verdict") != "block":
+            review = {
+                **review,
+                "verdict": "block",
+                "error": review.get("error") or "contract:verdict_invalid",
+            }
+        applied = False
+        apply_out = None
+        message = "Review blocked (fail-closed)"
+    else:
+        apply_out = apply_review_proposal(db, review)
+        applied = bool(apply_out.get("applied"))
+        message = "Task completed and reviewed" if applied else "Review not applied"
 
+    # 7. 兼容旧响应字段（保数据不删路由）：assessment / updated_skill
+    #    按 task_id 取本任务评估；apply 层写的行不带 task_id → 落库后按技能取最新
     assessment = (
         db.query(SkillAssessment)
         .filter(SkillAssessment.task_id == task.id)
         .order_by(SkillAssessment.created_at.desc())
         .first()
     )
+    skill_row = None
+    if applied and review.get("skill_name"):
+        skill_row = db.query(Skill).filter(Skill.name == review["skill_name"]).first()
+        if skill_row is not None and assessment is None:
+            assessment = (
+                db.query(SkillAssessment)
+                .filter(SkillAssessment.skill_id == skill_row.id)
+                .order_by(SkillAssessment.created_at.desc())
+                .first()
+            )
+
     assessment_out = (
         SkillAssessmentOut.model_validate(assessment)
         if assessment is not None
@@ -126,12 +151,25 @@ def review_task(
         )
     )
 
+    updated_skill = result.get("updated_skill", {})
+    if applied and skill_row is not None:
+        updated_skill = {
+            "id": skill_row.id,
+            "name": skill_row.name,
+            "level": skill_row.level,
+            "target_level": skill_row.target_level,
+            "evidence": list(skill_row.evidence) if skill_row.evidence else [],
+        }
+
     return ok(
-        ReviewerResult(
-            task=task_dict,
-            learning_log=LearningLogOut.model_validate(log),
-            assessment=assessment_out,
-            updated_skill=result.get("updated_skill", {}),
-        ),
-        message="Task completed and reviewed",
+        {
+            "task": task_dict,
+            "learning_log": LearningLogOut.model_validate(log),
+            "assessment": assessment_out,
+            "updated_skill": updated_skill,
+            "review": review,
+            "applied": applied,
+            "apply": apply_out,
+        },
+        message=message,
     )

@@ -4,8 +4,10 @@
     START → collect_context → evaluate_evidence → create_assessment
           → apply_skill_update → record_agent_run → END
 
-db session 通过 state 注入，节点内完成 DB 读写。
-record_agent_run 负责最终 commit，保证 SkillAssessment + Skill + AgentRun 原子性。
+db session 通过 state 注入。图只产出契约提案（state["review"]），不写
+SkillAssessment / skill 等级（spec §4.3 只读铁律）——落库由 API 层经
+apply_review_proposal 完成；record_agent_run 的 commit 只提交
+Task/LearningLog/AgentRun 等 tracing 与事实写入。
 """
 
 from __future__ import annotations

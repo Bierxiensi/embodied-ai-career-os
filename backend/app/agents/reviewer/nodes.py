@@ -1,12 +1,16 @@
 """Reviewer Agent 的 LangGraph 节点。
 
 每个节点接收 state，返回 dict（LangGraph 合并到状态）。
-与 Planner 不同，Reviewer 节点涉及 DB 读写（collect/apply/record），
-故 db session 通过 state 传递（API 层注入）。
+
+只读铁律（spec §4.3）：Reviewer 链路**不写** SkillAssessment / skill 等级——
+节点只产出契约提案（review），落库唯一通道是
+``app.services.evidence_events.apply_review_proposal``（API 层调用）。
+collect_context / evaluate_evidence 只读 DB 或不碰 DB；
+record_agent_run 仍写 agent_runs（tracing，非技能状态）。
 
 流程：
     collect_context → evaluate_evidence → create_assessment
-    → apply_skill_update → record_agent_run
+    → apply_skill_update（只读投影） → record_agent_run
 """
 
 from __future__ import annotations
@@ -15,14 +19,80 @@ import json
 import uuid
 
 from app.agents.reviewer.rules import (
-    build_evidence_entry,
     decide_level,
     score_evidence,
 )
 from app.agents.reviewer.state import ReviewerState
 from app.models.agent_run import AgentRun
 from app.models.skill import Skill
-from app.models.skill_assessment import SkillAssessment
+
+
+# ============================================================
+# 评审契约（fail-closed，spec §4.3）
+# ============================================================
+
+
+def validate_review_contract(payload: dict) -> dict:
+    """评审契约校验（fail-closed，spec §4.3）。
+
+    任何缺字段/类型错 → verdict=block，如实带 error；不静默降分、不吞异常。
+    """
+    required = {
+        "skill_name": str,
+        "proposed_level": int,
+        "evidence_score": int,
+        "reason": str,
+        "evidence_refs": list,
+    }
+    try:
+        for field, typ in required.items():
+            if field not in payload or not isinstance(payload[field], typ):
+                return {**payload, "verdict": "block", "error": f"contract:{field}"}
+        if not (0 <= payload["proposed_level"] <= 5):
+            return {**payload, "verdict": "block", "error": "contract:proposed_level_range"}
+        if not (0 <= payload["evidence_score"] <= 100):
+            return {**payload, "verdict": "block", "error": "contract:evidence_score_range"}
+        payload.setdefault("verdict", "pass")
+        return payload
+    except Exception as e:  # 校验自身异常也必须 fail-closed
+        return {"verdict": "block", "error": f"contract:validator_crashed:{e}"}
+
+
+def _evidence_refs(task: dict, learning_log: dict) -> list[str]:
+    """从产出链接提取可追溯 ref（commit:sha）。
+
+    只认 commit 型 URL：ref 词表是 unit_item:id / commit:sha / experiment:id，
+    杜绝把任意链接冒充证据。取不到可追溯 ref 时返回空列表——
+    apply_review_proposal 会以 evidence_refs_empty 拒绝落库（防虚构）。
+    """
+    url = str(learning_log.get("artifact_url") or "").strip()
+    if "/commit/" not in url:
+        return []
+    sha = url.rstrip("/").split("/commit/")[-1].split("/")[0].split("?")[0]
+    return [f"commit:{sha}"] if sha else []
+
+
+def _build_review_proposal(state: ReviewerState, score: int) -> dict:
+    """把评分结果组装成契约提案（只读；是否落库由 apply 层裁决）。"""
+    task = state.get("task") or {}
+    skill = state.get("skill") or {}
+    learning_log = state.get("learning_log") or {}
+
+    old_level = int(skill["level"]) if skill.get("level") is not None else 0
+    target_level = (
+        int(skill["target_level"]) if skill.get("target_level") is not None else 5
+    )
+    new_level, _confidence, reason, _should_append = decide_level(
+        score, old_level, target_level
+    )
+    return {
+        "skill_name": task.get("skill_name") or skill.get("name") or "",
+        "proposed_level": int(new_level),
+        "evidence_score": int(score),
+        "reason": reason,
+        "evidence_refs": _evidence_refs(task, learning_log),
+        "verdict": "pass",
+    }
 
 
 # ============================================================
@@ -102,9 +172,12 @@ def collect_context(state: ReviewerState) -> dict:
 
 
 def evaluate_evidence(state: ReviewerState) -> dict:
-    """节点2：计算证据得分。
+    """节点2：计算证据得分并产出契约提案（只读，spec §4.3）。
 
-    LLM 优先（语义理解），失败时 fallback 规则评分。
+    LLM 优先（语义理解），失败时 fallback 规则评分；
+    评分结果组装成 review 提案后必须过 validate_review_contract——
+    契约不通过（缺字段/类型错/越界）→ verdict=block + applied=False，零写库。
+    本节点不落库；是否落库由 API 层经 apply_review_proposal 裁决。
     """
     task = state.get("task", {})
     learning_log = state.get("learning_log", {})
@@ -112,11 +185,18 @@ def evaluate_evidence(state: ReviewerState) -> dict:
     # LLM 优先
     llm_result = _evaluate_with_llm(task, learning_log)
     if llm_result is not None:
-        return llm_result
+        score = int(llm_result["evidence_score"])
+        extra = {"llm_evaluation": llm_result.get("llm_evaluation")}
+    else:
+        # Fallback: 规则评分
+        score = score_evidence(task, learning_log)
+        extra = {}
 
-    # Fallback: 规则评分
-    score = score_evidence(task, learning_log)
-    return {"evidence_score": score}
+    result = validate_review_contract(_build_review_proposal(state, score))
+    if result.get("verdict") == "block":
+        # fail-closed：契约不过，提案直接裁决为 block，不写库、不降分
+        return {"evidence_score": score, "review": result, "applied": False, **extra}
+    return {"evidence_score": score, "review": result, **extra}
 
 
 def create_assessment(state: ReviewerState) -> dict:
@@ -147,64 +227,19 @@ def create_assessment(state: ReviewerState) -> dict:
 
 
 def apply_skill_update(state: ReviewerState) -> dict:
-    """节点4：应用技能等级变更。
+    """节点4：投影技能状态（只读，spec §4.3）。
 
-    - 写 SkillAssessment 表（中间结果留痕）
-    - 更新 Skill.level（如等级有变化）
-    - 追加 Skill.evidence（如 should_append）
-
-    db 为 None 或 skill_id 为 None 时：仅内存更新 updated_skill，不写库。
-    评估/学习场景下不中断——允许无 DB 的试运行。
+    历史行为（写 SkillAssessment / 改 Skill.level / 追加 Skill.evidence）
+    已整体移交 API 层的 apply_review_proposal——本节点不再碰 DB，只把
+    collect_context 读到的当前状态投影给响应；API 层在 apply 成功后用
+    DB 真值刷新 updated_skill。
     """
-    db = state.get("db")
     skill = state.get("skill") or {}
-    assessment = state.get("assessment") or {}
-    learning_log = state.get("learning_log") or {}
-    task = state.get("task") or {}
 
     updated_skill = dict(skill)
-    skill_id = skill.get("id")
-
-    # 技能未注册：仅内存更新，标注原因写入 updated_skill，
-    # 让 API 层可区分"评估了但无技能"与"完全没评估"（不再静默跳过）。
-    if skill_id is None:
+    # 技能未注册：标注原因，让 API 层可区分"评估了但无技能"与"完全没评估"
+    if updated_skill.get("id") is None:
         updated_skill["note"] = "技能未注册，仅生成评估未落库"
-
-    if db is not None and skill_id is not None:
-        # 写 SkillAssessment
-        db.add(
-            SkillAssessment(
-                skill_id=skill_id,
-                task_id=assessment.get("task_id"),
-                old_level=assessment.get("old_level", 0),
-                new_level=assessment.get("new_level", 0),
-                confidence=assessment.get("confidence", 0.0),
-                reason=assessment.get("reason", ""),
-                evidence_score=assessment.get("evidence_score", 0),
-            )
-        )
-
-        # 更新 Skill
-        skill_obj = db.query(Skill).filter(Skill.id == skill_id).first()
-        if skill_obj is not None:
-            new_lvl = assessment.get("new_level", 0)
-            old_lvl = assessment.get("old_level", 0)
-            if new_lvl != old_lvl:
-                skill_obj.level = new_lvl
-
-            if assessment.get("should_append_evidence"):
-                entry = build_evidence_entry(task, learning_log)
-                current_evidence = list(skill_obj.evidence) if skill_obj.evidence else []
-                if entry not in current_evidence:
-                    skill_obj.evidence = current_evidence + [entry]
-
-            updated_skill = {
-                "id": skill_obj.id,
-                "name": skill_obj.name,
-                "level": skill_obj.level,
-                "target_level": skill_obj.target_level,
-                "evidence": list(skill_obj.evidence) if skill_obj.evidence else [],
-            }
 
     return {"updated_skill": updated_skill}
 
@@ -250,6 +285,7 @@ def record_agent_run(state: ReviewerState) -> dict:
                 trace_id=run_id,
             )
         )
-        db.commit()  # 提交所有写入（SkillAssessment + Skill + AgentRun）
+        db.commit()  # 提交 tracing + 路由前置事实写入（Task/LearningLog/AgentRun）；
+        # SkillAssessment / Skill 等级由 API 层 apply_review_proposal 单独提交
 
     return {"agent_run_id": run_id}
