@@ -10,6 +10,8 @@ import CareerProgressCard from "@/components/CareerProgressCard";
 import SkillRadarCard from "@/components/SkillRadarCard";
 import RiskRadar from "@/components/RiskRadar";
 import RoiTaskList from "@/components/RoiTaskList";
+import EvidenceGateList from "@/components/EvidenceGateList";
+import PortfolioPanel from "@/components/PortfolioPanel";
 import { ApiError } from "@/lib/apiClient";
 import { getJobHuntBoard } from "@/services/jobHuntService";
 import { getToday } from "@/services/planService";
@@ -85,6 +87,8 @@ export default async function ProgressPage() {
           }}
         >
           <SkillRadarCard data={radar} />
+          <EvidenceGateList />
+          <PortfolioPanel />
           {transition ? (
             <CareerProgressCard
               progress={transition.careerProgress}
