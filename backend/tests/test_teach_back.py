@@ -64,3 +64,43 @@ def test_complete_writes_learning_log_auto():
         db.commit()
     finally:
         db.close()
+
+
+def test_wrong_item_twice_creates_only_one_card():
+    # 一题一卡不变量：同 item 反复答错不刷 SM-2 队列
+    db = SessionLocal()
+    try:
+        u = MasteryUnit(
+            source_type="paper", source_ref="paper:775", title="Dedup 单元",
+            skill_ids='["DPO"]', day_seq=None, generation_mode="rule",
+            content_hash=None, status="opened", created_at=datetime.now(timezone.utc),
+        )
+        db.add(u)
+        db.commit()
+        db.refresh(u)
+        item = UnitItem(unit_id=u.id, kind="quiz_q", body="Q", answer="奖励模型", rationale="r")
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+
+        def submit():
+            return client.post("/api/teach-back/complete", json={
+                "unit_id": u.id,
+                "duration_minutes": 5,
+                "answers": [{"item_id": item.id, "spoken": "完全不对"}],
+            }).json()["data"]
+
+        r1 = submit()
+        r2 = submit()
+        assert r1["cards_created"] == 1
+        assert r2["cards_created"] == 0  # 已有卡不重复建
+        n = db.query(ReviewCard).filter_by(source_item_id=item.id).count()
+        assert n == 1
+
+        db.query(ReviewCard).filter_by(source_item_id=item.id).delete()
+        db.query(UnitItem).filter_by(id=item.id).delete()
+        db.query(MasteryUnit).filter_by(id=u.id).delete()
+        db.query(LearningLog).filter(LearningLog.content.like("Teach-Back · Dedup 单元%")).delete()
+        db.commit()
+    finally:
+        db.close()

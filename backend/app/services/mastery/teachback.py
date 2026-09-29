@@ -35,7 +35,10 @@ def judge_answer(question: str, reference: str, spoken: str) -> bool:
                 ),
             ])
             if isinstance(result, dict) and "passed" in result:
-                return bool(result["passed"])
+                v = result["passed"]
+                if isinstance(v, bool):  # 严格布尔：字符串 "false" 不得当 True
+                    return v
+                # 非布尔 → 落回规则兜底（never-throws 契约）
         except Exception:
             pass
 

@@ -55,16 +55,23 @@ def complete(
             item.is_verified = True
             item.verified_at = datetime.now(timezone.utc)
         if not passed:
-            db.add(ReviewCard(
-                source_item_id=item.id,
-                source="teachback",
-                front=item.body,
-                back=item.answer or "",
-                due_at=datetime.now(timezone.utc),
-                **initial_card(),
-                created_at=datetime.now(timezone.utc),
-            ))
-            cards_created += 1
+            # 一题一卡：先按 source_item_id 查已有卡（与 mastery 首答路径一致），
+            # 已有卡不重复建（quiz 答错 + teach-back 答错同一 item 只留 1 张）
+            existing = (
+                db.query(ReviewCard).filter_by(source_item_id=item.id).first()
+                if item.id else None
+            )
+            if existing is None:
+                db.add(ReviewCard(
+                    source_item_id=item.id,
+                    source="teachback",
+                    front=item.body,
+                    back=item.answer or "",
+                    due_at=datetime.now(timezone.utc),
+                    **initial_card(),
+                    created_at=datetime.now(timezone.utc),
+                ))
+                cards_created += 1
 
     # 自动落学习日志：content = 用户口述原话（按条拼接），AI 只判对错不改写
     content = f"Teach-Back · {unit.title}\n" + "\n".join(lines)
