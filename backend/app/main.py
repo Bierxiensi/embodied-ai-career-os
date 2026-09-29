@@ -32,6 +32,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.milestones import router as milestones_router
 from app.api.paper import router as paper_router
 from app.api.phd import router as phd_router
+from app.api.portfolio import router as portfolio_router
 from app.api.experiments import router as experiments_router
 from app.api.plan import router as plan_router
 from app.api.planner import router as planner_router
@@ -124,6 +125,8 @@ app.include_router(teach_back_router, prefix=api_prefix)
 app.include_router(risk_router, prefix=api_prefix)
 # Phase 3 统一落地页：职业进度 + 当前工作 + 学术与博士（/today 页的数据源之一）
 app.include_router(transition_router, prefix=api_prefix)
+# 作品集组装（spec §2.3 作品集说话）：证据库 → 13 节 README（只读）
+app.include_router(portfolio_router, prefix=api_prefix)
 
 
 @app.get("/health")
