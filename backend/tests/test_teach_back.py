@@ -54,6 +54,7 @@ def test_complete_writes_learning_log_auto():
         log = db.get(LearningLog, body["log_id"])
         assert log is not None
         assert "DPO 不再需要显式奖励模型" in log.content  # 口述原文，不改写
+        assert log.content.startswith("Teach-Back · ")  # 前缀是前端完成徽章的跨栈契约
         assert log.duration_minutes == 15
         assert db.query(LearningLog).count() == before + 1
 

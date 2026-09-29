@@ -4,6 +4,7 @@
  * 不再是布尔勾选：完成状态从真实记录派生，不可手点。 */
 
 import type { LearningLog, MasteryUnit } from "@/types";
+import { isToday } from "@/services/learningLogService";
 
 export default function TodayCompletion({
   unit,
@@ -13,8 +14,9 @@ export default function TodayCompletion({
   logs: LearningLog[];
 }) {
   const quizPassed = (unit?.items ?? []).some((i) => i.isVerified);
-  const teachBackDone = logs.some((l) => l.content.startsWith("Teach-Back ·"));
-  const evidence = logs.some((l) => Boolean(l.artifactUrl));
+  const todayLogs = logs.filter((l) => isToday(l)); // 日闸（spec §3.2）：只看本地日历日
+  const teachBackDone = todayLogs.some((l) => l.content.startsWith("Teach-Back ·"));
+  const evidence = todayLogs.some((l) => Boolean(l.artifactUrl));
   const done = quizPassed || teachBackDone || evidence;
   const criteria = [
     { ok: quizPassed, label: "测验实证过" },
@@ -38,7 +40,7 @@ export default function TodayCompletion({
             style={{
               padding: "2px 10px",
               borderRadius: "var(--radius-pill)",
-              background: c.ok ? "var(--accent-primary-soft, #DBEFE)" : "var(--surface-muted, #F4F4F5)",
+              background: c.ok ? "var(--accent-primary-soft, #DBEAFE)" : "var(--surface-muted, #F4F4F5)",
               color: c.ok ? "var(--accent-primary)" : "var(--text-muted)",
             }}
           >
