@@ -414,8 +414,9 @@ Expected: **523 + 13 = 536 passed / 2 skipped / 0 failed**
 Run:
 ```
 cd backend
-PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c "import hashlib, pathlib, subprocess, sys; p=pathlib.Path('data/app.db'); b=hashlib.sha256(p.read_bytes()).hexdigest(); subprocess.run([sys.executable, 'scripts/trial_status.py'], check=True, env={'PYTHONIOENCODING': 'utf-8'}); a=hashlib.sha256(p.read_bytes()).hexdigest(); print('fingerprint', 'SAME' if a==b else 'CHANGED'); sys.exit(0 if a==b else 1)"
+PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c "import hashlib, pathlib, subprocess, sys; p=pathlib.Path('data/app.db'); b=hashlib.sha256(p.read_bytes()).hexdigest(); subprocess.run([sys.executable, 'scripts/trial_status.py'], check=True); a=hashlib.sha256(p.read_bytes()).hexdigest(); print('fingerprint', 'SAME' if a==b else 'CHANGED'); sys.exit(0 if a==b else 1)"
 ```
+（勘误：子进程默认继承父环境，父命令已设 `PYTHONIOENCODING`——不得给 subprocess 传 `env=` 全量替换，会丢 `SystemRoot` 触发 WinError 10106。）
 Expected: 五项输出齐（连续活跃天数 / quiz 覆盖率 / 覆盖率历史读数=暂无历史读数 / 错题条数=0 / 到期卡数）且末行 `fingerprint SAME`
 
 - [ ] **Step 7: Commit**
