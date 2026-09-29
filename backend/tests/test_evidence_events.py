@@ -52,3 +52,45 @@ def test_unknown_skill_is_noop():
         assert r == {"skill": "不存在的技能XYZ", "from_gate": -1, "to_gate": -1, "applied": False}
     finally:
         db.close()
+
+
+def test_derived_writeback_never_lowers_gate():
+    """派生回写只升不降：/skills/evidence 的推导值不得抹平已抬高的 gate。
+
+    背景（controller EXTRA）：两处 `s.evidence_gate = ev["gate_level"]` 是无条件
+    覆盖——事件/人工抬到 2 后，一次看板请求就会把 gate 打回推导值，破坏
+    evidence_events 的只升不变量。
+    """
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.models.skill import Skill
+
+    db = SessionLocal()
+    original = None
+    try:
+        skill = db.query(Skill).filter_by(name="DPO").first()
+        if skill is None:  # 无种子技能时跳过（与 _gate_of 同口径）
+            return
+        original = skill.evidence_gate
+        skill.evidence_gate = 2
+        db.commit()  # 结束写事务，放行下面 TestClient 事务的写入
+
+        client = TestClient(app)
+        resp = client.get("/api/skills/evidence")
+        assert resp.status_code == 200
+
+        db.refresh(skill)
+        assert int(skill.evidence_gate or 0) >= 2, (
+            f"派生回写把 evidence_gate 降到了 {skill.evidence_gate!r}（只升不变量被破坏）"
+        )
+    finally:
+        try:
+            sk = db.query(Skill).filter_by(name="DPO").first()
+            if sk is not None:
+                sk.evidence_gate = original
+            db.commit()
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()

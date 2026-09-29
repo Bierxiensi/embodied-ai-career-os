@@ -120,9 +120,10 @@ def list_evidence(db: Session = Depends(get_db)) -> ApiResponse[list[dict]]:
     out: list[dict] = []
     for s in skills:
         ev = compute_skill_evidence(s.name, db)
-        # 顺带把推导结果写回 evidence_gate，供看板直接读取（幂等）
+        # 顺带把推导结果写回 evidence_gate，供看板直接读取（幂等）。
+        # 只升不降：事件/人工抬高的 gate 不得被推导值抹平（evidence_events 不变量）
         if s.evidence_gate != ev["gate_level"]:
-            s.evidence_gate = ev["gate_level"]
+            s.evidence_gate = max(int(s.evidence_gate or 0), int(ev["gate_level"]))
         out.append(
             {
                 "id": s.id,
@@ -149,7 +150,8 @@ def skill_evidence(skill_id: int, db: Session = Depends(get_db)) -> ApiResponse[
         raise HTTPException(status_code=404, detail="Skill not found")
     ev = compute_skill_evidence(skill.name, db)
     if skill.evidence_gate != ev["gate_level"]:
-        skill.evidence_gate = ev["gate_level"]
+        # 只升不降：推导值只在高于现值时写回（evidence_events 不变量）
+        skill.evidence_gate = max(int(skill.evidence_gate or 0), int(ev["gate_level"]))
         db.commit()
     return ok(
         {
