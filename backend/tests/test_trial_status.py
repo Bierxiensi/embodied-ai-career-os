@@ -107,3 +107,63 @@ def test_main_prints_five_sections(capsys):
     out = capsys.readouterr().out
     for label in ("连续活跃天数", "quiz 覆盖率", "覆盖率历史读数", "错题条数", "到期卡数"):
         assert label in out, label
+
+
+# ---- M2 SQL 口径端到端钉：SELECT 的 kind / is_verified 过滤不许被改 ----
+
+
+def test_m2_sql_selection_pinned_end_to_end(capsys):
+    # 三类种子：quiz_q+verified（应计）/ quiz_q 未验证（应进分母不进分子）/
+    # flashcard+verified（两类都不应含）
+    from sqlalchemy import func
+
+    from app.db.base import SessionLocal
+    from app.models.mastery import MasteryUnit, UnitItem
+    from scripts.trial_status import main
+
+    db = SessionLocal()
+    u = None
+    try:
+        # 先取当前会话库的基线（其它测试可能已留数据——用差值断言，不依赖全局为 0）
+        base_denom = db.query(func.count(UnitItem.id)).filter(
+            UnitItem.kind == "quiz_q"
+        ).scalar()
+        base_num = db.query(func.count(UnitItem.id)).filter(
+            UnitItem.kind == "quiz_q", UnitItem.is_verified.is_(True)
+        ).scalar()
+
+        u = MasteryUnit(
+            source_type="paper",
+            source_ref="paper:m2pin",
+            title="M2 口径钉",
+            skill_ids='["DPO"]',
+            day_seq=None,
+            generation_mode="rule",
+            content_hash=None,
+            status="opened",
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(u)
+        db.commit()
+        db.refresh(u)
+        db.add_all(
+            [
+                UnitItem(unit_id=u.id, kind="quiz_q", body="q_verified", is_verified=True),
+                UnitItem(unit_id=u.id, kind="quiz_q", body="q_unverified", is_verified=False),
+                UnitItem(unit_id=u.id, kind="flashcard", body="f_verified", is_verified=True),
+            ]
+        )
+        db.commit()
+
+        assert main() == 0
+        out = capsys.readouterr().out
+        expected = local_coverage(base_num + 1, base_denom + 2)
+        assert f"quiz 覆盖率: {expected}" in out, (
+            f"期望 {expected}；若不符：kind 或 is_verified 过滤被改动"
+        )
+    finally:
+        if u is not None:
+            db.query(UnitItem).filter_by(unit_id=u.id).delete()
+            db.query(MasteryUnit).filter_by(id=u.id).delete()
+            db.commit()
+        db.close()
