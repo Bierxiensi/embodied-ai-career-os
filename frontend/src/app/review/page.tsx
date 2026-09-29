@@ -3,6 +3,7 @@
 
 import PageHeader from "@/components/PageHeader";
 import ReviewBoard from "@/components/ReviewBoard";
+import ReviewQueue from "@/components/ReviewQueue";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function ReviewPage() {
           title="今日复盘"
           subtitle="写清「今天到底做了什么」——这是证据链的第一环，也是复习队列的来源。"
         />
+        <ReviewQueue />
         <ReviewBoard />
       </div>
     </main>

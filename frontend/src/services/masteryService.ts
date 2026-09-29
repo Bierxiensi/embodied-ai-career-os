@@ -86,3 +86,45 @@ export async function teachBackComplete(payload: {
     verdicts: d.verdicts.map((v) => ({ itemId: v.item_id, passed: v.passed, hint: v.hint })),
   };
 }
+
+export type ReviewCardT = {
+  id: number;
+  front: string;
+  back: string;
+  dueAt: string;
+  intervalDays: number;
+  ef: number;
+  lapseCount: number;
+  goodStreak: number;
+  cardStatus: "active" | "fixed";
+};
+
+export async function listDueCards(): Promise<ReviewCardT[]> {
+  const data = await apiClient.get<{ review?: { due_cards: Array<{
+    id: number; front: string; back: string; due_at: string;
+    interval_days: number; ef: number; lapse_count: number;
+    good_streak: number; card_status: "active" | "fixed";
+  }> } }>("/api/today");
+  return (data.review?.due_cards ?? []).map((c) => ({
+    id: c.id,
+    front: c.front,
+    back: c.back,
+    dueAt: c.due_at,
+    intervalDays: c.interval_days,
+    ef: c.ef,
+    lapseCount: c.lapse_count,
+    goodStreak: c.good_streak,
+    cardStatus: c.card_status,
+  }));
+}
+
+export async function reviewCard(
+  cardId: number,
+  rating: "again" | "hard" | "good" | "easy",
+  durationSeconds?: number | null,
+): Promise<void> {
+  await apiClient.post(`/api/mastery/cards/${cardId}/review`, {
+    rating,
+    duration_seconds: durationSeconds ?? null,
+  });
+}
