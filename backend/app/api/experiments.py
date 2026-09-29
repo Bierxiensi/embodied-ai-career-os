@@ -5,10 +5,15 @@
 
 端点：
     GET    /api/experiments              列表（?skill_name= / ?day_seq= 过滤）
-    POST   /api/experiments              新增
+    POST   /api/experiments              新增（schema 隐藏，见下）
     GET    /api/experiments/{id}         详情
     PATCH  /api/experiments/{id}         更新（结论 / 指标）
     DELETE /api/experiments/{id}         删除
+
+DEPRECATED 标注（2026-09-29 计划 3 Task 3 预算腾挪）：POST 登记写
+`include_in_schema=False`——前端唯一调用方 services/experimentService.ts 实测
+零 import（撤 UI 留数据，spec D5），活跃写端点预算 ≤25 需要该空位；
+路由保留，实验数据不删。
 
 设计：纯规则 CRUD，不烧 LLM；variants / metrics 原样存 JSON，前端渲染对比表。
 """
@@ -43,7 +48,7 @@ def list_experiments(
     return ok([ExperimentOut.model_validate(r) for r in rows])
 
 
-@router.post("")
+@router.post("", include_in_schema=False)
 def create_experiment(
     payload: ExperimentCreate, db: Session = Depends(get_db)
 ) -> ApiResponse[ExperimentOut]:
