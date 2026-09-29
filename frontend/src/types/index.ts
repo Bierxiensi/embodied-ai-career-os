@@ -1633,4 +1633,6 @@ export type AnswerResult = {
   verified: boolean;
   rationale: string | null;
   cardId: number | null;
+  /** 判定产出方式：降级可见（与 generationMode 同款纪律） */
+  judgeMode: "llm" | "rule";
 };

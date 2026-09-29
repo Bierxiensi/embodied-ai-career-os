@@ -17,7 +17,7 @@ const KIND_LABEL: Record<UnitItem["kind"], string> = {
 
 export default function UnitView({ unit }: { unit: MasteryUnit }) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [verdicts, setVerdicts] = useState<Record<number, { correct: boolean; rationale: string | null }>>({});
+  const [verdicts, setVerdicts] = useState<Record<number, { correct: boolean; rationale: string | null; judgeMode: "llm" | "rule" }>>({});
   const [tbResult, setTbResult] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -27,7 +27,7 @@ export default function UnitView({ unit }: { unit: MasteryUnit }) {
     setBusy(true);
     try {
       const r = await answerItem(unit.id, item.id, text);
-      setVerdicts((v) => ({ ...v, [item.id]: { correct: r.correct, rationale: r.rationale } }));
+      setVerdicts((v) => ({ ...v, [item.id]: { correct: r.correct, rationale: r.rationale, judgeMode: r.judgeMode } }));
     } finally {
       setBusy(false);
     }
@@ -43,7 +43,8 @@ export default function UnitView({ unit }: { unit: MasteryUnit }) {
     try {
       const r = await teachBackComplete({ unitId: unit.id, answers: spoken });
       const passed = r.verdicts.filter((v) => v.passed).length;
-      setTbResult(`Teach-Back 完成：${passed}/${r.verdicts.length} 通过，已自动写入学习日志（错项 ${r.cardsCreated} 张进复习队列）。`);
+      const ruleNote = r.verdicts.some((v) => v.judgeMode === "rule") ? "（含规则判分）" : "";
+      setTbResult(`Teach-Back 完成：${passed}/${r.verdicts.length} 通过，已自动写入学习日志（错项 ${r.cardsCreated} 张进复习队列）${ruleNote}。`);
     } finally {
       setBusy(false);
     }
@@ -98,7 +99,9 @@ export default function UnitView({ unit }: { unit: MasteryUnit }) {
               </button>
               {verdicts[item.id] ? (
                 <span className="text-xs" style={{ color: verdicts[item.id].correct ? "var(--accent-success, #16A34A)" : "var(--accent-danger)" }}>
+                  {/* 降级可见：规则判分时在徽章上如实标注（与 AI 生成徽章同款纪律） */}
                   {verdicts[item.id].correct ? "✓ 通过" : `✗ ${verdicts[item.id].rationale ?? "再试一次"}`}
+                  {verdicts[item.id].judgeMode === "rule" ? " · 规则判分" : ""}
                 </span>
               ) : null}
             </div>

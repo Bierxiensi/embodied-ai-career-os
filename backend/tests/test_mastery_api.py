@@ -135,6 +135,7 @@ def test_answer_correct_marks_verified_and_creates_card():
     assert r["correct"] is True
     assert r["verified"] is True
     assert r["card_id"] is not None  # 答对建卡：answer → review 链路可接
+    assert r["judge_mode"] == "rule"  # 降级可见：本端点恒为规则判分
 
     # 重新 GET 单元：is_verified 必须已翻真（不是只在 answer 响应里说说）
     reopened = client.get(f"/api/mastery/units/{uid}").json()["data"]
@@ -148,6 +149,7 @@ def test_answer_correct_marks_verified_and_creates_card():
         json={"item_id": iid2, "answer": "完全不相关的答案"},
     ).json()["data"]
     assert r_bad["correct"] is False and r_bad["verified"] is False
+    assert r_bad["judge_mode"] == "rule"
 
     _cleanup_unit(uid)
     _cleanup_unit(uid2)
@@ -161,6 +163,7 @@ def test_wrong_answer_creates_mistake_card():
         json={"item_id": iid, "answer": "完全不相关的答案"},
     ).json()["data"]
     assert r["correct"] is False and r["card_id"] is not None
+    assert r["judge_mode"] == "rule"
 
     from app.db.base import SessionLocal
     from app.models.mastery import ReviewCard
@@ -242,6 +245,7 @@ def test_first_answer_returns_card_id():
         json={"item_id": quiz["id"], "answer": "参考答案原文见 rationale"},
     ).json()["data"]
     assert r["card_id"] is not None
+    assert r["judge_mode"] == "rule"
 
 
 def test_vacuous_reference_never_judges_correct():

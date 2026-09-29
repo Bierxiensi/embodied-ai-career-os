@@ -1,7 +1,9 @@
 """Teach-Back 判定（Learn FASTER 机制，spec §3.2/§4.2）。
 
 纪律：LLM 优先判对错，规则关键词兜底；Mock 不参与判定（直接走规则）。
-判定只输出布尔——**不改写用户口述**，日志内容永远是用户原话。
+判定输出 {passed, mode}——mode 如实上报判定是 LLM 给的还是规则兜底的
+（降级可见，与 generation_mode 同款纪律）；**不改写用户口述**，
+日志内容永远是用户原话。never-throws：任何异常都落回规则并报 mode="rule"。
 """
 
 from __future__ import annotations
@@ -13,11 +15,12 @@ def _is_mock() -> bool:
     return type(get_llm()).__name__ == "MockClient"
 
 
-def judge_answer(question: str, reference: str, spoken: str) -> bool:
+def judge_answer(question: str, reference: str, spoken: str) -> dict[str, bool | str]:
+    """返回 {"passed": bool, "mode": "llm" | "rule"}——mode = 判定实际产出方式。"""
     text = (spoken or "").strip().lower()
     ref = (reference or "").strip().lower()
     if not text or not ref:
-        return False
+        return {"passed": False, "mode": "rule"}
 
     if not _is_mock():
         try:
@@ -37,14 +40,14 @@ def judge_answer(question: str, reference: str, spoken: str) -> bool:
             if isinstance(result, dict) and "passed" in result:
                 v = result["passed"]
                 if isinstance(v, bool):  # 严格布尔：字符串 "false" 不得当 True
-                    return v
-                # 非布尔 → 落回规则兜底（never-throws 契约）
+                    return {"passed": v, "mode": "llm"}
+                # 非布尔 → 落回规则兜底（never-throws 契约），如实报 mode="rule"
         except Exception:
             pass
 
     # 规则兜底：参考答案核心词被口述覆盖 ≥ 一半即通过
     keywords = [w for w in ref.replace("/", " ").split() if len(w) >= 2]
     if not keywords:
-        return False
+        return {"passed": False, "mode": "rule"}
     hits = sum(1 for w in keywords if w in text)
-    return hits >= max(1, (len(keywords) + 1) // 2)
+    return {"passed": hits >= max(1, (len(keywords) + 1) // 2), "mode": "rule"}

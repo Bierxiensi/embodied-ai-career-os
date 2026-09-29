@@ -46,10 +46,12 @@ def complete(
         item = db.get(UnitItem, ans.item_id)
         if item is None or item.unit_id != unit.id:
             raise HTTPException(status_code=404, detail=f"Item {ans.item_id} not found")
-        passed = judge_answer(item.body, item.answer or "", ans.spoken)
+        verdict = judge_answer(item.body, item.answer or "", ans.spoken)
+        passed = bool(verdict["passed"])
         verdicts.append({
             "item_id": item.id,
             "passed": passed,
+            "judge_mode": str(verdict["mode"]),  # 降级可见：判定是 LLM 给的还是规则兜底
             "hint": None if passed else (item.rationale or "重读本题对应概念卡"),
         })
         lines.append(f"[{'通过' if passed else '待复习'}] {item.body} → {ans.spoken}")

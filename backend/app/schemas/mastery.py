@@ -44,6 +44,7 @@ class AnswerOut(BaseModel):
     verified: bool
     rationale: str | None = None
     card_id: int | None = None
+    judge_mode: str  # 降级可见：判定产出方式 "llm"|"rule"（本端点恒为 "rule"）
 
 
 class ReviewIn(BaseModel):

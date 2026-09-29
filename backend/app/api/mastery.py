@@ -123,6 +123,7 @@ def answer_item(
         item_id=item.id, correct=correct, verified=verified,
         rationale=item.rationale if not correct else None,
         card_id=card_id,
+        judge_mode="rule",  # 本端点只有内联规则判分（不改判定逻辑，只上报方式）
     ))
 
 

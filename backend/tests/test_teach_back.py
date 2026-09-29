@@ -14,9 +14,18 @@ client = TestClient(app)
 
 
 def test_judge_rule_fallback():
-    # conftest 钉死 mock → 走规则兜底
-    assert judge_answer("DPO 绕过什么？", "奖励模型", "DPO 不再需要显式奖励模型") is True
-    assert judge_answer("DPO 绕过什么？", "奖励模型", "今天天气不错") is False
+    # conftest 钉死 mock → 走规则兜底；返回 dict：判定结果 + 降级可见的 mode
+    ok = judge_answer("DPO 绕过什么？", "奖励模型", "DPO 不再需要显式奖励模型")
+    assert ok["passed"] is True and ok["mode"] == "rule"
+    bad = judge_answer("DPO 绕过什么？", "奖励模型", "今天天气不错")
+    assert bad["passed"] is False and bad["mode"] == "rule"
+
+
+def test_judge_mode_rule_pin_on_pass():
+    # 降级可见性钉：Mock 从不判分 → passed=True 的判定也必须如实上报 mode="rule"
+    result = judge_answer("DPO 绕过什么？", "奖励模型", "DPO 不再需要显式奖励模型")
+    assert result["passed"] is True
+    assert result["mode"] == "rule"
 
 
 def test_complete_writes_learning_log_auto():
@@ -51,6 +60,8 @@ def test_complete_writes_learning_log_auto():
         body = resp.json()["data"]
         assert body["log_id"]
         assert body["cards_created"] >= 1
+        # 降级可见：每条裁决都带 judge_mode（pinned mock 下恒为 rule）
+        assert all(v.get("judge_mode") == "rule" for v in body["verdicts"])
         log = db.get(LearningLog, body["log_id"])
         assert log is not None
         assert "DPO 不再需要显式奖励模型" in log.content  # 口述原文，不改写

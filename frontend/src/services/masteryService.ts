@@ -62,19 +62,26 @@ export async function answerItem(
 ): Promise<AnswerResult> {
   const d = await apiClient.post<{
     item_id: number; correct: boolean; verified: boolean;
-    rationale: string | null; card_id: number | null;
+    rationale: string | null; card_id: number | null; judge_mode: "llm" | "rule";
   }>(`/api/mastery/units/${unitId}/answer`, { item_id: itemId, answer });
-  return { itemId: d.item_id, correct: d.correct, verified: d.verified, rationale: d.rationale, cardId: d.card_id };
+  return {
+    itemId: d.item_id, correct: d.correct, verified: d.verified,
+    rationale: d.rationale, cardId: d.card_id, judgeMode: d.judge_mode,
+  };
 }
 
 export async function teachBackComplete(payload: {
   unitId: number;
   durationMinutes?: number | null;
   answers: { itemId: number; spoken: string }[];
-}): Promise<{ logId: number; cardsCreated: number; verdicts: { itemId: number; passed: boolean; hint: string | null }[] }> {
+}): Promise<{
+  logId: number;
+  cardsCreated: number;
+  verdicts: { itemId: number; passed: boolean; judgeMode: "llm" | "rule"; hint: string | null }[];
+}> {
   const d = await apiClient.post<{
     log_id: number; cards_created: number;
-    verdicts: { item_id: number; passed: boolean; hint: string | null }[];
+    verdicts: { item_id: number; passed: boolean; judge_mode: "llm" | "rule"; hint: string | null }[];
   }>("/api/teach-back/complete", {
     unit_id: payload.unitId,
     duration_minutes: payload.durationMinutes ?? null,
@@ -83,7 +90,9 @@ export async function teachBackComplete(payload: {
   return {
     logId: d.log_id,
     cardsCreated: d.cards_created,
-    verdicts: d.verdicts.map((v) => ({ itemId: v.item_id, passed: v.passed, hint: v.hint })),
+    verdicts: d.verdicts.map((v) => ({
+      itemId: v.item_id, passed: v.passed, judgeMode: v.judge_mode, hint: v.hint,
+    })),
   };
 }
 
