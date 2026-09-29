@@ -75,6 +75,11 @@ _DEV_DB = (Path(__file__).resolve().parents[1] / "data" / "app.db").resolve()
 #   test_e2e_learning_loop.py  Day7 学习闭环（独立脚本，E2E_RESET_DB 会删库）
 #   test_phase2_week1.py       Phase2 W1 集成（有 pytest 风格 test_*，但依赖实时后端；
 #                              纯进程内的部分已被其他单测覆盖）
+#
+# 另：tests/e2e/（四信号可复跑验收单，e2e_signal*.py + e2e_common.py）**不进 pytest**——
+# 文件名无 test_ 前缀，pytest 默认 python_files 不匹配，collect 时自然跳过；
+# 手动 `cd backend && .venv/Scripts/python.exe tests/e2e/e2e_signalN_*.py` 执行
+# （自起副本库后端 :8011，不碰开发库，见 e2e_common.start_backend_copy）。
 collect_ignore = [
     "test_agent_closure.py",
     "test_e2e_learning_loop.py",
