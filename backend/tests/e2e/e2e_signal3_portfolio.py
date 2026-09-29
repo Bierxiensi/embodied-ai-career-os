@@ -28,7 +28,9 @@ def main() -> None:
         try:
             for sk in SKILLS:
                 result = record_evidence_event(db, sk, "commit", f"commit:e2e-{sk}")
-                assert result["applied"], f"{sk} 事件未落库: {result}"
+                # 幂等：副本库若已带 gate≥2（上次跑过），record_evidence_event 返回
+                # applied=False 的 no-op —— 端态仍达标，不能假失败。
+                assert result["applied"] or result["from_gate"] >= 2, f"事件未落库且门未达标: {result}"
         finally:
             db.close()
 

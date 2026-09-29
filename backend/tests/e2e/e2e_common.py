@@ -67,18 +67,28 @@ def stop_and_verify(proc, copy_db: Path, fingerprint_before: str) -> None:
     proc.terminate()
     proc.wait(timeout=10)
     after = db_fingerprint(DEV_DB)
+    # 清理必达 + 失败不互盖：先取指纹结果，副本库删除放独立 try —— 即使指纹
+    # mismatch 也绝不泄漏副本库；清理异常同样不得盖掉指纹 AssertionError。
+    # （原先 assert 在 unlink 之前，mismatch 会让副本库泄漏；finally 抛错会盖原错。）
+    cleanup_err: Exception | None = None
+    try:
+        # Windows：本进程若曾 import app.*（如 signal3 的 SessionLocal），engine 连接池
+        # 会占着副本库句柄 → 先释放再删；再带重试兜底后端句柄释放的时延。
+        # 只在 app 已被 import 时 dispose —— 否则会以默认 DATABASE_URL 新建 engine。
+        if "app.db.base" in sys.modules:
+            sys.modules["app.db.base"].engine.dispose()
+        for attempt in range(10):
+            try:
+                copy_db.unlink(missing_ok=True)
+                break
+            except PermissionError:
+                if attempt == 9:
+                    raise
+                time.sleep(0.5)
+    except Exception as e:  # 清理失败先记账，不立即抛 → 不盖指纹结论
+        cleanup_err = e
+    # 指纹检查语义不变：mismatch → AssertionError（且已在清理之后响亮抛出）
     assert after == fingerprint_before, f"开发库被改动！before={fingerprint_before} after={after}"
-    # Windows：本进程若曾 import app.*（如 signal3 的 SessionLocal），engine 连接池
-    # 会占着副本库句柄 → 先释放再删；再带重试兜底后端句柄释放的时延。
-    # 只在 app 已被 import 时 dispose —— 否则会以默认 DATABASE_URL 新建 engine。
-    if "app.db.base" in sys.modules:
-        sys.modules["app.db.base"].engine.dispose()
-    for attempt in range(10):
-        try:
-            copy_db.unlink(missing_ok=True)
-            break
-        except PermissionError:
-            if attempt == 9:
-                raise
-            time.sleep(0.5)
+    if cleanup_err is not None:
+        raise cleanup_err
     print("开发库指纹一致 ✅")
