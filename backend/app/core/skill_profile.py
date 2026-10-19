@@ -120,7 +120,7 @@ SKILL_PROFILE: list[SkillProfile] = [
         name="Distributed Training", domain="llm_foundation", category="Weak", level=1, target_level=3, evidence=["仅概念层"],
     ),
     SkillProfile(
-        name="FlashAttention", domain="llm_foundation", category="Weak", level=1, target_level=3, evidence=["仅概念层"],
+        name="FlashAttention", domain="llm_foundation", category="Weak", level=1, target_level=4, evidence=["仅概念层"],
     ),
     SkillProfile(
         name="Gradient Checkpointing", domain="llm_foundation", category="Weak", level=1, target_level=3, evidence=["仅概念层"],
@@ -170,6 +170,7 @@ SKILL_PROFILE: list[SkillProfile] = [
     # ══════════════════════════════════════════════════════════════════════
     # 现有强项 —— 求职基本盘
     # ══════════════════════════════════════════════════════════════════════
+    # v3.3：护城河维持，不因推理支加权降权（Agent Application / RAG / Python 三项 target 不动）
     SkillProfile(
         name="Agent Application", domain="engineering_delivery", category="Strong", level=4, target_level=5,
         evidence=[
