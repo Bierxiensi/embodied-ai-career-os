@@ -268,7 +268,7 @@ git commit -m "feat(skill_profile): v3.3 推理支五项 target≥4 + 护城河�
   ```
   Expected: 打印含 v3.3 重心的 note，无 AssertionError
 - [ ] **v3.0 文档零改动**：`git diff 8a9c6be..HEAD --name-only -- "docs/路线调整-Post-Training-v3.0.md"` → 空输出
-- [ ] **改动面核对**：`git diff 8a9c6be..HEAD --name-only` 仅含两配置 + 两测试文件
+- [ ] **改动面核对**：`git diff c655e54..HEAD --name-only` 仅含两配置 + 两测试文件（基线=计划提交点；用 8a9c6be 会把计划文档自身计入）
 - [ ] **全量**：549 passed / 2 skipped / 0 failed
 - [ ] **（plan 期间已改）spec 文件名与文内自称均为 v3.3**：`grep -n "v3\.1" docs/superpowers/specs/2026-10-19-v33-inference-weighting-design.md` → **仅"血缘"说明那一行命中**（标题、注释块、护城河注释、reframe 自查均须为 v3.3；多出任何一行即失败）
 
