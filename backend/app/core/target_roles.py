@@ -86,6 +86,16 @@ class TargetRole:
 # 3. 内核层 24 项不全铺：只突击 6 个最高频考点到 level 3（够答"是什么/为什么"）：
 #    KV Cache / FlashAttention / PagedAttention / FSDP-ZeRO / Quantization / MoE，
 #    与 Mini Post-Training Lab 实验绑定；其余维持 level 1-2，本窗口不投入。
+# ================================================================================
+# 2026-10-19 推理优化支再加权 v3.3（spec: docs/superpowers/specs/2026-10-19-v33-inference-weighting-design.md）
+# ================================================================================
+# v3.0 框架内的重心加权，不是 reframe。主攻内部的学习与 artifact 重心 = 推理优化支
+# （vLLM / KV Cache / 量化 / FlashAttention 语义层），直接对冲 09-08 技术面内核层失分。
+# 40/40/20（v3.3 再加权，2026-10-19）：
+#   40% 推理优化支主攻（治内核层失分，挂 Mini Lab 07_inference 的 artifact）
+#   40% Agent/RAG 护城河维持（应用层 3.75，求职筹码，不降权）
+#   20% 观察带（DeepSeek×TileLang×昇腾 信号核实；国产算力生态跟踪）
+# 提级细则见 skill_profile 侧：推理支五项 target=max(现值,4)，护城河三项不动。
 TARGET_ROLES: list[TargetRole] = [
     TargetRole(
         key="llm",
@@ -94,7 +104,9 @@ TARGET_ROLES: list[TargetRole] = [
         salary_range="36-45K",
         note="v3.2：Post-Training 横向能力（SFT→DPO→RL），VLM 是其模型分支；"
              "Transformer→SFT→LoRA/QLoRA→DPO/GRPO→Eval 必须能讲透并做过实验；"
-             "补 RAG/Agent Application（真实 JD 要求且是本人强项，见 v3.2 注记）",
+             "补 RAG/Agent Application（真实 JD 要求且是本人强项，见 v3.2 注记）；"
+             "v3.3：学习与 artifact 重心=推理优化支（vLLM/KV Cache/量化/FlashAttention），"
+             "权重口径 40/40/20 见文件头 v3.3 注释",
         required_skills=[
             "Transformer", "Attention", "Pretraining", "SFT",
             "LoRA/QLoRA", "DPO", "RLHF", "GRPO",
@@ -121,7 +133,8 @@ TARGET_ROLES: list[TargetRole] = [
         name="AI 算法 / 推理工程师",
         priority="保底",
         salary_range="30-40K",
-        note="进入模型团队的入口岗：推理优化与工程交付是现有强项，可快速拿面试",
+        note="进入模型团队的入口岗：推理优化与工程交付是现有强项，可快速拿面试；"
+             "v3.3：承载推理优化支（priority=保底不变）",
         required_skills=[
             "Python", "Deep Learning", "PyTorch",
             "Inference Optimization", "Linux",
