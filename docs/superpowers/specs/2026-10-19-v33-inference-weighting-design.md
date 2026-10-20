@@ -80,6 +80,7 @@
 
 | 项 | 归属 | 触发条件 |
 |---|---|---|
+| **llm_generator 提示词旧措辞**（「推理侧以 vLLM 部署评测为保底技能」→ v3.3 重心措辞；同票扫描同类"保底"话术） | 后续票（终审 Important#2，用户裁决 2026-10-20：回头撕） | **下次 planner 生成学习周之前**必须完成 |
 | 核实 DeepSeek×TileLang×昇腾 | **用户（零代码）** | 随时；结果决定观察带下一步 |
 | 国产算力 artifact 选型 brainstorm | 下一轮 brainstorm | 信号属实 + 用户想做 |
 | 30-60 天推理优化 artifact 选型 | 下一轮 brainstorm | 用户启动（挂 `07_inference`） |
